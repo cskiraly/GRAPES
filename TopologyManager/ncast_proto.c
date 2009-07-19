@@ -80,7 +80,7 @@ int ncast_query(struct cache_entry *local_cache)
 int ncast_proto_init(struct socketID *s)
 {
   myEntry = cache_init(2);
-  cache_add(myEntry, sockid_dup(s));
+  cache_add(myEntry, s);
 
   return 0;
 }
