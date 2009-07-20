@@ -9,11 +9,11 @@
 
 #define MAX_PEERS 50
 struct cache_entry {
-  struct socketID *id;
+  struct nodeID *id;
   uint64_t timestamp;
 };
 
-struct socketID *nodeid(const struct cache_entry *c, int i)
+struct nodeID *nodeid(const struct cache_entry *c, int i)
 {
   if (c[i].timestamp == 0) {
     return NULL;
@@ -24,25 +24,25 @@ struct socketID *nodeid(const struct cache_entry *c, int i)
   return c[i].id;
 }
 
-int cache_add(struct cache_entry *c, struct socketID *neighbour)
+int cache_add(struct cache_entry *c, struct nodeID *neighbour)
 {
   int i;
 
   for (i = 0; c->timestamp != 0; i++);
-  c[i].id = sockid_dup(neighbour);
+  c[i].id = nodeid_dup(neighbour);
   c[i++].timestamp = 1;
   c[i].timestamp = 0;
   
   return i;
 }
 
-int cache_del(struct cache_entry *c, struct socketID *neighbour)
+int cache_del(struct cache_entry *c, struct nodeID *neighbour)
 {
   int i;
   int found = 0;
 
   for (i = 0; c->timestamp != 0; i++) {
-    if (sockid_equal(c[i].id, neighbour)) {
+    if (nodeid_equal(c[i].id, neighbour)) {
       found = 1;
     }
     if (found) {
@@ -74,9 +74,9 @@ struct cache_entry *cache_init(int n)
   return res;
 }
 
-int fill_cache_entry(struct cache_entry *c, const struct socketID *s)
+int fill_cache_entry(struct cache_entry *c, const struct nodeID *s)
 {
-  c->id = sockid_dup(s);
+  c->id = nodeid_dup(s);
   c->timestamp = 1;
 #warning Timestamps are probably wrong...
   return 1;
@@ -87,7 +87,7 @@ int in_cache(const struct cache_entry *c, const struct cache_entry *elem)
   int i;
 
   for (i = 0; c[i].timestamp != 0; i++) {
-    if (sockid_equal(c[i].id, elem->id)) {
+    if (nodeid_equal(c[i].id, elem->id)) {
       return 1;
     }
   }
@@ -95,7 +95,7 @@ int in_cache(const struct cache_entry *c, const struct cache_entry *elem)
   return 0;
 }
 
-struct socketID *rand_peer(struct cache_entry *c)
+struct nodeID *rand_peer(struct cache_entry *c)
 {
   int i, j;
 
@@ -121,7 +121,7 @@ struct cache_entry *entries_undump(const uint8_t *buff, int size)
 
     memcpy(&res[i].timestamp, p, sizeof(uint64_t));
     p += sizeof(uint64_t);
-    res[i++].id = sockid_undump(p, &len);
+    res[i++].id = nodeid_undump(p, &len);
     p += len;
   }
 if (p - buff != size) { fprintf(stderr, "Waz!! %d != %d\n", p - buff, size); exit(-1);}
@@ -135,7 +135,7 @@ int entry_dump(uint8_t *b, struct cache_entry *e, int i)
   
   res = sizeof(uint64_t);
   memcpy(b, &e[i].timestamp, sizeof(uint64_t));
-  res += sockid_dump(b + res, e[i].id);
+  res += nodeid_dump(b + res, e[i].id);
 
   return res;
 }

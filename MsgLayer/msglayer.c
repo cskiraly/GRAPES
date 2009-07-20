@@ -9,24 +9,18 @@
 
 #include "msglayer.h"
 
-struct socketID {
+struct nodeID {
   struct sockaddr_in addr;
-};
-struct connectionID {
-  struct socketID localid;
-  struct socketID remoteid;
-  int s;
+  int fd;
 };
 
-static struct connectionID my_end;
-
-struct socketID *create_socket(const char *IPaddr, int port)
+struct nodeID *create_socket(const char *IPaddr, int port)
 {
-  struct socketID *s;
+  struct nodeID *s;
   int res;
 
-  s = malloc(sizeof(struct socketID));
-  memset(s, 0, sizeof(struct socketID));
+  s = malloc(sizeof(struct nodeID));
+  memset(s, 0, sizeof(struct nodeID));
   s->addr.sin_family = AF_INET;
   s->addr.sin_port = htons(port);
   res = inet_aton(IPaddr, &s->addr.sin_addr);
@@ -36,73 +30,47 @@ struct socketID *create_socket(const char *IPaddr, int port)
     s = NULL;
   }
 
-  if (my_end.s <= 0) {
-    my_end.s = socket(AF_INET, SOCK_DGRAM, 0);
-    if (my_end.s < 0) {
-      free(s);
+  s->fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (s->fd < 0) {
+    free(s);
     
-      return NULL;
-    }
-fprintf(stderr, "My sock: %d\n", my_end.s);
-    res = bind(my_end.s, (struct sockaddr *)&s->addr, sizeof(struct sockaddr_in));
-    if (res < 0) {
-      perror("Bind");
-      close(my_end.s);
-      free(s);
-    
-      return NULL;
-    }
+    return NULL;
+  }
+fprintf(stderr, "My sock: %d\n", s->fd);
+  res = bind(s->fd, (struct sockaddr *)&s->addr, sizeof(struct sockaddr_in));
+  if (res < 0) {
+    /* bind failed: not a local address... Just close the socket! */
+    close(s->fd);
+    s->fd = -1;
   }
 
   return s;
 }
 
-struct connectionID *open_connection(struct socketID *myid,struct socketID *otherid, int parameters){
-  struct connectionID *c;
-
-  if (my_end.localid.addr.sin_port != 0) {
-    if (memcmp(&my_end.localid, myid, sizeof(struct socketID)) != 0) {
-      fprintf(stderr, "Error: Only one local address is currently supported!\n");
-      return NULL;
-    }
-  } else {
-    my_end.localid = *myid;
-  }
-
-  c = malloc(sizeof(struct connectionID));
-  memset(c, 0, sizeof(struct connectionID));
-  c->localid = *myid;
-  c->remoteid = *otherid;
-  c->s = my_end.s;
-
-  return c;
+int send_data(const struct nodeID *from, const struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
+{
+  return sendto(from->fd, buffer_ptr, buffer_size, 0,
+                (struct sockaddr *)&to->addr, sizeof(struct sockaddr_in));
 }
 
-int send_data(const struct connectionID *conn, const uint8_t *buffer_ptr, int buffer_size){
-  return sendto(conn->s, buffer_ptr, buffer_size, 0,
-                (struct sockaddr *)&conn->remoteid.addr, sizeof(struct sockaddr_in));
-}
-int recv_data(struct connectionID *conn, uint8_t *buffer_ptr, int buffer_size)
+int recv_data(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
 {
   int res;
   struct sockaddr_in raddr;
   socklen_t raddr_size = sizeof(struct sockaddr_in);
 
-  res = recvfrom(conn->s, buffer_ptr, buffer_size, 0, (struct sockaddr *)&raddr, &raddr_size);
-  memcpy(&conn->remoteid.addr, &raddr, raddr_size);
+  *remote = malloc(sizeof(struct nodeID));
+  if (*remote == NULL) {
+    return -1;
+  }
+  res = recvfrom(local->fd, buffer_ptr, buffer_size, 0, (struct sockaddr *)&raddr, &raddr_size);
+  memcpy(&(*remote)->addr, &raddr, raddr_size);
+  (*remote)->fd = -1;
 fprintf(stderr, "Read %d from %s\n", res, inet_ntoa(raddr.sin_addr));
   return res;
 }
 
-int close_connection(const struct connectionID *conn)
-{
-  //close(conn->s);		FIXME!
-  free((void *)conn);
-
-  return 0;
-}
-
-const char *socket_addr(const struct socketID *s)
+const char *node_addr(const struct nodeID *s)
 {
   static char addr[256];
 
@@ -111,53 +79,42 @@ const char *socket_addr(const struct socketID *s)
   return addr;
 }
 
-struct conn_fd *getConnections(int *n)
+int getFD(const struct nodeID *n)
 {
-  static struct conn_fd fds;
-
-  fds.conn = &my_end;
-  fds.fd = my_end.s;
-  *n = 1;
-
-  return &fds;
+  return n->fd;
 }
 
-struct socketID *sockid_dup(const struct socketID *s)
+struct nodeID *nodeid_dup(const struct nodeID *s)
 {
-  struct socketID *res;
+  struct nodeID *res;
 
-  res = malloc(sizeof(struct socketID));
+  res = malloc(sizeof(struct nodeID));
   if (res != NULL) {
-    memcpy(res, s, sizeof(struct socketID));
+    memcpy(res, s, sizeof(struct nodeID));
   }
 
   return res;
 }
-int sockid_equal(const struct socketID *s1, const struct socketID *s2)
+int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 {
-  return (memcmp(s1, s2, sizeof(struct socketID)) == 0);
-}
-/*
-void setRecvTimeout(struct connectionID *conn, int timeout);
-void setMeasurementParameters(meas_params): sets monitoring parameters for the messaging layer
-*/
-
-int sockid_dump(uint8_t *b, const struct socketID *s)
-{
-  memcpy(b, s, sizeof(struct socketID));
-
-  return sizeof(struct socketID);
+  return (memcmp(s1, s2, sizeof(struct nodeID)) == 0);
 }
 
-struct socketID *sockid_undump(const uint8_t *b, int *len)
+int nodeid_dump(uint8_t *b, const struct nodeID *s)
 {
-  struct socketID *res;
-  res = malloc(sizeof(struct socketID));
+  memcpy(b, s, sizeof(struct nodeID));
+
+  return sizeof(struct nodeID);
+}
+
+struct nodeID *nodeid_undump(const uint8_t *b, int *len)
+{
+  struct nodeID *res;
+  res = malloc(sizeof(struct nodeID));
   if (res != NULL) {
-    memcpy(res, b, sizeof(struct socketID));
+    memcpy(res, b, sizeof(struct nodeID));
   }
-  *len = sizeof(struct socketID);
+  *len = sizeof(struct nodeID);
 
   return res;
 }
-
