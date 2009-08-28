@@ -1,0 +1,37 @@
+/** @mainpage
+
+   @section intro Introduction
+
+   GRAPES (Generic Resource-Aware P2P Environment for Streaming) is a
+   set of libraries containing some ``building blocks'' for P2P
+   streaming applications. Each application is decomposed in a set of
+   <i>modules</i> (or <i>\em components</i>), and the libraries contain
+   various alternative implementations of the modules.
+
+   Ideally, a P2P streaming application can be built by linking such
+   libraries with a minimum amount of code (in the best of the possible
+   worlds, we would have some kind of GUI - like a graph editor - allowing
+   to combine the various modules in different ways and to automatically
+   generate the glue code for building the P2P program).
+
+   @section structure GRAPES Structure
+
+   The following Components/Modules can be idenfiied:
+	- ml - <b>Messaging Layer</b> - ml.h
+	- mon - <b>Monitoring Layer</b> - mon.h
+	- rep - <b>Repository</b> - repoclient.h
+	- som - <b>Scheduler and Overlay Manager</b> -
+	- ul - <b>User</b> (interface) <b>Layer</b> - ul.h
+
+   Each module can be composed by some submodules; for example, the som is
+   composed by:
+	- a chunk transport layer (send \& receive chunks)
+	- a Scheduler
+	- a Chunks Buffer
+	- a @link topmanager.h Topology Manager @endlink
+	- a Signalling Module
+
+   Each module is separated into a sub-directory within the source tree,
+   and the public Application Programming Interfaces (APIs) are located
+   in the <i>include/</i> sub-directory.
+*/
