@@ -1,4 +1,4 @@
-BASE = ..
+BASE = ../..
 
 CFLAGS = -Wall
 CFLAGS += -Wdeclaration-after-statement
