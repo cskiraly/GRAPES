@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-#include "msglayer.h"
+#include "net_helper.h"
 #include "nccache.h"
 
 #define MAX_PEERS 50

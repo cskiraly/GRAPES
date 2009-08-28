@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "msglayer.h"
+#include "net_helper.h"
 #include "topmanager.h"
 #include "nccache.h"
 #include "ncast_proto.h"

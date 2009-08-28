@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "msglayer.h"
+#include "net_helper.h"
 
 struct nodeID {
   struct sockaddr_in addr;

@@ -10,7 +10,7 @@ CPPFLAGS = -I$(BASE)/include
 
 OBJS = ncast.o ncast_proto.o nccache.o
 
-all: libtopman.a
+all: libtopman.a net_helper.o
 
 %.a: $(OBJS)
 	ar rcs $@ $^

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "msglayer.h"
+#include "net_helper.h"
 #include "nccache.h"
 #include "proto.h"
 #include "ncast_proto.h"
