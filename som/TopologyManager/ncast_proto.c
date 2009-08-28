@@ -2,21 +2,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "msglayer.h"
+#include "net_helper.h"
 #include "nccache.h"
 #include "proto.h"
 #include "ncast_proto.h"
 
 static struct cache_entry *myEntry;
 
-int ncast_payload_fill(uint8_t *payload, int size, struct cache_entry *c, struct socketID *snot)
+int ncast_payload_fill(uint8_t *payload, int size, struct cache_entry *c, struct nodeID *snot)
 {
   int i;
   uint8_t *p = payload;
 
   p += entry_dump(p, myEntry, 0);
   for (i = 0; nodeid(c, i); i++) {
-    if (!sockid_equal(nodeid(c, i), snot)) {
+    if (!nodeid_equal(nodeid(c, i), snot)) {
       if (p - payload > size - 32 /* FIXME */) {
         fprintf(stderr, "too many entries!\n");
         return -1;
@@ -28,13 +28,13 @@ int ncast_payload_fill(uint8_t *payload, int size, struct cache_entry *c, struct
   return p - payload;
 }
 
-int ncast_reply(const struct connectionID *conn, const uint8_t *payload, int psize, struct cache_entry *local_cache)
+int ncast_reply(const uint8_t *payload, int psize, struct cache_entry *local_cache)
 {
   uint8_t pkt[1500];
   struct ncast_header *h = (struct ncast_header *)pkt;
   const struct cache_entry *c = entries_undump(payload, psize);
   int len;
-  struct socketID *dst;
+  struct nodeID *dst;
 
 #if 0
   n = psize / sizeof(struct cache_entry);
@@ -49,26 +49,24 @@ int ncast_reply(const struct connectionID *conn, const uint8_t *payload, int psi
   len = ncast_payload_fill(pkt + sizeof(struct ncast_header), 1500 - sizeof(struct ncast_header), local_cache, dst);
   free((void *)c);
 
-  return send_data(conn, pkt, sizeof(struct ncast_header) + len);
+  return send_data(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);
 }
 
-int ncast_query_peer(struct cache_entry *local_cache, struct socketID *dst)
+int ncast_query_peer(struct cache_entry *local_cache, struct nodeID *dst)
 {
   uint8_t pkt[1500];
   struct ncast_header *h = (struct ncast_header *)pkt;
-  struct connectionID *conn;
   int len;
 
   h->protocol = PROTO_NCAST;
   h->type = NCAST_QUERY;
-  conn = open_connection(nodeid(myEntry, 0), dst, 0);
   len = ncast_payload_fill(pkt + sizeof(struct ncast_header), 1500 - sizeof(struct ncast_header), local_cache, dst);
-  return send_data(conn, pkt, sizeof(struct ncast_header) + len);
+  return send_data(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);
 }
 
 int ncast_query(struct cache_entry *local_cache)
 {
-  struct socketID *dst;
+  struct nodeID *dst;
 
   dst = rand_peer(local_cache);
   if (dst == NULL) {
@@ -77,7 +75,7 @@ int ncast_query(struct cache_entry *local_cache)
   return ncast_query_peer(local_cache, dst);
 }
 
-int ncast_proto_init(struct socketID *s)
+int ncast_proto_init(struct nodeID *s)
 {
   myEntry = cache_init(2);
   cache_add(myEntry, s);

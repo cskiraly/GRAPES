@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "msglayer.h"
+#include "net_helper.h"
 #include "topmanager.h"
 
 #define MAX_PEERS 5000
