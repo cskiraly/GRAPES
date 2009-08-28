@@ -25,13 +25,35 @@
 
    Each module can be composed by some submodules; for example, the som is
    composed by:
-	- a chunk transport layer (send \& receive chunks)
+	- a @ref trade_msg submodule (send \& receive chunks)
 	- a Scheduler
 	- a Chunks Buffer
 	- a @link topmanager.h Topology Manager @endlink
-	- a Signalling Module
+	- a @ref trade_sig Module
 
    Each module is separated into a sub-directory within the source tree,
-   and the public Application Programming Interfaces (APIs) are located
-   in the <i>include/</i> sub-directory.
+   is described by a well-defined interface, and can have different
+   implementations and/or bindings to different programming languages.
+   The public Application Programming Interfaces (APIs) of the various
+   modules are located in the <i>include/</i> sub-directory.
+
+@section trade_msg Chunk Transport
+   Chunk Transport is a submodule of the som which is responsible for
+   sending and receiving chunks (described by the struct chunk from chunk.h).
+
+   As for other submodules, chunk transport is provided through two kinds
+   of APIs: the <i>high abstraction</i> and the <i>low abstraction</i> API.
+
+   One of the design goals of the chunk transport facilities is not to force
+   any particular structure in the applications using it, and it should be
+   possible to use its APIs (or at least the low abstraction one) in either
+   multi-threaded programs, multi-process applications, single-threaded
+   (event based) architectures, etc...
+
+   Moreover, there should not be any dependency on external libraries, and
+   the code should be fairly portable. Finally, the API should be generic
+   enough to support both push and pull styles of streaming.
+
+@section trade_sig Signalling
+  @todo
 */
