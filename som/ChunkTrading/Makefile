@@ -6,9 +6,9 @@ CFLAGS += -Wno-switch -Wpointer-arith -Wredundant-decls
 CFLAGS += -Wno-pointer-sign 
 CFLAGS += -g
 
-CPPFLAGS = -I$(BASE)/include
+CPPFLAGS = -I$(BASE)/include -I..
 
-OBJS = chunk_encoding.o
+OBJS = chunk_encoding.o chunk_delivery.o
 
 all: libtrading.a
 
