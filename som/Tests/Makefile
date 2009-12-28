@@ -1,4 +1,5 @@
 BASE = ../..
+TESTS = topology_test chunk_encoding_test chunk_sending_test
 
 CFLAGS = -Wall
 CFLAGS += -Wdeclaration-after-statement
@@ -13,11 +14,10 @@ CPPFLAGS += -I..
 LDFLAGS = -L../TopologyManager -L../ChunkTrading
 #LDFLAGS += -static
 
-all: topology_test chunk_encoding_test chunk_sending_test
+all: $(TESTS)
 
 topology_test: topology_test.o net_helpers.o
 topology_test: ../net_helper.o
-topology_test: ../TopologyManager/libtopman.a
 topology_test: LDLIBS += -ltopman
 
 chunk_encoding_test: chunk_encoding_test.o
@@ -28,13 +28,13 @@ chunk_sending_test: chunk_sending_test.o net_helpers.o
 chunk_sending_test: ../net_helper.o
 chunk_sending_test: LDLIBS += -ltrading
 
-../TopologyManager/libtopman.a:
+libtopman:
 	make -C ../TopologyManager
-../ChunkTrading/libtrading.a:
+libtrading:
 	make -C ../ChunkTrading
 
 clean:
-	rm -f topology_test chunk_encoding_test
+	rm -f $(TESTS)
 	rm -f *.o
 
 allclean: clean
