@@ -18,23 +18,25 @@ typedef struct chunkID_set ChunkIDSet;
   * 
   * Create an empty chunk ID set, and return a pointer to it.
   * 
+  * @parameter size the expected number of chunk IDs that will be stored
+  *                 in the set; 0 if such a number is not known.
   * @return the pointer to the new set on success, NULL on error
   */
-struct chunkID_set *chunkID_set_init(void);
+struct chunkID_set *chunkID_set_init(int size);
 
  /**
   * Add a chunk ID to the set.
   * 
-  * Insert a chunk ID, and its associated priority, to the set. If the chunk
+  * Insert a chunk ID, and its associated priority (the priority is assumed
+  * to depend on the insertion order), to the set. If the chunk
   * ID is already in the set, nothing happens.
   *
   * @parameter h a pointer to the set where the chunk ID has to be added
   * @parameter chunk_id the ID of the chunk to be inserted in the set
-  * @parameter priority the priority associated to chunk_id 
   * @return > 0 if the chunk ID is correctly inserted in the set, 0 if chunk_id
   *         is already in the set, < 0 on error
   */
-int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id, int priority);
+int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id);
 
  /**
   * Get the set size
@@ -49,17 +51,15 @@ int chunkID_size(const struct chunkID_set *h);
  /**
   * Get a chunk ID from a set
   * 
-  * Return the i^th chunk ID from the set, with its associated priority.
+  * Return the i^th chunk ID from the set. The chunk's priority is
+  * assumed to depend on i.
   *
   * @parameter h a pointer to the set
   * @parameter i the index of the chunk ID to be returned
-  * @parameter priority a pointer to an integer where the priority associated
-  *            to the chunk ID is stored. If this parameter is NULL, the
-  *            priority is not returned
   * @return the i^th chunk ID in the set in case of success, or < 0 on error
   *         (in case of error, priority is not meaningful)
   */
-int chunkID_set_get_chunk(const struct chunkID_set *h, int i, int *priority);
+int chunkID_set_get_chunk(const struct chunkID_set *h, int i);
 
  /**
   * Check if a chunk ID is in a set
@@ -77,7 +77,9 @@ int chunkID_set_check(const struct chunkID_set *h, int chunk_id);
   * Remove all the chunk IDs from a set.
   *
   * @parameter h a pointer to the set
+  * @parameter size the expected number of chunk IDs that will be stored
+  *                 in the set; 0 if such a number is not known.
   */
-void chunkID_clear(struct chunkID_set *h);
+void chunkID_clear(struct chunkID_set *h, int size);
 
 #endif	/* CHUNKIDSET_H */
