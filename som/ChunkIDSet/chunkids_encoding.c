@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 
@@ -23,44 +24,61 @@ static inline int int_rcpy(const uint8_t *p)
   return tmp;
 }
 
-int chunkID_set_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len)
+int chunkID_set_encode(const struct chunkID_set *h, void *meta, int meta_len, uint8_t *buff, int buff_len)
 {
   int i;
 
-  if (buff_len < h->n_ids * 4 + 8) {
+  if (buff_len < h->n_ids * 4 + 12 + meta_len) {
     return -1;
   }
   int_cpy(buff, h->n_ids);
   int_cpy(buff + 4, 0);
+  int_cpy(buff + 8, meta_len);
   
   for (i = 0; i < h->n_ids; i++) {
-    int_cpy(buff + 8 + i * 4, h->ids[i]);
+    int_cpy(buff + 12 + i * 4, h->ids[i]);
+  }
+  if (meta_len) {
+    memcpy(buff + h->n_ids * 4 + 12, meta, meta_len);
   }
 
-  return h->n_ids * 4 + 8;
+  return h->n_ids * 4 + 12 + meta_len;
 }
 
-struct chunkID_set *chunkID_set_decode(const uint8_t *buff, int buff_len)
+struct chunkID_set *chunkID_set_decode(void **meta, int *meta_len, const uint8_t *buff, int buff_len)
 {
-  int i, size;
+  int i, val, size;
   struct chunkID_set *h;
 
   size = int_rcpy(buff);
-  if (buff_len != size * 4 + 8) {
+  val = int_rcpy(buff + 4);
+  *meta_len = int_rcpy(buff + 8);
+  if (buff_len != size * 4 + 12 + *meta_len) {
     return NULL;
   }
   h = chunkID_set_init(size);
   if (h == NULL) {
     return NULL;
   }
-  if (int_rcpy(buff + 4)) {
+  if (val) {
     return h;	/* Not supported yet! */
   }
 
   for (i = 0; i < size; i++) {
-    h->ids[i] = int_rcpy(buff + 8 + i * 4);
+    h->ids[i] = int_rcpy(buff + 12 + i * 4);
   }
   h->n_ids = size;
+
+  if (*meta_len) {
+    *meta = malloc(*meta_len);
+    if (*meta != NULL) {
+      memcpy(*meta, buff + 12 + size * 4, *meta_len);
+    } else {
+      *meta_len = 0;
+    }
+  } else {
+    *meta = NULL;
+  }
 
   return h;
 }
