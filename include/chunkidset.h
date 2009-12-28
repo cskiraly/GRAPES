@@ -95,9 +95,11 @@ void chunkID_clear(struct chunkID_set *h, int size);
   * @param[in] h Chunk ID set to send 
   * @param[in] buff Buffer that will be filled with the bit stream obtained as a coding of the above parameters
   * @param[in] buff_len length of the buffer that will contain the bit stream
+  * @param meta pointer to metadata that will be encoded with the chunk ID set
+  * @param meta_len pointer to the metadata lenght
   * @return the lenght of the encoded bitstream (in bytes) on success, <0 on error
   */
-int chunkID_set_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len);
+int chunkID_set_encode(const struct chunkID_set *h, void *meta, int meta_len, uint8_t *buff, int buff_len);
 
 /**
   * Decode the bit stream contained int the buffer, transforming it in a chunk
@@ -105,8 +107,10 @@ int chunkID_set_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len)
   *  
   * @param[in] buff Buffer which contain the bit stream to decode
   * @param[in] buff_len length of the buffer that contain the bit stream
+  * @param meta pointer to the metadata
+  * @param meta_len metadata lenght
   * @return a pointer to the chunk ID set on success, NULL on error
   */
-struct chunkID_set *chunkID_set_decode(const uint8_t *buff, int buff_len);
+struct chunkID_set *chunkID_set_decode(void **meta, int *meta_len, const uint8_t *buff, int buff_len);
 
 #endif	/* CHUNKIDSET_H */
