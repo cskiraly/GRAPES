@@ -1,14 +1,10 @@
 #include <stdlib.h>
+#include <stdint.h>
 
+#include "chunkids_private.h"
 #include "chunkidset.h"
 
 #define DEFAULT_SIZE_INCREMENT 32
-
-struct chunkID_set {
-  int size;
-  int n_ids;
-  int *ids;
-};
 
 struct chunkID_set *chunkID_set_init(int size)
 {

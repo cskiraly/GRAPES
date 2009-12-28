@@ -82,4 +82,31 @@ int chunkID_set_check(const struct chunkID_set *h, int chunk_id);
   */
 void chunkID_clear(struct chunkID_set *h, int size);
 
+ /**
+  * Encode a chunk ID set, filling the buffer with the corresponding bit stream.
+  * 
+  * Encode a chunk ID set given as parameter and fills a buffer (given as
+  * parameter) with the corresponding bit stream, which can be sent over the
+  * network.
+  * The main reason to encode and return the bit stream is the possibility
+  * to either send directly a packet with the encoded bit stream, or 
+  * add this bit stream in piggybacking
+  * 
+  * @param[in] h Chunk ID set to send 
+  * @param[in] buff Buffer that will be filled with the bit stream obtained as a coding of the above parameters
+  * @param[in] buff_len length of the buffer that will contain the bit stream
+  * @return the lenght of the encoded bitstream (in bytes) on success, <0 on error
+  */
+int chunkID_set_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len);
+
+/**
+  * Decode the bit stream contained int the buffer, transforming it in a chunk
+  * ID set.
+  *  
+  * @param[in] buff Buffer which contain the bit stream to decode
+  * @param[in] buff_len length of the buffer that contain the bit stream
+  * @return a pointer to the chunk ID set on success, NULL on error
+  */
+struct chunkID_set *chunkID_set_decode(const uint8_t *buff, int buff_len);
+
 #endif	/* CHUNKIDSET_H */

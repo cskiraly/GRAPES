@@ -8,7 +8,7 @@ CFLAGS += -g
 
 CPPFLAGS = -I$(BASE)/include
 
-OBJS = chunkids_ops.o
+OBJS = chunkids_ops.o chunkids_encoding.o
 
 all: libsignalling.a
 
