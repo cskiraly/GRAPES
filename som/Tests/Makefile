@@ -8,21 +8,22 @@ CFLAGS += -g
 
 CPPFLAGS = -I$(BASE)/include
 CPPFLAGS += -I../TopologyManager
+CPPFLAGS += -I..
 
 LDFLAGS = -L../TopologyManager -L../ChunkTrading
-LDLIBS = -ltopman -ltrading
 #LDFLAGS += -static
 
 all: topology_test chunk_encoding_test
 
 topology_test: topology_test.o net_helpers.o
-topology_test: ../TopologyManager/net_helper.o
+topology_test: ../net_helper.o
 topology_test: ../TopologyManager/libtopman.a
+topology_test: LDLIBS += -ltopman
 
 chunk_encoding_test: chunk_encoding_test.o
 chunk_encoding_test: ../ChunkTrading/libtrading.a
+chunk_encoding_test: LDLIBS += -ltrading
 
-../TopologyManager/net_helper.o:
 ../TopologyManager/libtopman.a:
 	make -C ../TopologyManager
 ../ChunkTrading/libtrading.a:
