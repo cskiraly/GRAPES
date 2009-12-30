@@ -13,7 +13,7 @@ LDFLAGS = -L../TopologyManager -L../ChunkTrading
 LDLIBS = -ltopman -ltrading
 #LDFLAGS += -static
 
-all: topology_test chunk_encoding_test
+all: topology_test chunk_encoding_test chunkidset_test
 
 topology_test: topology_test.o net_helpers.o
 topology_test: ../TopologyManager/net_helper.o
@@ -21,6 +21,9 @@ topology_test: ../TopologyManager/libtopman.a
 
 chunk_encoding_test: chunk_encoding_test.o
 chunk_encoding_test: ../ChunkTrading/libtrading.a
+
+chunkidset_test: chunkidset_test.o
+chunkidset_test: ../ChunkIDSet/libsignalling.a
 
 ../TopologyManager/net_helper.o:
 ../TopologyManager/libtopman.a:
