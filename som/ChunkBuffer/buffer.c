@@ -12,6 +12,24 @@ struct chunk_buffer {
   struct chunk *buffer;
 };
 
+static void insert_sort(struct chunk *b, int size)
+{
+  int i, j;
+  struct chunk tmp;
+
+  for(i = 1; i < size; i++) {
+    tmp = b[i];
+    j = i-1;
+    while(tmp.id < b[j].id && j >= 0) {
+      b[j + 1] = b[j];
+      j = j - 1;
+    }
+    b[j + 1] = tmp;
+  }
+}
+
+
+
 static void chunk_free(struct chunk *c)
 {
     free(c->data);
@@ -101,7 +119,7 @@ struct chunk *cb_get_chunks(const struct chunk_buffer *cb, int *n)
     return NULL;
   }
 
-  bubble_sort(cb->buffer, cb->size);
+  insert_sort(cb->buffer, cb->size);
 
   return cb->buffer;
 }
