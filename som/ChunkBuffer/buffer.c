@@ -1,4 +1,6 @@
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "chunk.h"
 #include "chunkbuffer.h"
@@ -7,31 +9,65 @@
 struct chunk_buffer {
   int size;
   int num_chunks;
-  struct chunk **buffer;
+  struct chunk *buffer;
 };
 
-struct chunk_buffer *cb_init(const char *config);
+static void chunk_free(struct chunk *c)
+{
+    free(c->data);
+    free(c->attributes);
+    c->id = -1;
+}
+
+static int remove_oldest_chunk(struct chunk_buffer *cb, int id)
+{
+  int i, min, pos_min;
+
+  min = cb->buffer[0].id; pos_min = 0;
+  for (i = 1; i < cb->num_chunks; i++) {
+    if (cb->buffer[i].id < min) {
+      min = cb->buffer[i].id;
+      pos_min = i;
+    }
+  }
+  if (min < id) {
+    chunk_free(&cb->buffer[pos_min]);
+
+    return pos_min;
+  }
+
+  return -1;
+}
+
+struct chunk_buffer *cb_init(const char *config)
 {
   struct tag *cfg_tags;
   struct chunk_buffer *cb;
+  int res, i;
 
-  cb = malloc(sizeof(struct chunk_buffer))
+  cb = malloc(sizeof(struct chunk_buffer));
   if (cb == NULL) {
     return cb;
   }
+  memset(cb, 0, sizeof(struct chunk_buffer));
 
   cfg_tags = config_parse(config);
-  cb->size = config_value_int(cfg_tags, "size);
-  if (cb->size <= 0) {
+  res = config_value_int(cfg_tags, "size", &cb->size);
+  if (!res) {
     free(cb);
+    free(cfg_tags);
+
     return NULL;
   }
   free(cfg_tags);
 
-  cb->buffer = malloc(sizeof(struct chunk *));
+  cb->buffer = malloc(sizeof(struct chunk) * cb->size);
   if (cb->buffer == NULL) {
     free(cb);
     return NULL;
+  }
+  for (i = 0; i < cb->size; i++) {
+    cb->buffer[i].id = -1;
   }
 
   return cb;
@@ -42,14 +78,15 @@ int cb_add_chunk(struct chunk_buffer *cb, const struct chunk *c)
   int i;
 
   if (cb->num_chunks == cb->size) {
-    remove_oldest_chunk(cb);
+    i = remove_oldest_chunk(cb, c->id);
+  } else {
+    i = 0;
   }
   
-  i = 0;
   while(1) {
-    if (cb->buffer[i] == NULL) {
-      cb->buffer[i] = c;
-      cb-> size++;
+    if (cb->buffer[i].id < 0) {
+      cb->buffer[i] = *c;
+      cb->num_chunks++;
 
       return 0; 
     }
@@ -69,12 +106,13 @@ struct chunk *cb_get_chunks(const struct chunk_buffer *cb, int *n)
   return cb->buffer;
 }
 
-int cb_clear(struct chunk_buffer *cb);
+int cb_clear(struct chunk_buffer *cb)
 {
+  int i;
+
   cb->num_chunks = 0;
   for (i = 0; i < cb->size; i++) {
-    chunk_free(cb->chunk[i]);
-    cb->chunk[i] = NULL;
+    chunk_free(&cb->buffer[i]);
   }
 
   return 0;
