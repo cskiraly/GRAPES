@@ -52,6 +52,7 @@ static int remove_oldest_chunk(struct chunk_buffer *cb, int id)
   }
   if (min < id) {
     chunk_free(&cb->buffer[pos_min]);
+    cb->num_chunks--;
 
     return pos_min;
   }
@@ -102,6 +103,10 @@ int cb_add_chunk(struct chunk_buffer *cb, const struct chunk *c)
     i = remove_oldest_chunk(cb, c->id);
   } else {
     i = 0;
+  }
+
+  if (i < 0) {
+    return i;
   }
   
   while(1) {
