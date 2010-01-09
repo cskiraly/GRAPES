@@ -14,14 +14,17 @@ struct tag *config_parse(const char *cfg)
 {
   /* Fake Implementation */
   struct tag *res;
+  int i = 0;
 
   res = malloc(sizeof(struct tag) * MAX_TAGS);
   if (res == NULL) {
     return res;
   }
-  strcpy(res[0].name, "size");
-  strcpy(res[0].value, "32");
-  res[1].name[0] = 0;
+  strcpy(res[i].name, "size");
+  strcpy(res[i++].value, "32");
+  res[i++].name[0] = 0;
+
+  res = realloc(res, sizeof(struct tag) * i);
 
   return res;
 }
