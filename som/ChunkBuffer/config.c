@@ -31,7 +31,7 @@ int config_value_int(const struct tag *cfg_values, const char *value, int *res)
   int i, done;
 
   i = 0; done = 0;
-  while (done) {
+  while (!done) {
     if (!strcmp(cfg_values[i].name, value)) {
       *res = atoi(cfg_values[i].value);
 
