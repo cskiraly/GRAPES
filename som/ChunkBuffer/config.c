@@ -12,16 +12,34 @@ struct tag {
 #warning Fix config_parse
 struct tag *config_parse(const char *cfg)
 {
-  /* Fake Implementation */
   struct tag *res;
   int i = 0;
+  const char *p = cfg;
 
   res = malloc(sizeof(struct tag) * MAX_TAGS);
   if (res == NULL) {
     return res;
   }
-  strcpy(res[i].name, "size");
-  strcpy(res[i++].value, "32");
+  while (p && *p != 0) {
+    char *p1 = strchr(p, '=');
+    if (p1) {
+      if (i % MAX_TAGS == 0) {
+        res = realloc(res, sizeof(struct tag) * (i + MAX_TAGS));
+      }
+      memcpy(res[i].name, p, p1 - p);
+      res[i].name[p1 - p + 1] = 0;
+      p = strchr(p1, ',');
+      if (p == NULL) {
+        strcpy(res[i++].value, p1 + 1);
+      } else {
+        memcpy(res[i].value, p1 + 1, p - p1 - 1);
+        res[i++].value[p - p1] = 0;
+        p++;
+      }
+    } else {
+      p = NULL;
+    }
+  }
   res[i++].name[0] = 0;
 
   res = realloc(res, sizeof(struct tag) * i);
