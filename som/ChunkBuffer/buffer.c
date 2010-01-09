@@ -19,8 +19,8 @@ static void insert_sort(struct chunk *b, int size)
 
   for(i = 1; i < size; i++) {
     tmp = b[i];
-    j = i-1;
-    while(tmp.id < b[j].id && j >= 0) {
+    j = i - 1;
+    while(j >= 0 && tmp.id < b[j].id) {
       b[j + 1] = b[j];
       j = j - 1;
     }
@@ -33,7 +33,9 @@ static void insert_sort(struct chunk *b, int size)
 static void chunk_free(struct chunk *c)
 {
     free(c->data);
+    c->data = NULL;
     free(c->attributes);
+    c->attributes = NULL;
     c->id = -1;
 }
 
@@ -84,6 +86,7 @@ struct chunk_buffer *cb_init(const char *config)
     free(cb);
     return NULL;
   }
+  memset(cb->buffer, 0, cb->size);
   for (i = 0; i < cb->size; i++) {
     cb->buffer[i].id = -1;
   }
@@ -119,7 +122,7 @@ struct chunk *cb_get_chunks(const struct chunk_buffer *cb, int *n)
     return NULL;
   }
 
-  insert_sort(cb->buffer, cb->size);
+  insert_sort(cb->buffer, cb->num_chunks);
 
   return cb->buffer;
 }
@@ -128,10 +131,17 @@ int cb_clear(struct chunk_buffer *cb)
 {
   int i;
 
-  cb->num_chunks = 0;
-  for (i = 0; i < cb->size; i++) {
+  for (i = 0; i < cb->num_chunks; i++) {
     chunk_free(&cb->buffer[i]);
   }
+  cb->num_chunks = 0;
 
   return 0;
+}
+
+void cb_destroy(struct chunk_buffer *cb)
+{
+  cb_clear(cb);
+  free(cb->buffer);
+  free(cb);
 }

@@ -78,4 +78,14 @@ struct chunk *cb_get_chunks(const struct chunk_buffer *cb, int *n);
  */
 int cb_clear(struct chunk_buffer *cb);
 
+/**
+ * Destroy a chunk buffer
+ *
+ * Remove all the chunks from the specified chunk buffer,
+ * and free all the memory dynamically allocated to it.
+ *
+ * @param cb a pointer to the chunk buffer
+ */
+void cb_destroy(struct chunk_buffer *cb);
+
 #endif	/* CHUNKBUFFER_H */
