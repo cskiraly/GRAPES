@@ -28,14 +28,19 @@ static struct chunk *chunk_forge(int id)
 static void chunk_add(struct chunk_buffer *cb, int id)
 {
   struct chunk *c;
+  int res;
 
-  printf("Inserting %d\n", id);
+  printf("Inserting %d... ", id);
   c = chunk_forge(id);
   if (c) {
-    cb_add_chunk(cb, c);
+    res = cb_add_chunk(cb, c);
+    if (res < 0) {
+      printf("not inserted (out of window)");
+    }
   } else {
     printf("Failed to create the chunk");
   }
+  printf("\n");
   free(c);
 }
 
@@ -54,7 +59,7 @@ int main(int argc, char *argv[])
 {
   struct chunk_buffer *b;
 
-  b = cb_init("size=32");
+  b = cb_init("size=8,time=now");
   if (b == NULL) {
     printf("Error initialising the Chunk Buffer\n");
 
@@ -64,12 +69,27 @@ int main(int argc, char *argv[])
   chunk_add(b, 5);
   chunk_add(b, 12);
   chunk_add(b, 40);
+  cb_print(b);
+
   chunk_add(b, 51);
   chunk_add(b, 2);
   chunk_add(b, 13);
   chunk_add(b, 11);
+  cb_print(b);
+
   chunk_add(b, 26);
+  cb_print(b);
   chunk_add(b, 30);
+  cb_print(b);
+  chunk_add(b, 110);
+  cb_print(b);
+  chunk_add(b, 64);
+  chunk_add(b, 4);
+  cb_print(b);
+  chunk_add(b, 7);
+  chunk_add(b, 34);
+  chunk_add(b, 2);
+  chunk_add(b, 33);
   cb_print(b);
 
   cb_destroy(b);
