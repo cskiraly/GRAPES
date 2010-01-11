@@ -36,6 +36,8 @@ static void chunk_add(struct chunk_buffer *cb, int id)
     res = cb_add_chunk(cb, c);
     if (res < 0) {
       printf("not inserted (out of window)");
+      free(c->data);
+      free(c->attributes);
     }
   } else {
     printf("Failed to create the chunk");
