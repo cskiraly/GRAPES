@@ -11,7 +11,7 @@ CPPFLAGS = -I$(BASE)/include
 CPPFLAGS += -I../TopologyManager
 CPPFLAGS += -I..
 
-LDFLAGS = -L../TopologyManager -L../ChunkTrading
+LDFLAGS = -L../TopologyManager -L../ChunkTrading -L ../ChunkBuffer
 #LDFLAGS += -static
 
 all: $(TESTS)
@@ -23,6 +23,9 @@ topology_test: LDLIBS += -ltopman
 chunk_encoding_test: chunk_encoding_test.o
 chunk_encoding_test: ../ChunkTrading/libtrading.a
 chunk_encoding_test: LDLIBS += -ltrading
+
+cb_test: cb_test.o
+cb_test: LDLIBS += -lcb
 
 chunk_sending_test: chunk_sending_test.o net_helpers.o
 chunk_sending_test: ../net_helper.o
