@@ -8,7 +8,6 @@ CFLAGS += -Wno-pointer-sign
 CFLAGS += -g
 
 CPPFLAGS = -I$(BASE)/include
-CPPFLAGS += -I../TopologyManager
 CPPFLAGS += -I..
 
 LDFLAGS = -L../TopologyManager -L../ChunkTrading -L ../ChunkBuffer
