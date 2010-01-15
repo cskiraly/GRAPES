@@ -46,7 +46,7 @@ static void chunk_print(FILE *f, const struct chunk *c)
 
 //TO CHECK AND CORRECT
 //XXX Send data is in char while our buffer is in uint8
-int sendChunk(struct nodeID *to, struct chunk *c){
+int sendChunk(const struct nodeID *to, struct chunk *c){
     int buff_len;
     uint8_t *buff;
     int res;
