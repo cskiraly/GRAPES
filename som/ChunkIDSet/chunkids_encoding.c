@@ -5,6 +5,7 @@
 
 #include "chunkids_private.h"
 #include "chunkidset.h"
+#include "trade_sig_la.h"
 
 static inline void int_cpy(uint8_t *p, int v)
 {
@@ -24,7 +25,7 @@ static inline int int_rcpy(const uint8_t *p)
   return tmp;
 }
 
-int chunkID_set_encode(const struct chunkID_set *h, void *meta, int meta_len, uint8_t *buff, int buff_len)
+int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta_len, uint8_t *buff, int buff_len)
 {
   int i;
 
@@ -45,7 +46,7 @@ int chunkID_set_encode(const struct chunkID_set *h, void *meta, int meta_len, ui
   return h->n_ids * 4 + 12 + meta_len;
 }
 
-struct chunkID_set *chunkID_set_decode(void **meta, int *meta_len, const uint8_t *buff, int buff_len)
+struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8_t *buff, int buff_len)
 {
   int i, val, size;
   struct chunkID_set *h;
