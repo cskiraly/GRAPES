@@ -27,7 +27,7 @@ struct nodeID *create_socket(const char *IPaddr, int port)
   if (res == 0) {
     free(s);
 
-    s = NULL;
+    return NULL;
   }
 
   s->fd = socket(AF_INET, SOCK_DGRAM, 0);
