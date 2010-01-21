@@ -97,7 +97,7 @@ struct nodeID *nodeid_dup(const struct nodeID *s)
 }
 int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 {
-  return (memcmp(s1, s2, sizeof(struct nodeID)) == 0);
+  return (memcmp(&s1->addr, &s2->addr, sizeof(struct sockaddr_in)) == 0);
 }
 
 int nodeid_dump(uint8_t *b, const struct nodeID *s)
