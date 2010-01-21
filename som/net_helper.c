@@ -66,7 +66,8 @@ int recv_data(const struct nodeID *local, struct nodeID **remote, uint8_t *buffe
   res = recvfrom(local->fd, buffer_ptr, buffer_size, 0, (struct sockaddr *)&raddr, &raddr_size);
   memcpy(&(*remote)->addr, &raddr, raddr_size);
   (*remote)->fd = -1;
-fprintf(stderr, "Read %d from %s\n", res, inet_ntoa(raddr.sin_addr));
+  //fprintf(stderr, "Read %d from %s\n", res, inet_ntoa(raddr.sin_addr));
+
   return res;
 }
 
