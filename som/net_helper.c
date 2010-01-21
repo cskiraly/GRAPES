@@ -27,7 +27,7 @@ struct nodeID *create_socket(const char *IPaddr, int port)
   if (res == 0) {
     free(s);
 
-    s = NULL;
+    return NULL;
   }
 
   s->fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -66,7 +66,8 @@ int recv_data(const struct nodeID *local, struct nodeID **remote, uint8_t *buffe
   res = recvfrom(local->fd, buffer_ptr, buffer_size, 0, (struct sockaddr *)&raddr, &raddr_size);
   memcpy(&(*remote)->addr, &raddr, raddr_size);
   (*remote)->fd = -1;
-fprintf(stderr, "Read %d from %s\n", res, inet_ntoa(raddr.sin_addr));
+  //fprintf(stderr, "Read %d from %s\n", res, inet_ntoa(raddr.sin_addr));
+
   return res;
 }
 
@@ -97,7 +98,7 @@ struct nodeID *nodeid_dup(const struct nodeID *s)
 }
 int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 {
-  return (memcmp(s1, s2, sizeof(struct nodeID)) == 0);
+  return (memcmp(&s1->addr, &s2->addr, sizeof(struct sockaddr_in)) == 0);
 }
 
 int nodeid_dump(uint8_t *b, const struct nodeID *s)
