@@ -32,8 +32,8 @@ int ncast_reply(const uint8_t *payload, int psize, struct cache_entry *local_cac
 {
   uint8_t pkt[1500];
   struct ncast_header *h = (struct ncast_header *)pkt;
-  const struct cache_entry *c = entries_undump(payload, psize);
-  int len;
+  struct cache_entry *c = entries_undump(payload, psize);
+  int len, res;
   struct nodeID *dst;
 
 #if 0
@@ -47,9 +47,10 @@ int ncast_reply(const uint8_t *payload, int psize, struct cache_entry *local_cac
   h->protocol = PROTO_NCAST;
   h->type = NCAST_REPLY;
   len = ncast_payload_fill(pkt + sizeof(struct ncast_header), 1500 - sizeof(struct ncast_header), local_cache, dst);
-  free((void *)c);
 
-  return send_data(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);
+  res = send_data(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);
+  cache_free(c);
+  return res;
 }
 
 int ncast_query_peer(struct cache_entry *local_cache, struct nodeID *dst)

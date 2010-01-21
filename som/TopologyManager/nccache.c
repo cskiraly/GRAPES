@@ -74,6 +74,16 @@ struct cache_entry *cache_init(int n)
   return res;
 }
 
+void cache_free(struct cache_entry *c)
+{
+  int i;
+
+  for (i = 0; c[i].timestamp != 0; i++) {
+    free(c[i].id);
+  }
+  free(c);
+}
+
 int fill_cache_entry(struct cache_entry *c, const struct nodeID *s)
 {
   c->id = nodeid_dup(s);
@@ -140,7 +150,7 @@ int entry_dump(uint8_t *b, struct cache_entry *e, int i)
   return res;
 }
 
-struct cache_entry *merge_caches(const struct cache_entry *c1, const struct cache_entry *c2, int cache_size)
+struct cache_entry *merge_caches(struct cache_entry *c1, struct cache_entry *c2, int cache_size)
 {
   int i, n1, n2;
   struct cache_entry *new_cache;
@@ -158,41 +168,30 @@ struct cache_entry *merge_caches(const struct cache_entry *c1, const struct cach
     if (c1[n1].timestamp == 0) {
       if (!in_cache(new_cache, &c2[n2])) {
         new_cache[i++] = c2[n2];
-      } else {
-        free(c2[n2].id);
+        c2[n2].id = NULL;
       }
       n2++;
     } else if (c2[n2].timestamp == 0) {
       if (!in_cache(new_cache, &c1[n1])) {
         new_cache[i++] = c1[n1];
-      } else {
-        free(c1[n1].id);
+        c1[n1].id = NULL;
       }
       n1++;
     } else {
       if (c2[n2].timestamp > c1[n1].timestamp) {
         if (!in_cache(new_cache, &c1[n1])) {
           new_cache[i++] = c1[n1];
-        } else {
-          free(c1[n1].id);
+          c1[n1].id = NULL;
         }
         n1++;
       } else {
         if (!in_cache(new_cache, &c2[n2])) {
           new_cache[i++] = c2[n2];
-        } else {
-          free(c2[n2].id);
+          c2[n2].id = NULL;
         }
         n2++;
       }
     }
-  }
-
-  while (c1[n1].timestamp != 0) {
-    free(c1[n1++].id);
-  }
-  while (c2[n2].timestamp != 0) {
-    free(c2[n2++].id);
   }
 
   return new_cache;

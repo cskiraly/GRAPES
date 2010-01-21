@@ -76,9 +76,9 @@ int topParseData(const uint8_t *buff, int len)
     }
     remote_cache = entries_undump(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header));
     new = merge_caches(local_cache, remote_cache, cache_size);
-    free(remote_cache);
+    cache_free(remote_cache);
     if (new != NULL) {
-      free(local_cache);
+      cache_free(local_cache);
       local_cache = new;
     }
   }
