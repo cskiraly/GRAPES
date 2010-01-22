@@ -2,9 +2,12 @@
 #include <string.h>
 #include "config.h"
 
+#define NAME_SIZE 32
+#define VAL_SIZE 16
+
 struct tag {
-  char name[32];
-  char value[16];
+  char name[NAME_SIZE];
+  char value[VAL_SIZE];
 };
 
 #define MAX_TAGS 16
@@ -22,12 +25,14 @@ struct tag *config_parse(const char *cfg)
   }
   while (p && *p != 0) {
     char *p1 = strchr(p, '=');
+    
+    memset(res[i].name, 0, NAME_SIZE);
+    memset(res[i].value, 0, VAL_SIZE);
     if (p1) {
       if (i % MAX_TAGS == 0) {
         res = realloc(res, sizeof(struct tag) * (i + MAX_TAGS));
       }
       memcpy(res[i].name, p, p1 - p);
-      res[i].name[p1 - p + 1] = 0;
       p = strchr(p1, ',');
       if (p == NULL) {
         strcpy(res[i++].value, p1 + 1);
@@ -40,7 +45,6 @@ struct tag *config_parse(const char *cfg)
       p = NULL;
     }
   }
-  res[i++].name[0] = 0;
 
   res = realloc(res, sizeof(struct tag) * i);
 
