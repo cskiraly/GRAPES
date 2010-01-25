@@ -50,7 +50,7 @@ fprintf(stderr, "My sock: %d\n", s->fd);
 int send_data(const struct nodeID *from, const struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
   return sendto(from->fd, buffer_ptr, buffer_size, 0,
-                (struct sockaddr *)&to->addr, sizeof(struct sockaddr_in));
+                (const struct sockaddr *)&to->addr, sizeof(struct sockaddr_in));
 }
 
 int recv_data(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
