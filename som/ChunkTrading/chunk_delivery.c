@@ -4,8 +4,6 @@
  *  This is free software;
  *  see GPL.txt
  */
- //header to clean
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -15,24 +13,6 @@
 #include "trade_msg_ha.h"
 
 static struct nodeID *localID;
-
-static void chunk_print(FILE *f, const struct chunk *c)
-{
-  const uint8_t *p;
-
-  fprintf(f, "Chunk %d:\n", c->id);
-  fprintf(f, "\tTS: %llu\n", c->timestamp);
-  fprintf(f, "\tPayload size: %d\n", c->size);
-  fprintf(f, "\tAttributes size: %d\n", c->attributes_size);
-  p = c->data;
-  fprintf(f, "\tPayload:\n");
-  fprintf(f, "\t\t%c %c %c %c ...:\n", p[0], p[1], p[2], p[3]);
-  if (c->attributes_size > 0) {
-    p = c->attributes;
-    fprintf(f, "\tAttributes:\n");
-    fprintf(f, "\t\t%c %c %c %c ...:\n", p[0], p[1], p[2], p[3]);
-  }
-}
 
 /**
  * Send a Chunk to a target Peer
@@ -46,7 +26,7 @@ static void chunk_print(FILE *f, const struct chunk *c)
 
 //TO CHECK AND CORRECT
 //XXX Send data is in char while our buffer is in uint8
-int sendChunk(struct nodeID *to, struct chunk *c){
+int sendChunk(const struct nodeID *to, struct chunk *c){
     int buff_len;
     uint8_t *buff;
     int res;
@@ -57,8 +37,6 @@ int sendChunk(struct nodeID *to, struct chunk *c){
         return -1;
     }
     res = encodeChunk(c, buff + 1, buff_len);
-    fprintf(stdout, "Encoding chunk %d in %d bytes\n",res, buff_len);
-    chunk_print(stdout, c);
     buff[0] = 12;
     send_data(localID, to, buff, buff_len + 1);
     free(buff);

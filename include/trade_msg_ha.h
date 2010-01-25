@@ -17,7 +17,7 @@
   * @param[in] c Chunk to send
   * @return 0 on success, <0 on error
   */
-int sendChunk(struct nodeID *to, struct chunk *c);
+int sendChunk(const struct nodeID *to, struct chunk *c);
 
 /**
   * Init the Chunk trading stuff...
@@ -29,6 +29,7 @@ int sendChunk(struct nodeID *to, struct chunk *c);
 int chunkInit(struct nodeID *myID);
 
 
+#if 0
 /** 
   * Notification function for a Chunk arrival
   */
@@ -45,3 +46,4 @@ typedef int (*ChunkNotification)(struct peer *from, struct chunk  *c);
   * @return a handle to the notification or NULL on error @see unregisterSendChunk
   */
 void registerSendChunkNotifier(struct peer *p, ChunkNotification *fn);
+#endif
