@@ -27,7 +27,7 @@ struct chunkID_set *chunkID_set_init(int size)
 
 int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id)
 {
-  if (chunkID_set_check(h, chunk_id) < 0) {
+  if (chunkID_set_check(h, chunk_id) >= 0) {
     return 0;
   }
 
