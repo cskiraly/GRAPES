@@ -10,6 +10,7 @@
 #include "nccache.h"
 #include "ncast_proto.h"
 #include "proto.h"
+#include "msg_types.h"
 
 #define MAX_PEERS 30
 
@@ -65,7 +66,7 @@ int topParseData(const uint8_t *buff, int len)
     struct ncast_header *h = (struct ncast_header *)buff;
     struct cache_entry *new, *remote_cache;
 
-    if (h->protocol != PROTO_NCAST) {
+    if (h->protocol != MSG_TYPE_TOPOLOGY) {
       fprintf(stderr, "NCAST: Wrong protocol!\n");
 
       return -1;

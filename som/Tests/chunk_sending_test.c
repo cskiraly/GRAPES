@@ -15,6 +15,7 @@
 #include "trade_msg_la.h"
 #include "trade_msg_ha.h"
 #include "net_helpers.h"
+#include "msg_types.h"
 
 static const char *my_addr = "127.0.0.1";
 static int port = 6666;
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
 
     res = recv_data(my_sock, &remote, buff, BUFFSIZE);
     /* TODO: Error check! */
-    if (buff[0] != 12) {
+    if (buff[0] != MSG_TYPE_CHUNK) {
       fprintf(stderr, "Wrong message type!!!\n");
 
       return -1;

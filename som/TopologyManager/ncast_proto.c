@@ -6,6 +6,7 @@
 #include "nccache.h"
 #include "proto.h"
 #include "ncast_proto.h"
+#include "msg_types.h"
 
 static struct cache_entry *myEntry;
 
@@ -44,7 +45,7 @@ int ncast_reply(const uint8_t *payload, int psize, struct cache_entry *local_cac
   }
 #endif
   dst = nodeid(c, 0);
-  h->protocol = PROTO_NCAST;
+  h->protocol = MSG_TYPE_TOPOLOGY;
   h->type = NCAST_REPLY;
   len = ncast_payload_fill(pkt + sizeof(struct ncast_header), 1500 - sizeof(struct ncast_header), local_cache, dst);
 
@@ -59,7 +60,7 @@ int ncast_query_peer(struct cache_entry *local_cache, struct nodeID *dst)
   struct ncast_header *h = (struct ncast_header *)pkt;
   int len;
 
-  h->protocol = PROTO_NCAST;
+  h->protocol = MSG_TYPE_TOPOLOGY;
   h->type = NCAST_QUERY;
   len = ncast_payload_fill(pkt + sizeof(struct ncast_header), 1500 - sizeof(struct ncast_header), local_cache, dst);
   return send_data(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);

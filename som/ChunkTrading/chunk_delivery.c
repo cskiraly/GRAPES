@@ -11,6 +11,7 @@
 #include "net_helper.h"
 #include "trade_msg_la.h"
 #include "trade_msg_ha.h"
+#include "msg_types.h"
 
 static struct nodeID *localID;
 
@@ -37,7 +38,7 @@ int sendChunk(const struct nodeID *to, struct chunk *c){
         return -1;
     }
     res = encodeChunk(c, buff + 1, buff_len);
-    buff[0] = 12;
+    buff[0] = MSG_TYPE_CHUNK;
     send_data(localID, to, buff, buff_len + 1);
     free(buff);
 
