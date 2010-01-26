@@ -8,7 +8,7 @@ all:
 	done
 
 tests: all
-	make -C Tests
+	$(MAKE) -C Tests
 
 clean:
 	for dir in $(SUBDIRS); do \
@@ -17,4 +17,4 @@ clean:
 
 allclean: clean
 	rm -f *.o
-	make -C Tests clean
+	$(MAKE) -C Tests clean
