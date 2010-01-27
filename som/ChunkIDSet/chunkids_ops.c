@@ -46,7 +46,7 @@ int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id)
   return h->n_elements;
 }
 
-int chunkID_size(const struct chunkID_set *h)
+int chunkID_set_size(const struct chunkID_set *h)
 {
   return h->n_elements;
 }
@@ -84,7 +84,7 @@ int chunkID_set_union(struct chunkID_set *h, struct chunkID_set *a)
   return h->n_elements;
 }
 
-void chunkID_clear(struct chunkID_set *h, int size)
+void chunkID_set_clear(struct chunkID_set *h, int size)
 {
   h->n_elements = 0;
   h->size = size;

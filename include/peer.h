@@ -13,7 +13,6 @@
 struct peer {
     const struct nodeID *id;
     struct chunkID_set *bmap;
-    struct timeval bmap_timestamp;
 };
 
 

@@ -46,7 +46,7 @@ int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id);
   * @parameter h a pointer to the set
   * @return the number of chunk IDs in the set, or < 0 on error
   */
-int chunkID_size(const struct chunkID_set *h);
+int chunkID_set_size(const struct chunkID_set *h);
 
  /**
   * Get a chunk ID from a set
@@ -94,6 +94,6 @@ int chunkID_set_union(struct chunkID_set *h, struct chunkID_set *a);
   * @parameter size the expected number of chunk IDs that will be stored
   *                 in the set; 0 if such a number is not known.
   */
-void chunkID_clear(struct chunkID_set *h, int size);
+void chunkID_set_clear(struct chunkID_set *h, int size);
 
 #endif	/* CHUNKIDSET_H */

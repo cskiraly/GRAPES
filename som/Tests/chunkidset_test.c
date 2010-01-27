@@ -25,12 +25,12 @@ static void add_chunk(struct chunkID_set *c, int n)
   int res;
 
   res = chunkID_set_add_chunk(c, n);
-  printf("Add %d ---> Result=%d\tSize=%d\n", n, res, chunkID_size(c));
+  printf("Add %d ---> Result=%d\tSize=%d\n", n, res, chunkID_set_size(c));
 }
 
 static void print_set(struct chunkID_set *c)
 {
-  int i, size = chunkID_size(c);
+  int i, size = chunkID_set_size(c);
 
   printf("Chunk ID Set size: %d\n", size);
   printf("Chunks (in priority order): ");
@@ -56,7 +56,7 @@ static void simple_test(void)
   struct chunkID_set *cset;
 
   cset = chunkID_set_init(0);
-  printf("Chunk ID Set initialised: size is %d\n", chunkID_size(cset));
+  printf("Chunk ID Set initialised: size is %d\n", chunkID_set_size(cset));
   populate(cset);
   print_set(cset);
 
@@ -65,7 +65,7 @@ static void simple_test(void)
   check_chunk(cset, 3);
   check_chunk(cset, 9);
 
-  chunkID_clear(cset, 0);
+  chunkID_set_clear(cset, 0);
   free(cset);
 }
 
@@ -80,12 +80,12 @@ static void encoding_test(void)
   populate(cset);
   res = encodeChunkSignaling(cset, NULL, 0, buff, sizeof(buff));
   printf("Encoding Result: %d\n", res);
-  chunkID_clear(cset, 0);
+  chunkID_set_clear(cset, 0);
   free(cset);
   
   cset1 = decodeChunkSignaling(&meta, &meta_len, buff, res);
   print_set(cset1);
-  chunkID_clear(cset1, 0);
+  chunkID_set_clear(cset1, 0);
   free(cset1);
 }
 
