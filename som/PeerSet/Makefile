@@ -8,9 +8,9 @@ CFLAGS += -g
 
 CPPFLAGS = -I$(BASE)/include
 
-OBJS = chunkids_ops.o chunkids_encoding.o
+OBJS = peerset_ops.o
 
-all: libsignalling.a
+all: libpeerset.a
 
 %.a: $(OBJS)
 	ar rcs $@ $^
