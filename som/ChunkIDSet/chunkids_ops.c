@@ -34,7 +34,7 @@ int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id)
   if (h->n_elements == h->size) {
     int *res;
 
-    res = realloc(h->elements, h->size + DEFAULT_SIZE_INCREMENT);
+    res = realloc(h->elements, (h->size + DEFAULT_SIZE_INCREMENT) * sizeof(int));
     if (res == NULL) {
       return -1;
     }
@@ -88,7 +88,7 @@ void chunkID_clear(struct chunkID_set *h, int size)
 {
   h->n_elements = 0;
   h->size = size;
-  h->elements = realloc(h->elements, size);
+  h->elements = realloc(h->elements, size * sizeof(int));
   if (h->elements == NULL) {
     h->size = 0;
   }
