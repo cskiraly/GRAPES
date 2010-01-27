@@ -29,21 +29,21 @@ int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta
 {
   int i;
 
-  if (buff_len < h->n_ids * 4 + 12 + meta_len) {
+  if (buff_len < h->n_elements * 4 + 12 + meta_len) {
     return -1;
   }
-  int_cpy(buff, h->n_ids);
+  int_cpy(buff, h->n_elements);
   int_cpy(buff + 4, 0);
   int_cpy(buff + 8, meta_len);
   
-  for (i = 0; i < h->n_ids; i++) {
-    int_cpy(buff + 12 + i * 4, h->ids[i]);
+  for (i = 0; i < h->n_elements; i++) {
+    int_cpy(buff + 12 + i * 4, h->elements[i]);
   }
   if (meta_len) {
-    memcpy(buff + h->n_ids * 4 + 12, meta, meta_len);
+    memcpy(buff + h->n_elements * 4 + 12, meta, meta_len);
   }
 
-  return h->n_ids * 4 + 12 + meta_len;
+  return h->n_elements * 4 + 12 + meta_len;
 }
 
 struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8_t *buff, int buff_len)
@@ -66,9 +66,9 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
   }
 
   for (i = 0; i < size; i++) {
-    h->ids[i] = int_rcpy(buff + 12 + i * 4);
+    h->elements[i] = int_rcpy(buff + 12 + i * 4);
   }
-  h->n_ids = size;
+  h->n_elements = size;
 
   if (*meta_len) {
     *meta = malloc(*meta_len);
