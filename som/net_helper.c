@@ -14,7 +14,22 @@ struct nodeID {
   int fd;
 };
 
-struct nodeID *create_socket(const char *IPaddr, int port)
+int wait4data(const struct nodeID *s, struct timeval tout)
+{
+  fd_set fds;
+  int res;
+
+  FD_ZERO(&fds);
+  FD_SET(s->fd, &fds);
+  res = select(s->fd + 1, &fds, NULL, NULL, &tout);
+  if (FD_ISSET(s->fd, &fds)) {
+    return 1;
+  }
+
+  return 0;
+}
+
+struct nodeID *create_node(const char *IPaddr, int port)
 {
   struct nodeID *s;
   int res;
@@ -36,24 +51,40 @@ struct nodeID *create_socket(const char *IPaddr, int port)
     
     return NULL;
   }
-fprintf(stderr, "My sock: %d\n", s->fd);
-  res = bind(s->fd, (struct sockaddr *)&s->addr, sizeof(struct sockaddr_in));
-  if (res < 0) {
-    /* bind failed: not a local address... Just close the socket! */
-    close(s->fd);
-    s->fd = -1;
-  }
 
   return s;
 }
 
-int send_data(const struct nodeID *from, const struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
+struct nodeID *net_helper_init(const char *my_addr, int port)
+{
+  int res;
+  struct nodeID *myself;
+
+  myself = create_node(my_addr, port);
+  if (myself == NULL) {
+    fprintf(stderr, "Error creating my socket (%s:%d)!\n", my_addr, port);
+  }
+  fprintf(stderr, "My sock: %d\n", myself->fd);
+
+  res = bind(myself->fd, (struct sockaddr *)&myself->addr, sizeof(struct sockaddr_in));
+  if (res < 0) {
+    /* bind failed: not a local address... Just close the socket! */
+    close(myself->fd);
+    free(myself);
+
+    return NULL;
+  }
+
+  return myself;
+}
+
+int send_to_peer(const struct nodeID *from, const struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
   return sendto(from->fd, buffer_ptr, buffer_size, 0,
                 (const struct sockaddr *)&to->addr, sizeof(struct sockaddr_in));
 }
 
-int recv_data(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
+int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
 {
   int res;
   struct sockaddr_in raddr;
@@ -78,11 +109,6 @@ const char *node_addr(const struct nodeID *s)
   sprintf(addr, "%s:%d", inet_ntoa(s->addr.sin_addr), ntohs(s->addr.sin_port));
 
   return addr;
-}
-
-int getFD(const struct nodeID *n)
-{
-  return n->fd;
 }
 
 struct nodeID *nodeid_dup(const struct nodeID *s)

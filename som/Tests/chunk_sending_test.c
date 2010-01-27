@@ -46,9 +46,11 @@ static struct nodeID *init(void)
 {
   struct nodeID *myID;
 
-  myID = create_socket(my_addr, port);
+  myID = net_helper_init(my_addr, port);
   if (myID == NULL) {
     fprintf(stderr, "Error creating my socket (%s:%d)!\n", my_addr, port);
+
+    return NULL;
   }
   chunkInit(myID);
 
@@ -98,7 +100,7 @@ int main(int argc, char *argv[])
     c.data = (uint8_t *)"ciao";
     c.attributes_size = 0;
 
-    dst = create_socket(dst_ip, dst_port);
+    dst = create_node(dst_ip, dst_port);
     sendChunk(dst, &c);
   } else {
     /* Receive a chunk and print it! */
@@ -106,7 +108,7 @@ int main(int argc, char *argv[])
     struct nodeID *remote;
     static uint8_t buff[BUFFSIZE];
 
-    res = recv_data(my_sock, &remote, buff, BUFFSIZE);
+    res = recv_from_peer(my_sock, &remote, buff, BUFFSIZE);
     /* TODO: Error check! */
     if (buff[0] != MSG_TYPE_CHUNK) {
       fprintf(stderr, "Wrong message type!!!\n");

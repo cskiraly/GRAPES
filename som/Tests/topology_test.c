@@ -2,6 +2,19 @@
  *  Copyright (c) 2009 Luca Abeni
  *
  *  This is free software; see GPL.txt
+ *
+ *  This is a small test program for the gossip based TopologyManager
+ *  To try the simple test: run it with
+ *    ./topology_test -I <network interface> -P <port> [-i <remote IP> -p <remote port>]
+ *    the "-i" and "-p" parameters can be used to add an initial neighbour
+ *    (otherwise, the peer risks to stay out of the overlay).
+ *    For example, run
+ *      ./topology_test -I eth0 -P 6666
+ *    on a computer, and then
+ *      ./topology_test -I eth0 -P 2222 -i <ip_address> -p 6666
+ *  on another one ... Of course, one of the two peers has to use -i... -p...
+ *  (in general, to be part of the overlay a peer must either use
+ *  "-i<known peer IP> -p<known peer port>" or be referenced by another peer).
  */
 #include <sys/select.h>
 #include <stdlib.h>
@@ -18,7 +31,6 @@ static const char *my_addr = "127.0.0.1";
 static int port = 6666;
 static int srv_port;
 static const char *srv_ip;
-static struct timeval tout = {1, 0};
 
 static void cmdline_parse(int argc, char *argv[])
 {
@@ -46,30 +58,15 @@ static void cmdline_parse(int argc, char *argv[])
   }
 }
 
-static int wait4data(int fd)
-{
-  fd_set fds;
-  int res;
-  struct timeval tv;
-
-  FD_ZERO(&fds);
-  FD_SET(fd, &fds);
-  tv = tout;
-  res = select(fd + 1, &fds, NULL, NULL, &tv);
-  if (FD_ISSET(fd, &fds)) {
-    return fd;
-  }
-
-  return -1;
-}
-
 static struct nodeID *init(void)
 {
   struct nodeID *myID;
 
-  myID = create_socket(my_addr, port);
+  myID = net_helper_init(my_addr, port);
   if (myID == NULL) {
     fprintf(stderr, "Error creating my socket (%s:%d)!\n", my_addr, port);
+
+    return NULL;
   }
   topInit(myID);
 
@@ -86,13 +83,14 @@ static void loop(struct nodeID *s)
   topParseData(NULL, 0);
   while (!done) {
     int len;
-    int fd = getFD(s);
+    int news;
+    struct timeval tout = {1, 0};
 
-    fd = wait4data(fd);
-    if (fd > 0) {
+    news = wait4data(s, tout);
+    if (news > 0) {
       struct nodeID *remote;
 
-      len = recv_data(s, &remote, buff, BUFFSIZE);
+      len = recv_from_peer(s, &remote, buff, BUFFSIZE);
       topParseData(buff, len);
       free(remote);
     } else {
@@ -118,11 +116,20 @@ int main(int argc, char *argv[])
   cmdline_parse(argc, argv);
 
   my_sock = init();
-  if (srv_port != 0) {
-    struct nodeID *srv;
+  if (my_sock == NULL) {
+    return -1;
+  }
 
-    srv = create_socket(srv_ip, srv_port);
-    topAddNeighbour(srv);
+  if (srv_port != 0) {
+    struct nodeID *knownHost;
+
+    knownHost = create_node(srv_ip, srv_port);
+    if (knownHost == NULL) {
+      fprintf(stderr, "Error creating knownHost socket (%s:%d)!\n", srv_ip, srv_port);
+
+      return -1;
+    }
+    topAddNeighbour(knownHost);
   }
 
   loop(my_sock);
