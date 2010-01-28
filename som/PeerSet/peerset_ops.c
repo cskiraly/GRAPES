@@ -4,6 +4,7 @@
 #include "peerset_private.h"
 #include "peer.h"
 #include "peerset.h"
+#include "chunkidset.h"
 #include "net_helper.h"
 
 #define DEFAULT_SIZE_INCREMENT 32
@@ -31,6 +32,7 @@ struct peerset *peerset_init(int size)
 
 int peerset_add_peer(struct peerset *h, const struct nodeID *id)
 {
+  struct peer *e;
   if (peerset_check(h, id) >= 0) {
     return 0;
   }
@@ -45,7 +47,9 @@ int peerset_add_peer(struct peerset *h, const struct nodeID *id)
     h->size += DEFAULT_SIZE_INCREMENT;
     h->elements = (struct peer*) res;
   }
-  h->elements[h->n_elements++].id = id;
+  e = &(h->elements[h->n_elements++]);
+  e->id = nodeid_dup(id);
+  e->bmap = chunkID_set_init(0);
 
   return h->n_elements;
 }
