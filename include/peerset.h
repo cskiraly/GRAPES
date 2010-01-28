@@ -38,6 +38,18 @@ struct peerset *peerset_init(int size);
 int peerset_add_peer(struct peerset *h, struct nodeID *id);
 
  /**
+  * Add peers to the set.
+  * 
+  * Comodity function to add several peers at the same time to the set.
+  * See peerset_add_peer
+  *
+  * @parameter h a pointer to the set where the peer has to be added
+  * @parameter ids the IDs of the peers to be inserted in the set
+  * @parameter n length of the its array
+  */
+void peerset_add_peers(struct peerset *h, const struct nodeID **ids, int n);
+
+ /**
   * Get a peer if it is in the set
   * 
   * @parameter h a pointer to the set

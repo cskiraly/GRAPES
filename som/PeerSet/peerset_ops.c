@@ -49,6 +49,15 @@ int peerset_add_peer(struct peerset *h, struct nodeID *id)
   return h->n_elements;
 }
 
+void peerset_add_peers(struct peerset *h, const struct nodeID **ids, int n)
+{
+  int i;
+
+  for (i = 0; i < n; i++) {
+    peerset_add_peer(h,ids[i]);
+  }
+}
+
 int peerset_size(const struct peerset *h)
 {
   return h->n_elements;
