@@ -1,4 +1,4 @@
-SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer
+SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet
      
 .PHONY: subdirs $(SUBDIRS)
      
