@@ -35,7 +35,7 @@ struct peerset *peerset_init(int size);
   * @return > 0 if the peer is correctly inserted in the set, 0 if a peer with
   *         the same nodeID is already in the set, < 0 on error
   */
-int peerset_add_peer(struct peerset *h, struct nodeID *id);
+int peerset_add_peer(struct peerset *h, const struct nodeID *id);
 
  /**
   * Add peers to the set.
@@ -88,7 +88,7 @@ struct peer *peerset_get_peers(const struct peerset *h);
   * @return the position of the peer if it is present in the set,
   *         < 0 on error or if the peer is not in the set
   */
-int peerset_check(const struct peerset *h, struct nodeID *id);
+int peerset_check(const struct peerset *h, const struct nodeID *id);
 
 
  /**
