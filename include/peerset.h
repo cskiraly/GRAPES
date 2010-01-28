@@ -50,6 +50,19 @@ int peerset_add_peer(struct peerset *h, const struct nodeID *id);
 void peerset_add_peers(struct peerset *h, const struct nodeID **ids, int n);
 
  /**
+  * Remove a peer from the set.
+  * 
+  * Remove a peer from the set, distroying all associated data.
+  * If peer exists, pointers of peerset_get_peers move backwards.
+  *
+  * @parameter h a pointer to the set where the peer has to be added
+  * @parameter id the ID of the peer to be removed from the set
+  * @return > 0 if the peer is correctly removed from the set,
+  *         < 0 on error
+  */
+int peerset_remove_peer(struct peerset *h, const struct nodeID *id);
+
+ /**
   * Get a peer if it is in the set
   * 
   * @parameter h a pointer to the set

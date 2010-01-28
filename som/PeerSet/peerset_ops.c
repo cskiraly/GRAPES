@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "peerset_private.h"
 #include "peer.h"
@@ -77,6 +78,15 @@ struct peer *peerset_get_peer(const struct peerset *h, struct nodeID *id)
 {
   int i = peerset_check(h,id);
   return (i<0) ? NULL : &(h->elements[i]);
+}
+
+int peerset_remove_peer(struct peerset *h, const struct nodeID *id){
+  int i = peerset_check(h,id);
+  if (i >= 0) {
+    memmove(&h->elements[i], &h->elements[i+1], ((h->n_elements--) - (i+1)) * sizeof(struct peer));
+    return i;
+  }
+  return -1;
 }
 
 int peerset_check(const struct peerset *h, const struct nodeID *id)
