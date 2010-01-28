@@ -4,6 +4,7 @@
 #include "peerset_private.h"
 #include "peer.h"
 #include "peerset.h"
+#include "net_helper.h"
 
 #define DEFAULT_SIZE_INCREMENT 32
 
@@ -79,7 +80,7 @@ int peerset_check(const struct peerset *h, const struct nodeID *id)
   int i;
 
   for (i = 0; i < h->n_elements; i++) {
-    if (h->elements[i].id == id) {		//@TODO: check if this comparision is enough or not
+    if (nodeid_equal(h->elements[i].id, id)) {
       return i;
     }
   }
