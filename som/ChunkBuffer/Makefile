@@ -8,7 +8,7 @@ CFLAGS += -g
 
 CPPFLAGS = -I$(BASE)/include
 
-OBJS = buffer.o config.o
+OBJS = buffer.o config.o buffer-ha.o
 
 all: libcb.a
 
