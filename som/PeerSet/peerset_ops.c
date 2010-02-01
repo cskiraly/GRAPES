@@ -74,7 +74,7 @@ struct peer* peerset_get_peers(const struct peerset *h)
   return h->elements;
 }
 
-struct peer *peerset_get_peer(const struct peerset *h, struct nodeID *id)
+struct peer *peerset_get_peer(const struct peerset *h, const struct nodeID *id)
 {
   int i = peerset_check(h,id);
   return (i<0) ? NULL : &(h->elements[i]);

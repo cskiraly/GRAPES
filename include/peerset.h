@@ -70,7 +70,7 @@ int peerset_remove_peer(struct peerset *h, const struct nodeID *id);
   * @return a pointer to the peer if it is present in the set,
   *         NULL if the peer is not in the set
   */
-struct peer *peerset_get_peer(const struct peerset *h, struct nodeID *id);
+struct peer *peerset_get_peer(const struct peerset *h, const struct nodeID *id);
 
  /**
   * Get the set size
