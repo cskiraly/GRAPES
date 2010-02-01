@@ -51,6 +51,7 @@ int peerset_add_peer(struct peerset *h, const struct nodeID *id)
   e = &(h->elements[h->n_elements++]);
   e->id = nodeid_dup(id);
   e->bmap = chunkID_set_init(0);
+  timerclear(&e->bmap_timestamp);
 
   return h->n_elements;
 }
