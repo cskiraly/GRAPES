@@ -88,4 +88,10 @@ int cb_clear(struct chunk_buffer *cb);
  */
 void cb_destroy(struct chunk_buffer *cb);
 
+
+/*
+ * HA Functions
+ */
+const struct chunk *cb_get_chunk(const struct chunk_buffer *cb, int id);
+
 #endif	/* CHUNKBUFFER_H */
