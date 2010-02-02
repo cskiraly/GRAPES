@@ -23,9 +23,13 @@ CFLAGS += $(call cc-option, -funit-at-a-time)
 
 CPPFLAGS = -I$(BASE)/include -I$(BASE)/som
 
+LIBCOMMON = libsom.a
+
 %.a: $(OBJS)
 	ar rcs $@ $^
 
+libcommon: $(OBJS)
+	ar rcs $(BASE)/som/$(LIBCOMMON) $^
 clean:
 	rm -f *.a
 	rm -f *.o
