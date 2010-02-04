@@ -46,7 +46,7 @@ int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id);
   * @parameter h a pointer to the set
   * @return the number of chunk IDs in the set, or < 0 on error
   */
-int chunkID_size(const struct chunkID_set *h);
+int chunkID_set_size(const struct chunkID_set *h);
 
  /**
   * Get a chunk ID from a set
@@ -72,6 +72,20 @@ int chunkID_set_get_chunk(const struct chunkID_set *h, int i);
 int chunkID_set_check(const struct chunkID_set *h, int chunk_id);
 
  /**
+  * Add chunks from a chunk ID set to another one
+  * 
+  * Insert all chunk from a chunk ID set into another one. Priority is
+  * kept in the old one. New chunks from the added one are added with
+  * lower priorities, but keeping their order.
+  *
+  * @parameter h a pointer to the set where the chunk ID has to be added
+  * @parameter a a pointer to the set which has to be added
+  * @return > 0 if the chunk ID is correctly inserted in the set, 0 if chunk_id
+  *         is already in the set, < 0 on error
+  */
+int chunkID_set_union(struct chunkID_set *h, struct chunkID_set *a);
+
+ /**
   * Clear a set
   * 
   * Remove all the chunk IDs from a set.
@@ -80,6 +94,6 @@ int chunkID_set_check(const struct chunkID_set *h, int chunk_id);
   * @parameter size the expected number of chunk IDs that will be stored
   *                 in the set; 0 if such a number is not known.
   */
-void chunkID_clear(struct chunkID_set *h, int size);
+void chunkID_set_clear(struct chunkID_set *h, int size);
 
 #endif	/* CHUNKIDSET_H */
