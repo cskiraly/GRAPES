@@ -129,9 +129,9 @@ int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 
 int nodeid_dump(uint8_t *b, const struct nodeID *s)
 {
-  memcpy(b, s, sizeof(struct nodeID));
+  memcpy(b, &s->addr, sizeof(struct sockaddr_in));
 
-  return sizeof(struct nodeID);
+  return sizeof(struct sockaddr_in);
 }
 
 struct nodeID *nodeid_undump(const uint8_t *b, int *len)
@@ -139,9 +139,9 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len)
   struct nodeID *res;
   res = malloc(sizeof(struct nodeID));
   if (res != NULL) {
-    memcpy(res, b, sizeof(struct nodeID));
+    memcpy(&res->addr, b, sizeof(struct sockaddr_in));
   }
-  *len = sizeof(struct nodeID);
+  *len = sizeof(struct sockaddr_in);
 
   return res;
 }
