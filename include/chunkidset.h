@@ -96,4 +96,11 @@ int chunkID_set_union(struct chunkID_set *h, struct chunkID_set *a);
   */
 void chunkID_set_clear(struct chunkID_set *h, int size);
 
+ /**
+  * Clear a set and free all associated memory.
+  *
+  * @parameter h a pointer to the set
+  */
+void chunkID_set_free(struct chunkID_set *h);
+
 #endif	/* CHUNKIDSET_H */

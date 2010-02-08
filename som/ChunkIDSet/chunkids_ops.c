@@ -93,3 +93,10 @@ void chunkID_set_clear(struct chunkID_set *h, int size)
     h->size = 0;
   }
 }
+
+void chunkID_set_free(struct chunkID_set *h)
+{
+  chunkID_set_clear(h,0);
+  free(h->elements);
+  free(h);
+}
