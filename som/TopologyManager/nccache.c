@@ -43,6 +43,7 @@ int cache_del(struct cache_entry *c, struct nodeID *neighbour)
 
   for (i = 0; c[i].timestamp != 0; i++) {
     if (nodeid_equal(c[i].id, neighbour)) {
+      nodeID_free(c[i].id);
       found = 1;
     }
     if (found) {
