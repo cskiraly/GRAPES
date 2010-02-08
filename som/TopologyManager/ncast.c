@@ -56,7 +56,9 @@ int topInit(struct nodeID *myID)
 
 int topAddNeighbour(struct nodeID *neighbour)
 {
-  cache_add(local_cache, neighbour);
+  if (cache_add(local_cache, neighbour) < 0) {
+    return -1;
+  }
   return ncast_query_peer(local_cache, neighbour);
 }
 

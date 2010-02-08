@@ -28,7 +28,11 @@ int cache_add(struct cache_entry *c, struct nodeID *neighbour)
 {
   int i;
 
-  for (i = 0; c[i].timestamp != 0; i++);
+  for (i = 0; c[i].timestamp != 0; i++) {
+    if (nodeid_equal(c[i].id, neighbour)) {
+      return -1;
+    }
+  }
   c[i].id = nodeid_dup(neighbour);
   c[i++].timestamp = 1;
   c[i].timestamp = 0;
