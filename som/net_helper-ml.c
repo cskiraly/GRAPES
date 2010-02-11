@@ -4,6 +4,10 @@
  *  This is free software; see GPL.txt
  *
  */
+#include <netinet/in.h>
+#include <sys/uio.h>
+#include "util/udpSocket.h"
+#include <sys/socket.h>
 
 #include <event2/event.h>
 #include <arpa/inet.h>
@@ -11,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 
 #include "net_helper.h"
 #include "ml.h"
@@ -30,8 +35,9 @@ static int rIdx = 0;
 typedef struct nodeID {
 	socketID_handle addr;
 	int connID;	// connection associated to this node, -1 if myself
-	int addrSize;
-	int addrStringSize;
+	int refcnt;
+//	int addrSize;
+//	int addrStringSize;
 } nodeID;
 
 typedef struct msgData_cb {
@@ -109,21 +115,25 @@ static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
 	case 0:
 		//
 		memcpy(me->addr,local_socketID,SOCKETID_SIZE);
-		me->addrSize = SOCKETID_SIZE;
-		me->addrStringSize = SOCKETID_STRING_SIZE;
+	//	me->addrSize = SOCKETID_SIZE;
+	//	me->addrStringSize = SOCKETID_STRING_SIZE;
 		me->connID = -1;
-		fprintf(stderr,"Net-helper init : received my own socket: %s.\n",node_addr(me));
+		me->refcnt = 1;
+	//	fprintf(stderr,"Net-helper init : received my own socket: %s.\n",node_addr(me));
 		break;
 	case -1:
 		//
 		fprintf(stderr,"Net-helper init : socket error occurred in ml while creating socket\n");
+		exit(1);
 		break;
 	case 1:
 		//
 		fprintf(stderr,"Net-helper init : NAT traversal failed while creating socket\n");
+		exit(1);
 		break;
 	case 2:
 	    fprintf(stderr,"Net-helper init : NAT traversal timeout while creating socket\n");
+	    exit(2);
 	    break;
 	default :	// should never happen
 		//
@@ -141,7 +151,7 @@ static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
 static void t_out_cb (int socket, short flag, void* arg) {
 
 	timeoutFired = 1;
-	fprintf(stderr,"TIMEOUT!!!\n");
+//	fprintf(stderr,"TIMEOUT!!!\n");
 //	event_base_loopbreak(base);
 }
 
@@ -151,7 +161,7 @@ static void t_out_cb (int socket, short flag, void* arg) {
  * @param arg
  */
 static void receive_conn_cb(int connectionID, void *arg) {
-    fprintf(stderr, "Net-helper : remote peer opened the connection %d with arg = %d\n", connectionID,(int)arg);
+//    fprintf(stderr, "Net-helper : remote peer opened the connection %d with arg = %d\n", connectionID,(int)arg);
 
 }
 
@@ -169,7 +179,7 @@ static void connReady_cb (int connectionID, void *arg) {
 	send_Data(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,&params);
 	free(sendingBuffer[p->bIdx]);
 	sendingBuffer[p->bIdx] = NULL;
-	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
+//	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
 	//	event_base_loopbreak(base);
 }
 
@@ -201,7 +211,7 @@ static void connError_cb (int connectionID, void *arg) {
 static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_params *arg) {
 // TODO: lacks a void* arg... moreover: recv_params has a msgtype, but there is also a msgtype explicit argument...
 //	fprintf(stderr, "Net-helper : called back with some news...\n");
-	char str[SOCKETID_STRING_SIZE]; //str[SOCKETID_STRING_SIZE]=0;
+	char str[SOCKETID_STRING_SIZE];
 	if (arg->remote_socketID != NULL)
 		socketID_To_String(arg->remote_socketID,str,SOCKETID_STRING_SIZE);
 	else
@@ -210,7 +220,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 	    fprintf(stderr, "Net-helper : corrupted message arrived from %s\n",str);
 	}
 	else {
-		fprintf(stderr, "Net-helper : message arrived from %s\n",str);
+	//	fprintf(stderr, "Net-helper : message arrived from %s\n",str);
 		// buffering the received message only if possible, otherwise ignore it...
 		int index = next_R();
 		if (index >=0) {
@@ -228,8 +238,11 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 				return;
 			}
 			else {
+				memset(receivedBuffer[index][1], 0, sizeof(struct nodeID));
 				nodeID *remote; remote = (nodeID*)(receivedBuffer[index][1]);
-				memcpy(receivedBuffer[index][0],buffer,buflen);
+				receivedBuffer[index][0] = realloc(receivedBuffer[index][0],buflen+sizeof(int));
+				*(receivedBuffer[index][0]) = buflen;
+				memcpy((receivedBuffer[index][0])+sizeof(int),buffer,buflen);
 				  // get the socketID of the sender
 				remote->addr = malloc(SOCKETID_SIZE);
 				if (remote->addr == NULL) {
@@ -238,10 +251,12 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 					  return;
 				}
 				else {
+					memset(remote->addr, 0, SOCKETID_SIZE);
 					memcpy(remote->addr, arg->remote_socketID ,SOCKETID_SIZE);
-					remote->addrSize = SOCKETID_SIZE;
-					remote->addrStringSize = SOCKETID_STRING_SIZE;
+				//	remote->addrSize = SOCKETID_SIZE;
+				//	remote->addrStringSize = SOCKETID_STRING_SIZE;
 					remote->connID = arg->connectionID;
+					remote->refcnt = 1;
 				}
 			}
 		}
@@ -266,12 +281,15 @@ struct nodeID *net_helper_init(const char *IPaddr, int port,unsigned char msgtyp
 	if (me == NULL) {
 		return NULL;
 	}
+	memset(me,0,sizeof(nodeID));
 	me->addr = malloc(SOCKETID_SIZE);
 	if (me->addr == NULL) {
 		free(me);
 		return NULL;
 	}
-	me->addrSize = 0;	// dirty trick to spot later if the ml has called back ...
+	memset(me->addr,0,SOCKETID_SIZE);
+	me->connID = -10;	// dirty trick to spot later if the ml has called back ...
+	me->refcnt = 1;
 
 	int i;
 	for (i=0;i<NH_BUFFER_SIZE;i++) {
@@ -285,8 +303,13 @@ struct nodeID *net_helper_init(const char *IPaddr, int port,unsigned char msgtyp
 		register_Recv_data_cb(&recv_data_cb,msgtypes[i]);
 	}
 	init_messaging_layer(1,tout,port,IPaddr,0,NULL,&init_myNodeID_cb,base);
+	while (me->connID<-1) {
+	//	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, &tout);
+		event_base_loop(base,EVLOOP_ONCE);
+	}
+	timeoutFired = 0;
 //	fprintf(stderr,"Net-helper init : back from init!\n");
-//	register_recv_localsocketID_cb(init_myNodeID_cb);
+
 	return me;
 }
 
@@ -297,7 +320,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port,unsigned char msgtyp
  * @param to
  * @param buffer_ptr
  * @param buffer_size
- * @return The number of sent bytes or -1 if a connection error occurred.
+ * @return The dimension of the buffer or -1 if a connection error occurred.
  */
 int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
@@ -317,18 +340,19 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 		free(sendingBuffer[current]);
 		sendingBuffer[current] = NULL;
 		fprintf(stderr,"Net-helper: Couldn't get a connection ID to send msg %d.\n ", p->bIdx);
+		free(p);
+		return -1;
 	}
 	else {
-		fprintf(stderr,"Net-helper: Got a connection ID to send msg %d to %s.\n ",
-			current,node_addr(to));
+	//	fprintf(stderr,"Net-helper: Got a connection ID to send msg %d to %s.\n ",current,node_addr(to));
 	//		struct timeval tout = {0,500};
 	//		event_base_once(base,0, EV_TIMEOUT, &t_out_cb, NULL, &tout);
 		while (sendingBuffer[current] != NULL)
 			event_base_loop(base,EVLOOP_ONCE);//  EVLOOP_NONBLOCK
 //		fprintf(stderr,"Net-helper: Back from eventlib loop with status %d.\n", ok);
+		free(p);
+		return buffer_size;
 	}
-	free(p);
-	return to->connID;
 
 }
 
@@ -351,15 +375,15 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 
 	(*remote) = (nodeID*)(receivedBuffer[rIdx][1]);
 	// retrieve a msg from the buffer
-	memcpy(buffer_ptr, receivedBuffer[rIdx][0], buffer_size);
-
+	memcpy(buffer_ptr, (receivedBuffer[rIdx][0])+sizeof(int), buffer_size);
+	int size = (int)(*(receivedBuffer[rIdx][0]));
 	free(receivedBuffer[rIdx][0]);
 	receivedBuffer[rIdx][0] = NULL;
 	receivedBuffer[rIdx][1] = NULL;
 
 //	fprintf(stderr, "Net-helper : I've got mail!!!\n");
 
-	return buffer_size;
+	return size;
 }
 
 
@@ -393,18 +417,25 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 //		free(remote);
 //		return NULL;
 //	}
-	remote->addrSize = SOCKETID_SIZE;
-	remote->addrStringSize = SOCKETID_STRING_SIZE;
+//	remote->addrSize = SOCKETID_SIZE;
+//	remote->addrStringSize = SOCKETID_STRING_SIZE;
 	remote->addr = getRemoteSocketID(rem_IP, rem_port);
 	remote->connID = open_Connection(remote->addr,&connReady_cb,NULL);
+	remote->refcnt = 1;
 	return remote;
 }
 
-void delete_node(struct nodeID *n) {
 // TODO: check why closing the connection is annoying for the ML
+void delete_node(struct nodeID *n) {
+
 //	close_Connection(n->connID);
-	close_Socket(n->addr);
-	free(n);
+//	close_Socket(n->addr);
+//	free(n);
+	if (n && (--(n->refcnt) == 0)) {
+	//	close_Connection(n->connID);
+		close_Socket(n->addr);
+		free(n);
+	}
 }
 
 
@@ -419,43 +450,43 @@ const char *node_addr(const struct nodeID *s)
 	  return "";
 }
 
-struct nodeID *nodeid_dup(const struct nodeID *s)
+struct nodeID *nodeid_dup(struct nodeID *s)
 {
-  struct nodeID *res;
-
-  res = malloc(sizeof(struct nodeID));
-  if (res != NULL) {
-	  res->addr = malloc(SOCKETID_SIZE);
-	  if (res->addr != NULL) {
-		 memcpy(res->addr, s->addr, SOCKETID_SIZE);
-		 res->addrSize = SOCKETID_SIZE;
-		 res->addrStringSize = SOCKETID_STRING_SIZE;
-		 res->connID = s->connID;
-	  }
-	  else {
-		free(res);
-		res = NULL;
-		fprintf(stderr,"Net-helper : Error while duplicating nodeID...\n");
-	  }
-  }
-
-  return res;
+//  struct nodeID *res;
+//
+//  res = malloc(sizeof(struct nodeID));
+//  if (res != NULL) {
+//	  res->addr = malloc(SOCKETID_SIZE);
+//	  if (res->addr != NULL) {
+//		 memcpy(res->addr, s->addr, SOCKETID_SIZE);
+//	//	 res->addrSize = SOCKETID_SIZE;
+//	//	 res->addrStringSize = SOCKETID_STRING_SIZE;
+//		 res->connID = s->connID;
+//	  }
+//	  else {
+//		free(res);
+//		res = NULL;
+//		fprintf(stderr,"Net-helper : Error while duplicating nodeID...\n");
+//	  }
+//  }
+//	return res;
+	s->refcnt++;
+	return s;
 }
 
 int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 {
-  return (memcmp(&s1->addr, &s2->addr, SOCKETID_SIZE) == 0);
+	return (compare_socketIDs(s1->addr,s2->addr) == 0);
 }
 
 int nodeid_dump(uint8_t *b, const struct nodeID *s)
 {
   socketID_To_String(s->addr,(char *)b,SOCKETID_STRING_SIZE);
-  fprintf(stderr,"Dumping nodeID : ho scritto %s (%d bytes)\n",b, strlen((char *)b));
-//  return SOCKETID_STRING_SIZE;
+  //fprintf(stderr,"Dumping nodeID : ho scritto %s (%d bytes)\n",b, strlen((char *)b));
   return strlen((char *)b);
 
-//	memcpy(b, s->addr, SOCKETID_SIZE);
-//	return SOCKETID_SIZE;
+//	memcpy(b, s->addr,SOCKETID_SIZE);//sizeof(struct sockaddr_in6)*2
+//	return SOCKETID_SIZE;//sizeof(struct sockaddr_in6)*2;
 
 }
 
@@ -464,24 +495,28 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len)
   struct nodeID *res;
   res = malloc(sizeof(struct nodeID));
   if (res != NULL) {
+	  memset(res,0,sizeof(struct nodeID));
 	  res->addr = malloc(SOCKETID_SIZE);
 	  if (res->addr != NULL) {
-		  // memcpy(res->addr, b, SOCKETID_SIZE);
+		  memset(res->addr,0,SOCKETID_SIZE);
+		  //memcpy(res->addr, b, SOCKETID_SIZE);
+		  //*len = SOCKETID_SIZE;
 		  *len = strlen((char*)b);
-//		  char str[(*len)+1]; str[(*len)]= '\0';
-//		  snprintf(str,(*len),"%s",(char *)b);
-		  string_To_SocketID((char *)b/*str*/,res->addr);
-		  res->addrSize = SOCKETID_SIZE;
-		  res->addrStringSize = SOCKETID_STRING_SIZE;
+		  string_To_SocketID((char *)b,res->addr);
+	//	  fprintf(stderr,"Node undumped : %s\n",node_addr(res));
+	//	  res->addrSize = SOCKETID_SIZE;
+	//	  res->addrStringSize = SOCKETID_STRING_SIZE;
 		  res->connID = -1;
+		  res->refcnt = 1;
 	  }
 	  else {
 		  free(res);
 		  res = NULL;
+		  // TODO: what about *len in this case???
 		  fprintf(stderr,"Net-helper : Error while 'undumping' nodeID...\n");
 	  }
   }
-//  *len = SOCKETID_STRING_SIZE; // SOCKETID_SIZE; //sizeof(struct nodeID);
+
 
   return res;
 }
