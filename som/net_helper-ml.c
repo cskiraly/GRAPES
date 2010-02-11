@@ -105,6 +105,7 @@ static int next_S() {
 	return sIdx;
 }
 
+
 /**
  * Callback used by ml to confirm its initialization. Create a valid self nodeID and register to receive data from remote peers.
  * @param local_socketID
@@ -201,6 +202,7 @@ static void connError_cb (int connectionID, void *arg) {
 	//	event_base_loopbreak(base);
 }
 
+
 /**
  * Callback to receive data from ml
  * @param buffer
@@ -264,14 +266,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 //	event_base_loopbreak(base);
 }
 
-/**
- * Initialize the self nodeID structure, the ml and create a socket in ml to get the knownHost
- * @param IPaddr
- * @param port
- * @param srv_IP
- * @param srv_port
- * @return NULL, because to have a valid nodeID you have to wait for ml to call back...
- */
+
 struct nodeID *net_helper_init(const char *IPaddr, int port,unsigned char msgtypes[], int msgtypes_len) {
 
 	struct timeval tout = {1, 0};
