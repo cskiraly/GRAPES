@@ -4,10 +4,6 @@
  *  This is free software; see GPL.txt
  *
  */
-#include <netinet/in.h>
-#include <sys/uio.h>
-#include "util/udpSocket.h"
-#include <sys/socket.h>
 
 #include <event2/event.h>
 #include <arpa/inet.h>
@@ -267,7 +263,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 }
 
 
-struct nodeID *net_helper_init(const char *IPaddr, int port,unsigned char msgtypes[], int msgtypes_len) {
+struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
 	struct timeval tout = {1, 0};
 	base = event_base_new();
@@ -294,9 +290,6 @@ struct nodeID *net_helper_init(const char *IPaddr, int port,unsigned char msgtyp
 
 	register_Error_connection_cb(&connError_cb);
 	register_Recv_connection_cb(&receive_conn_cb);
-	for (i=0;i<msgtypes_len;i++) {
-		register_Recv_data_cb(&recv_data_cb,msgtypes[i]);
-	}
 	init_messaging_layer(1,tout,port,IPaddr,0,NULL,&init_myNodeID_cb,base);
 	while (me->connID<-1) {
 	//	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, &tout);
@@ -306,6 +299,14 @@ struct nodeID *net_helper_init(const char *IPaddr, int port,unsigned char msgtyp
 //	fprintf(stderr,"Net-helper init : back from init!\n");
 
 	return me;
+}
+
+
+void bind_msg_types (unsigned char msgtypes[], int msgtypes_len) {
+	int i;
+	for (i=0;i<msgtypes_len;i++) {
+			register_Recv_data_cb(&recv_data_cb,msgtypes[i]);
+	}
 }
 
 
