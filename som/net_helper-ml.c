@@ -23,7 +23,6 @@
 struct event_base *base;
 
 #define NH_BUFFER_SIZE 100
-#define NH_MSG_MAXSIZE 1024
 
 static int sIdx = 0;
 static int rIdx = 0;
@@ -56,8 +55,9 @@ static uint8_t *receivedBuffer[NH_BUFFER_SIZE][2];
  * @return the index of a free slot in the received msgs buffer, -1 if no free slot available.
  */
 static int next_R() {
+	const int size = 1024;
 	if (receivedBuffer[rIdx][0]==NULL) {
-		receivedBuffer[rIdx][0] = malloc(NH_MSG_MAXSIZE);
+		receivedBuffer[rIdx][0] = malloc(size);
 	}
 	else {
 		int count;
@@ -69,10 +69,10 @@ static int next_R() {
 		if (count==NH_BUFFER_SIZE)
 			return -1;
 		else {
-			receivedBuffer[rIdx][0] = malloc(NH_MSG_MAXSIZE);
+			receivedBuffer[rIdx][0] = malloc(size);
 		}
 	}
-	memset(receivedBuffer[rIdx][0],0,NH_MSG_MAXSIZE);
+	memset(receivedBuffer[rIdx][0],0,size);
 	return rIdx;
 }
 
@@ -81,8 +81,9 @@ static int next_R() {
  * @return the index of a free slot in the sending msgs buffer, -1 if no free slot available.
  */
 static int next_S() {
+	const int size = 1024;
 	if (sendingBuffer[sIdx]==NULL) {
-		sendingBuffer[sIdx] = malloc(NH_MSG_MAXSIZE);
+		sendingBuffer[sIdx] = malloc(size);
 	}
 	else {
 		int count;
@@ -94,10 +95,9 @@ static int next_S() {
 		if (count==NH_BUFFER_SIZE)
 			return -1;
 		else {
-			sendingBuffer[sIdx] = malloc(NH_MSG_MAXSIZE);
+			sendingBuffer[sIdx] = malloc(size);
 		}
 	}
-	memset(sendingBuffer[sIdx],0,NH_MSG_MAXSIZE);
 	return sIdx;
 }
 
@@ -193,7 +193,7 @@ static void connError_cb (int connectionID, void *arg) {
 		fprintf(stderr,"Net-helper: Connection %d could not be established to send msg %d.\n ", connectionID,p->bIdx);
 		free(sendingBuffer[p->bIdx]);
 		sendingBuffer[p->bIdx] = NULL;
-		free(p);
+		p->mSize = -1;
 	}
 	//	event_base_loopbreak(base);
 }
@@ -239,7 +239,9 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 				memset(receivedBuffer[index][1], 0, sizeof(struct nodeID));
 				nodeID *remote; remote = (nodeID*)(receivedBuffer[index][1]);
 				receivedBuffer[index][0] = realloc(receivedBuffer[index][0],buflen+sizeof(int));
-				*(receivedBuffer[index][0]) = buflen;
+				memset(receivedBuffer[index][0],0,buflen+sizeof(int));
+				memcpy(receivedBuffer[index][0],&buflen,sizeof(int));
+				//*(receivedBuffer[index][0]) = buflen;
 				memcpy((receivedBuffer[index][0])+sizeof(int),buffer,buflen);
 				  // get the socketID of the sender
 				remote->addr = malloc(SOCKETID_SIZE);
@@ -326,6 +328,8 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 		// free(buffer_ptr);
 		return -1;
 	}
+	sendingBuffer[index] = realloc(sendingBuffer[index],buffer_size);
+	memset(sendingBuffer[index],0,buffer_size);
 	memcpy(sendingBuffer[index],buffer_ptr,buffer_size);
 	// free(buffer_ptr);
 	msgData_cb *p = malloc(sizeof(msgData_cb));
@@ -346,8 +350,9 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 		while (sendingBuffer[current] != NULL)
 			event_base_loop(base,EVLOOP_ONCE);//  EVLOOP_NONBLOCK
 //		fprintf(stderr,"Net-helper: Back from eventlib loop with status %d.\n", ok);
+		int size = p->mSize;
 		free(p);
-		return buffer_size;
+		return size;
 	}
 
 }
