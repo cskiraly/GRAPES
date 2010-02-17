@@ -304,11 +304,9 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 }
 
 
-void bind_msg_types (unsigned char msgtypes[], int msgtypes_len) {
-	int i;
-	for (i=0;i<msgtypes_len;i++) {
-			register_Recv_data_cb(&recv_data_cb,msgtypes[i]);
-	}
+void bind_msg_type (unsigned char msgtype) {
+
+			register_Recv_data_cb(&recv_data_cb,msgtype);
 }
 
 
