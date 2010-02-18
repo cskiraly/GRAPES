@@ -425,7 +425,7 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 }
 
 // TODO: check why closing the connection is annoying for the ML
-void delete_node(struct nodeID *n) {
+void nodeid_free(struct nodeID *n) {
 
 //	close_Connection(n->connID);
 //	close_Socket(n->addr);
