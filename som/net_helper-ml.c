@@ -1,8 +1,7 @@
 /*
  *  Copyright (c) 2009 Marco Biazzini
  *
- *  This is free software; see GPL.txt
- *
+ *  This is free software; see gpl-3.0.txt
  */
 
 #include <event2/event.h>
