@@ -145,3 +145,9 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len)
 
   return res;
 }
+
+void nodeid_free(struct nodeID *s)
+{
+  free(s);
+}
+

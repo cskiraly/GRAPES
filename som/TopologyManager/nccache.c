@@ -79,7 +79,7 @@ void cache_free(struct cache_entry *c)
   int i;
 
   for (i = 0; c[i].timestamp != 0; i++) {
-    free(c[i].id);
+    nodeid_free(c[i].id);
   }
   free(c);
 }

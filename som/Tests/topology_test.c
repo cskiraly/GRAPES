@@ -92,7 +92,7 @@ static void loop(struct nodeID *s)
 
       len = recv_from_peer(s, &remote, buff, BUFFSIZE);
       topParseData(buff, len);
-      free(remote);
+      nodeid_free(remote);
     } else {
       topParseData(NULL, 0);
       if (cnt++ % 10 == 0) {
