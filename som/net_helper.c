@@ -78,6 +78,10 @@ struct nodeID *net_helper_init(const char *my_addr, int port)
   return myself;
 }
 
+void bind_msg_type (uint8_t msgtype)
+{
+}
+
 int send_to_peer(const struct nodeID *from, const struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
   return sendto(from->fd, buffer_ptr, buffer_size, 0,
