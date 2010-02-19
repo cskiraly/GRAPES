@@ -1,3 +1,6 @@
+#ifndef NET_HELPER_H
+#define NET_HELPER_H
+
 struct nodeID;
 
 struct nodeID *nodeid_dup(const struct nodeID *s);
@@ -14,3 +17,4 @@ int wait4data(const struct nodeID *n, struct timeval tout);
 const char *node_addr(const struct nodeID *s);
 struct nodeID *nodeid_undump(const uint8_t *b, int *len);
 int nodeid_dump(uint8_t *b, const struct nodeID *s);
+#endif /* NET_HELPER_H */
