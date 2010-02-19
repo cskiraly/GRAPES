@@ -3,7 +3,7 @@
 
 struct nodeID;
 
-struct nodeID *nodeid_dup(const struct nodeID *s);
+struct nodeID *nodeid_dup(struct nodeID *s);
 int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2);
 
 struct nodeID *create_node(const char *IPaddr, int port);
