@@ -6,7 +6,7 @@ CFLAGS += -Wno-switch -Wpointer-arith -Wredundant-decls
 CFLAGS += -Wno-pointer-sign 
 CFLAGS += -g
 
-CPPFLAGS = -I$(BASE)/include -I..
+CPPFLAGS = -I$(BASE)/include
 
 OBJS = ncast.o ncast_proto.o nccache.o
 
