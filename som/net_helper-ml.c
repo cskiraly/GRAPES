@@ -481,11 +481,11 @@ int nodeid_dump(uint8_t *b, const struct nodeID *s)
 {
   socketID_To_String(s->addr,(char *)b,SOCKETID_STRING_SIZE);
   //fprintf(stderr,"Dumping nodeID : ho scritto %s (%d bytes)\n",b, strlen((char *)b));
-  return strlen((char *)b);
 
 //	memcpy(b, s->addr,SOCKETID_SIZE);//sizeof(struct sockaddr_in6)*2
 //	return SOCKETID_SIZE;//sizeof(struct sockaddr_in6)*2;
 
+  return 1 + strlen((char *)b);	//terminating \0 IS included in the size
 }
 
 struct nodeID *nodeid_undump(const uint8_t *b, int *len)
@@ -499,7 +499,7 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len)
 		  memset(res->addr,0,SOCKETID_SIZE);
 		  //memcpy(res->addr, b, SOCKETID_SIZE);
 		  //*len = SOCKETID_SIZE;
-		  *len = strlen((char*)b);
+		  *len = strlen((char*)b) + 1;
 		  string_To_SocketID((char *)b,res->addr);
 	//	  fprintf(stderr,"Node undumped : %s\n",node_addr(res));
 	//	  res->addrSize = SOCKETID_SIZE;
