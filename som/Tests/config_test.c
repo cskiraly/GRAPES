@@ -11,7 +11,7 @@
 int main(int argc, char *argv[])
 {
   struct tag *cfg_tags;
-  int size, len, dummy, res;
+  int size=-1, len=-1, dummy=-1, res;
   
   cfg_tags = config_parse("size=10");
   res = config_value_int(cfg_tags, "size", &size);
