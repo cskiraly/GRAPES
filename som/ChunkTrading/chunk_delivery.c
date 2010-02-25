@@ -2,7 +2,7 @@
  *  Copyright (c) 2009 Alessandro Russo.
  *
  *  This is free software;
- *  see GPL.txt
+ *  see lgpl-2.1.txt
  */
 #include <stdlib.h>
 #include <stdint.h>
