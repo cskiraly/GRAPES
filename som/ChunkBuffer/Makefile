@@ -1,6 +1,6 @@
 BASE = ../..
 
-OBJS = buffer.o config.o buffer-ha.o
+OBJS = buffer.o buffer-ha.o
 
 all: libcb.a
 
