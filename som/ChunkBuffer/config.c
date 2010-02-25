@@ -51,8 +51,10 @@ struct tag *config_parse(const char *cfg)
       p = NULL;
     }
   }
+  memset(res[i].name, 0, NAME_SIZE);
+  memset(res[i].value, 0, VAL_SIZE);
 
-  res = realloc(res, sizeof(struct tag) * i);
+  res = realloc(res, sizeof(struct tag) * (i + 1));
 
   return res;
 }
