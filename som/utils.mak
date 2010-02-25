@@ -30,6 +30,6 @@ LIBCOMMON = libsom.a
 
 libcommon: $(OBJS)
 	ar rcs $(BASE)/som/$(LIBCOMMON) $^
-clean:
+clean::
 	rm -f *.a
 	rm -f *.o

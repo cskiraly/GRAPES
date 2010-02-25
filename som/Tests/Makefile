@@ -1,5 +1,3 @@
-include ../utils.mak
-
 CFLAGS = -g -Wall
 CFLAGS += $(call cc-option, -Wdeclaration-after-statement)
 CFLAGS += $(call cc-option, -Wno-switch)
@@ -15,7 +13,11 @@ CFLAGS += $(call cc-option, -Wundef)
 CFLAGS += $(call cc-option, -funit-at-a-time)
 
 BASE = ../..
-TESTS = topology_test chunk_encoding_test chunk_sending_test chunkidset_test
+TESTS = topology_test \
+        chunk_encoding_test \
+        chunk_sending_test \
+        chunkidset_test \
+        cb_test
 
 CPPFLAGS = -I$(BASE)/include
 CPPFLAGS += -I..
@@ -47,10 +49,12 @@ libtopman:
 libtrading:
 	make -C ../ChunkTrading
 
-clean:
+clean::
 	rm -f $(TESTS)
 	rm -f *.o
 
 allclean: clean
 	make -C ../TopologyManager clean
 	make -C ../MsgLayer clean
+
+include ../utils.mak
