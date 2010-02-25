@@ -13,7 +13,11 @@ CFLAGS += $(call cc-option, -Wundef)
 CFLAGS += $(call cc-option, -funit-at-a-time)
 
 BASE = ../..
-TESTS = topology_test chunk_encoding_test chunk_sending_test chunkidset_test
+TESTS = topology_test \
+        chunk_encoding_test \
+        chunk_sending_test \
+        chunkidset_test \
+        cb_test
 
 CPPFLAGS = -I$(BASE)/include
 CPPFLAGS += -I..
