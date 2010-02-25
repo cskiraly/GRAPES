@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2009 Luca Abeni
  *
- *  This is free software; see GPL.txt
+ *  This is free software; see gpl-3.0.txt
  *
  *  This is a small test program for the gossip based TopologyManager
  *  To try the simple test: run it with

@@ -1,3 +1,9 @@
+/*
+ *  Copyright (c) 2010 Csaba Kiraly
+ *
+ *  This is free software; see lgpl-2.1.txt
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include "scheduler_la.h"

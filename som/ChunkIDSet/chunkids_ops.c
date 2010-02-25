@@ -1,3 +1,9 @@
+/*
+ *  Copyright (c) 2010 Luca Abeni
+ *
+ *  This is free software; see lgpl-2.1.txt
+ */
+
 #include <stdlib.h>
 #include <stdint.h>
 

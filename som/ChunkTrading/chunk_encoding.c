@@ -1,3 +1,11 @@
+/*
+ *  Copyright (c) 2009 Luca Abeni.
+ *  Copyright (c) 2009 Alessandro Russo.
+ *
+ *  This is free software;
+ *  see lgpl-2.1.txt
+ */
+
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
