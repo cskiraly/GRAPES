@@ -8,7 +8,13 @@ all:
 	done
 
 tests: all
-	make -C Tests
+	$(MAKE) -C Tests
+
+libsom.a:
+	rm -f $@
+	for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir libcommon; \
+	done	
 
 clean:
 	for dir in $(SUBDIRS); do \
@@ -17,4 +23,4 @@ clean:
 
 allclean: clean
 	rm -f *.o
-	make -C Tests clean
+	$(MAKE) -C Tests clean
