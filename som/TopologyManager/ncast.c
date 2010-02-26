@@ -48,8 +48,14 @@ static int time_to_send(void)
 /*
  * Public Functions!
  */
-int topInit(struct nodeID *myID)
+int topInit(struct nodeID *myID, void *metadata, int metadata_size)
 {
+  if (metadata_size) {
+    fprintf(stderr, "Metadata are not implemented yet!\n");
+
+    return -1;
+  }
+
   local_cache = cache_init(cache_size);
   if (local_cache == NULL) {
     return -1;
@@ -60,8 +66,14 @@ int topInit(struct nodeID *myID)
   return 1;
 }
 
-int topAddNeighbour(struct nodeID *neighbour)
+int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 {
+  if (metadata_size) {
+    fprintf(stderr, "Metadata are not implemented yet!\n");
+
+    return -1;
+  }
+
   if (cache_add(local_cache, neighbour) < 0) {
     return -1;
   }
@@ -109,6 +121,13 @@ const struct nodeID **topGetNeighbourhood(int *n)
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
   return (const struct nodeID **)r;
+}
+
+const void **topGetMetadata(int *metadata_size)
+{
+  fprintf(stderr, "MetaData are not implemented yet!!!\n");
+
+  return NULL;
 }
 
 int topGrowNeighbourhood(int n)
