@@ -365,6 +365,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
  */
 int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
 {
+	int size;
 	// this should never happen... if it does, index handling is faulty...
 	if (receivedBuffer[rIdx][1]==NULL) {
 		fprintf(stderr, "Net-helper : memory error while creating a new nodeID \n");
@@ -373,8 +374,12 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 
 	(*remote) = (nodeID*)(receivedBuffer[rIdx][1]);
 	// retrieve a msg from the buffer
-	memcpy(buffer_ptr, (receivedBuffer[rIdx][0])+sizeof(int), buffer_size);
-	int size = (int)(*(receivedBuffer[rIdx][0]));
+	size = *((int*)(receivedBuffer[rIdx][0]));
+	if (size>buffer_size) {
+		fprintf(stderr, "Net-helper : recv_from_peer: buffer too small (size:%d > buffer_size: %d)!\n",size,buffer_size);
+		return -1;
+	}
+	memcpy(buffer_ptr, (receivedBuffer[rIdx][0])+sizeof(int), size);
 	free(receivedBuffer[rIdx][0]);
 	receivedBuffer[rIdx][0] = NULL;
 	receivedBuffer[rIdx][1] = NULL;
