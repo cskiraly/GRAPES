@@ -177,6 +177,7 @@ static void connReady_cb (int connectionID, void *arg) {
 	sendingBuffer[p->bIdx] = NULL;
 //	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
 	//	event_base_loopbreak(base);
+	free(p);
 }
 
 /**
@@ -341,15 +342,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 		return -1;
 	}
 	else {
-	//	fprintf(stderr,"Net-helper: Got a connection ID to send msg %d to %s.\n ",current,node_addr(to));
-	//		struct timeval tout = {0,500};
-	//		event_base_once(base,0, EV_TIMEOUT, &t_out_cb, NULL, &tout);
-		while (sendingBuffer[current] != NULL)
-			event_base_loop(base,EVLOOP_ONCE);//  EVLOOP_NONBLOCK
-//		fprintf(stderr,"Net-helper: Back from eventlib loop with status %d.\n", ok);
-		int size = p->mSize;
-		free(p);
-		return size;
+		return p->mSize;
 	}
 
 }
