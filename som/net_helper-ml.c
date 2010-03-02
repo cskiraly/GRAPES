@@ -342,7 +342,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 		return -1;
 	}
 	else {
-		return p->mSize;
+		return buffer_size; //p->mSize;
 	}
 
 }
