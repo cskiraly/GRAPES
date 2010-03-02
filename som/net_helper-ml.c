@@ -172,7 +172,7 @@ static void connReady_cb (int connectionID, void *arg) {
 	p = (msgData_cb *)arg;
 	if (p == NULL) return;
 	send_params params = {0,0,0,0};
-	send_Data(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,&params);
+	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,&params);
 	free(sendingBuffer[p->bIdx]);
 	sendingBuffer[p->bIdx] = NULL;
 //	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
@@ -211,7 +211,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 //	fprintf(stderr, "Net-helper : called back with some news...\n");
 	char str[SOCKETID_STRING_SIZE];
 	if (arg->remote_socketID != NULL)
-		socketID_To_String(arg->remote_socketID,str,SOCKETID_STRING_SIZE);
+		mlSocketIDToString(arg->remote_socketID,str,SOCKETID_STRING_SIZE);
 	else
 		sprintf(str,"!Unknown!");
 	if (arg->nrMissingBytes || !arg->firstPacketArrived) {
@@ -290,9 +290,9 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 		receivedBuffer[i][0] = NULL;
 	}
 
-	register_Error_connection_cb(&connError_cb);
-	register_Recv_connection_cb(&receive_conn_cb);
-	init_messaging_layer(1,tout,port,IPaddr,0,NULL,&init_myNodeID_cb,base);
+	mlRegisterErrorConnectionCb(&connError_cb);
+	mlRegisterRecvConnectionCb(&receive_conn_cb);
+	mlInit(1,tout,port,IPaddr,0,NULL,&init_myNodeID_cb,base);
 	while (me->connID<-1) {
 	//	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, &tout);
 		event_base_loop(base,EVLOOP_ONCE);
@@ -306,7 +306,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
 void bind_msg_type (unsigned char msgtype) {
 
-			register_Recv_data_cb(&recv_data_cb,msgtype);
+			mlRegisterRecvDataCb(&recv_data_cb,msgtype);
 }
 
 
@@ -333,7 +333,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 	msgData_cb *p = malloc(sizeof(msgData_cb));
 	p->bIdx = index; p->mSize = buffer_size; p->msgType = (unsigned char)buffer_ptr[0];
 	int current = p->bIdx;
-	to->connID = open_Connection(to->addr,&connReady_cb,p);
+	to->connID = mlOpenConnection(to->addr,&connReady_cb,p);
 	if (to->connID<0) {
 		free(sendingBuffer[current]);
 		sendingBuffer[current] = NULL;
@@ -416,7 +416,7 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 //	remote->addrSize = SOCKETID_SIZE;
 //	remote->addrStringSize = SOCKETID_STRING_SIZE;
 	remote->addr = getRemoteSocketID(rem_IP, rem_port);
-	remote->connID = open_Connection(remote->addr,&connReady_cb,NULL);
+	remote->connID = mlOpenConnection(remote->addr,&connReady_cb,NULL);
 	remote->refcnt = 1;
 	return remote;
 }
@@ -424,12 +424,12 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 // TODO: check why closing the connection is annoying for the ML
 void nodeid_free(struct nodeID *n) {
 
-//	close_Connection(n->connID);
-//	close_Socket(n->addr);
+//	mlCloseConnection(n->connID);
+//	mlCloseSocket(n->addr);
 //	free(n);
 	if (n && (--(n->refcnt) == 0)) {
-	//	close_Connection(n->connID);
-		close_Socket(n->addr);
+	//	mlCloseConnection(n->connID);
+		mlCloseSocket(n->addr);
 		free(n);
 	}
 }
@@ -438,8 +438,8 @@ void nodeid_free(struct nodeID *n) {
 const char *node_addr(const struct nodeID *s)
 {
   static char addr[256];
-  // TODO: socketID_To_String always return 0 !!!
-  int r = socketID_To_String(s->addr,addr,256);
+  // TODO: mlSocketIDToString always return 0 !!!
+  int r = mlSocketIDToString(s->addr,addr,256);
   if (!r)
 	  return addr;
   else
@@ -472,12 +472,12 @@ struct nodeID *nodeid_dup(struct nodeID *s)
 
 int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 {
-	return (compare_socketIDs(s1->addr,s2->addr) == 0);
+	return (mlCompareSocketIDs(s1->addr,s2->addr) == 0);
 }
 
 int nodeid_dump(uint8_t *b, const struct nodeID *s)
 {
-  socketID_To_String(s->addr,(char *)b,SOCKETID_STRING_SIZE);
+  mlSocketIDToString(s->addr,(char *)b,SOCKETID_STRING_SIZE);
   //fprintf(stderr,"Dumping nodeID : ho scritto %s (%d bytes)\n",b, strlen((char *)b));
 
 //	memcpy(b, s->addr,SOCKETID_SIZE);//sizeof(struct sockaddr_in6)*2
@@ -498,7 +498,7 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len)
 		  //memcpy(res->addr, b, SOCKETID_SIZE);
 		  //*len = SOCKETID_SIZE;
 		  *len = strlen((char*)b) + 1;
-		  string_To_SocketID((char *)b,res->addr);
+		  mlStringToSocketID((char *)b,res->addr);
 	//	  fprintf(stderr,"Node undumped : %s\n",node_addr(res));
 	//	  res->addrSize = SOCKETID_SIZE;
 	//	  res->addrStringSize = SOCKETID_STRING_SIZE;
