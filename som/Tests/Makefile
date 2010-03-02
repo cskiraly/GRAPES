@@ -17,7 +17,8 @@ TESTS = topology_test \
         chunk_encoding_test \
         chunk_sending_test \
         chunkidset_test \
-        cb_test
+        cb_test \
+        config_test
 
 CPPFLAGS = -I$(BASE)/include
 CPPFLAGS += -I..
@@ -43,6 +44,8 @@ chunkidset_test: LDLIBS += -lsignalling
 chunk_sending_test: chunk_sending_test.o net_helpers.o
 chunk_sending_test: ../net_helper.o
 chunk_sending_test: LDLIBS += -ltrading
+
+config_test: config_test.o ../ChunkBuffer/config.o
 
 libtopman:
 	make -C ../TopologyManager
