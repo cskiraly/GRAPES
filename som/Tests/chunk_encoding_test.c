@@ -55,6 +55,7 @@ int main(int argc, char *argv[])
   res = decodeChunk(&dst_c, buff, res);
   fprintf(stdout, "Decoding it: %d\n", res);
   chunk_print(stdout, &dst_c);
+  free(dst_c.data);
 
   return 0;
 }
