@@ -97,11 +97,12 @@ int main(int argc, char *argv[])
     c.id = 666;
     c.timestamp = 1000000000ULL;
     c.size = strlen("ciao") + 1;
-    c.data = (uint8_t *)"ciao";
+    c.data = strdup("ciao");
     c.attributes_size = 0;
 
     dst = create_node(dst_ip, dst_port);
     sendChunk(dst, &c);
+    free(c.data);
   } else {
     /* Receive a chunk and print it! */
     int res;
