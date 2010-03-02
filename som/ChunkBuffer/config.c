@@ -18,7 +18,6 @@ struct tag {
 
 #define MAX_TAGS 16
 
-#warning Fix config_parse
 struct tag *config_parse(const char *cfg)
 {
   struct tag *res;
