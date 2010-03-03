@@ -21,7 +21,6 @@ TESTS = topology_test \
         config_test
 
 CPPFLAGS = -I$(BASE)/include
-CPPFLAGS += -I..
 
 LDFLAGS = -L../TopologyManager -L../ChunkTrading -L../ChunkBuffer -L../ChunkIDSet
 #LDFLAGS += -static

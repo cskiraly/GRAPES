@@ -21,14 +21,14 @@ struct nodeID {
   int fd;
 };
 
-int wait4data(const struct nodeID *s, struct timeval tout)
+int wait4data(const struct nodeID *s, struct timeval *tout)
 {
   fd_set fds;
   int res;
 
   FD_ZERO(&fds);
   FD_SET(s->fd, &fds);
-  res = select(s->fd + 1, &fds, NULL, NULL, &tout);
+  res = select(s->fd + 1, &fds, NULL, NULL, tout);
   if (FD_ISSET(s->fd, &fds)) {
     return 1;
   }
@@ -85,7 +85,11 @@ struct nodeID *net_helper_init(const char *my_addr, int port)
   return myself;
 }
 
-int send_to_peer(const struct nodeID *from, const struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
+void bind_msg_type (uint8_t msgtype)
+{
+}
+
+int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
   return sendto(from->fd, buffer_ptr, buffer_size, 0,
                 (const struct sockaddr *)&to->addr, sizeof(struct sockaddr_in));
@@ -118,7 +122,7 @@ const char *node_addr(const struct nodeID *s)
   return addr;
 }
 
-struct nodeID *nodeid_dup(const struct nodeID *s)
+struct nodeID *nodeid_dup(struct nodeID *s)
 {
   struct nodeID *res;
 

@@ -84,9 +84,11 @@ static void loop(struct nodeID *s)
   while (!done) {
     int len;
     int news;
-    struct timeval tout = {1, 0};
+    const struct timeval tout = {1, 0};
+    struct timeval t1;
 
-    news = wait4data(s, tout);
+    t1 = tout;
+    news = wait4data(s, &t1);
     if (news > 0) {
       struct nodeID *remote;
 
