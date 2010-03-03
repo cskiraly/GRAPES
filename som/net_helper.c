@@ -14,14 +14,14 @@ struct nodeID {
   int fd;
 };
 
-int wait4data(const struct nodeID *s, struct timeval tout)
+int wait4data(const struct nodeID *s, struct timeval *tout)
 {
   fd_set fds;
   int res;
 
   FD_ZERO(&fds);
   FD_SET(s->fd, &fds);
-  res = select(s->fd + 1, &fds, NULL, NULL, &tout);
+  res = select(s->fd + 1, &fds, NULL, NULL, tout);
   if (FD_ISSET(s->fd, &fds)) {
     return 1;
   }
