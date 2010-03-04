@@ -171,8 +171,7 @@ static void connReady_cb (int connectionID, void *arg) {
 	msgData_cb *p;
 	p = (msgData_cb *)arg;
 	if (p == NULL) return;
-	send_params params = {0,0,0,0};
-	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,&params);
+	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,NULL);
 	free(sendingBuffer[p->bIdx]);
 	sendingBuffer[p->bIdx] = NULL;
 //	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
@@ -333,7 +332,8 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 	msgData_cb *p = malloc(sizeof(msgData_cb));
 	p->bIdx = index; p->mSize = buffer_size; p->msgType = (unsigned char)buffer_ptr[0];
 	int current = p->bIdx;
-	to->connID = mlOpenConnection(to->addr,&connReady_cb,p);
+	send_params params = {0,0,0,0};
+	to->connID = mlOpenConnection(to->addr,&connReady_cb,p, params);
 	if (to->connID<0) {
 		free(sendingBuffer[current]);
 		sendingBuffer[current] = NULL;
@@ -416,7 +416,8 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 //	remote->addrSize = SOCKETID_SIZE;
 //	remote->addrStringSize = SOCKETID_STRING_SIZE;
 	remote->addr = getRemoteSocketID(rem_IP, rem_port);
-	remote->connID = mlOpenConnection(remote->addr,&connReady_cb,NULL);
+	send_params params = {0,0,0,0};
+	remote->connID = mlOpenConnection(remote->addr,&connReady_cb,NULL, params);
 	remote->refcnt = 1;
 	return remote;
 }
