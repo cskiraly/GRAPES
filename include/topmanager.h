@@ -31,6 +31,25 @@
           in case of error, or if the neighbourhood is empty.
 */
 const struct nodeID **topGetNeighbourhood(int *n);
+
+/**
+  @brief Get the peer's metadata.
+
+  Each peer in the neighbourhood can have some opaque metadata attached to
+  it, and such metadata is gossiped together with the nodeIDs.
+  This function returns the metadata currently associated to the
+  neighbours of a peer, and the size of each object composing the metadata
+  (metadata have the same structure for all the peers, so such size is
+  constant). The neighbourhood size can be known by calling
+  topGetNeighbourhood().
+
+  @param metadata_size pointer to an integer where the size of the metadata
+         associated to each peer is returned.
+         Is set to -1 in case of error, or 0 if the neighbourhood is empty.
+  @return a pointer to an array of metadata (ordered as the peers returned
+          by topGetNeighbourhood()).
+          NULL in case of error, or if the neighbourhood is empty.
+*/
 const void *topGetMetadata(int *metadata_size);
 
 /**
@@ -70,6 +89,9 @@ int topRemoveNeighbour(struct nodeID *neighbour);
   @brief Initialise the Topology Manager.
 
   @param myID the ID of this peer.
+  @param metadata pointer to the metadata associated to this peer (will be
+         gossiped).
+  @param metadata_size size of the metadata associated to this peer.
   @return 0 in case of success; -1 in case of error.
 */
 int topInit(struct nodeID *myID, void *metadata, int metadata_size);
@@ -81,6 +103,10 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size);
   neighbourhood. It is useful in the bootstrap phase.
   @param neighbour the id of the peer to be added to the
          neighbourhood.
+  @param metadata pointer to the metadata associated to the new peer (will be
+         gossiped).
+  @param metadata_size size of the metadata associated to the new peer (must
+         be the same as for the other peers).
   @return 0 in case of success; -1 in case of error.
 */
 int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size);
