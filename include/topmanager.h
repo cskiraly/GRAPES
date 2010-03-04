@@ -1,7 +1,7 @@
 #ifndef TOPMAN_H
 #define TOPMAN_H
 const struct nodeID **topGetNeighbourhood(int *n);
-const void **topGetMetadata(int *metadata_size);
+const void *topGetMetadata(int *metadata_size);
 int topGrowNeighbourhood(int n);
 int topShrinkNeighbourhood(int n);
 int topRemoveNeighbour(struct nodeID *neighbour);
