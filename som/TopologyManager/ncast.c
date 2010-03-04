@@ -123,7 +123,7 @@ const struct nodeID **topGetNeighbourhood(int *n)
   return (const struct nodeID **)r;
 }
 
-const void **topGetMetadata(int *metadata_size)
+const void *topGetMetadata(int *metadata_size)
 {
   fprintf(stderr, "MetaData are not implemented yet!!!\n");
 

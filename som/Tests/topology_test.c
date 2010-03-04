@@ -68,7 +68,7 @@ static struct nodeID *init(void)
 
     return NULL;
   }
-  topInit(myID);
+  topInit(myID, NULL, 0);
 
   return myID;
 }
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
       return -1;
     }
-    topAddNeighbour(knownHost);
+    topAddNeighbour(knownHost, NULL, 0);
   }
 
   loop(my_sock);
