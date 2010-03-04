@@ -97,11 +97,13 @@ int main(int argc, char *argv[])
     c.id = 666;
     c.timestamp = 1000000000ULL;
     c.size = strlen("ciao") + 1;
-    c.data = (uint8_t *)"ciao";
+    c.data = strdup("ciao");
     c.attributes_size = 0;
 
     dst = create_node(dst_ip, dst_port);
     sendChunk(dst, &c);
+    nodeid_free(dst);
+    free(c.data);
   } else {
     /* Receive a chunk and print it! */
     int res;
@@ -118,7 +120,10 @@ int main(int argc, char *argv[])
     res = decodeChunk(&c, buff + 1, res);
     fprintf(stdout, "Decoding: %d\n", res);
     chunk_print(stdout, &c);
+    free(c.data);
+    nodeid_free(remote);
   }
+  nodeid_free(my_sock);
 
   return 0;
 }
