@@ -4,6 +4,7 @@
  *  This is free software; see lgpl-2.1.txt
  */
 
+#include <arpa/inet.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,8 +17,26 @@
 #define MAX_PEERS 50
 struct cache_entry {
   struct nodeID *id;
-  uint64_t timestamp;
+  uint32_t timestamp;
 };
+
+static inline void int_cpy(uint8_t *p, int v)
+{
+  int tmp;
+
+  tmp = htonl(v);
+  memcpy(p, &tmp, 4);
+}
+
+static inline int int_rcpy(const uint8_t *p)
+{
+  int tmp;
+  
+  memcpy(&tmp, p, 4);
+  tmp = ntohl(tmp);
+
+  return tmp;
+}
 
 struct nodeID *nodeid(const struct cache_entry *c, int i)
 {
@@ -140,8 +159,8 @@ struct cache_entry *entries_undump(const uint8_t *buff, int size)
   while (p - buff < size) {
     int len;
 
-    memcpy(&res[i].timestamp, p, sizeof(uint64_t));
-    p += sizeof(uint64_t);
+    res[i].timestamp = int_rcpy(p);
+    p += sizeof(uint32_t);
     res[i++].id = nodeid_undump(p, &len);
     p += len;
   }
@@ -153,9 +172,9 @@ if (p - buff != size) { fprintf(stderr, "Waz!! %d != %d\n", p - buff, size); exi
 int entry_dump(uint8_t *b, struct cache_entry *e, int i)
 {
   int res;
-  
-  res = sizeof(uint64_t);
-  memcpy(b, &e[i].timestamp, sizeof(uint64_t));
+
+  int_cpy(b, e[i].timestamp);
+  res = 4; 
   res += nodeid_dump(b + res, e[i].id);
 
   return res;
