@@ -58,7 +58,7 @@ int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, 
 {
   int i;
 
-  if (meta_size != c->metadata_size) {
+  if (meta_size && meta_size != c->metadata_size) {
     return -3;
   }
   for (i = 0; i < c->current_size; i++) {
