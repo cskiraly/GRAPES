@@ -2,9 +2,9 @@ struct peer_cache;
 struct cache_entry;
 
 struct nodeID *nodeid(const struct peer_cache *c, int i);
-int cache_add(struct peer_cache *c, struct nodeID *neighbour);
+int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size);
 int cache_del(struct peer_cache *c, struct nodeID *neighbour);
-struct peer_cache *cache_init(int n);
+struct peer_cache *cache_init(int n, int metadata_size);
 int fill_cache_entry(struct cache_entry *c, const struct nodeID *s);
 int in_cache(const struct peer_cache *c, const struct cache_entry *elem);
 struct nodeID *rand_peer(struct peer_cache *c);

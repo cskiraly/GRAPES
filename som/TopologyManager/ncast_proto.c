@@ -84,10 +84,10 @@ int ncast_query(struct peer_cache *local_cache)
   return ncast_query_peer(local_cache, dst);
 }
 
-int ncast_proto_init(struct nodeID *s)
+int ncast_proto_init(struct nodeID *s, void *meta, int meta_size)
 {
-  myEntry = cache_init(1);
-  cache_add(myEntry, s);
+  myEntry = cache_init(1, meta_size);
+  cache_add(myEntry, s, meta, meta_size);
 
   return 0;
 }

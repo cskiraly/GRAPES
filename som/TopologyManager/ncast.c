@@ -50,17 +50,11 @@ static int time_to_send(void)
  */
 int topInit(struct nodeID *myID, void *metadata, int metadata_size)
 {
-  if (metadata_size) {
-    fprintf(stderr, "Metadata are not implemented yet!\n");
-
-    return -1;
-  }
-
-  local_cache = cache_init(cache_size);
+  local_cache = cache_init(cache_size, metadata_size);
   if (local_cache == NULL) {
     return -1;
   }
-  ncast_proto_init(myID);
+  ncast_proto_init(myID, metadata, metadata_size);
   currtime = gettime();
 
   return 1;
@@ -68,13 +62,7 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size)
 
 int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 {
-  if (metadata_size) {
-    fprintf(stderr, "Metadata are not implemented yet!\n");
-
-    return -1;
-  }
-
-  if (cache_add(local_cache, neighbour) < 0) {
+  if (cache_add(local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
   }
   return ncast_query_peer(local_cache, neighbour);
@@ -125,7 +113,7 @@ const struct nodeID **topGetNeighbourhood(int *n)
 
 const void *topGetMetadata(int *metadata_size)
 {
-  fprintf(stderr, "MetaData are not implemented yet!!!\n");
+  fprintf(stderr, "getMetaData is not implemented yet!!!\n");
 
   return NULL;
 }
