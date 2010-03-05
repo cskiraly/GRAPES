@@ -54,6 +54,12 @@ struct nodeID *nodeid(const struct peer_cache *c, int i)
   return NULL;
 }
 
+const void *get_metadata(const struct peer_cache *c, int *size)
+{
+  *size = c->metadata_size;
+  return c->metadata;
+}
+
 int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size)
 {
   int i;

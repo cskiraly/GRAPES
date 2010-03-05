@@ -113,9 +113,7 @@ const struct nodeID **topGetNeighbourhood(int *n)
 
 const void *topGetMetadata(int *metadata_size)
 {
-  fprintf(stderr, "getMetaData is not implemented yet!!!\n");
-
-  return NULL;
+  return get_metadata(local_cache, metadata_size);
 }
 
 int topGrowNeighbourhood(int n)
