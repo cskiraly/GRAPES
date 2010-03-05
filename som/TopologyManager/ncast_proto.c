@@ -14,13 +14,14 @@
 #include "ncast_proto.h"
 #include "msg_types.h"
 
-static struct cache_entry *myEntry;
+static struct peer_cache *myEntry;
 
-int ncast_payload_fill(uint8_t *payload, int size, struct cache_entry *c, struct nodeID *snot)
+static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, struct nodeID *snot)
 {
   int i;
   uint8_t *p = payload;
 
+  p += cache_header_dump(p, c);
   p += entry_dump(p, myEntry, 0);
   for (i = 0; nodeid(c, i); i++) {
     if (!nodeid_equal(nodeid(c, i), snot)) {
@@ -35,11 +36,11 @@ int ncast_payload_fill(uint8_t *payload, int size, struct cache_entry *c, struct
   return p - payload;
 }
 
-int ncast_reply(const uint8_t *payload, int psize, struct cache_entry *local_cache)
+int ncast_reply(const uint8_t *payload, int psize, struct peer_cache *local_cache)
 {
   uint8_t pkt[1500];
   struct ncast_header *h = (struct ncast_header *)pkt;
-  struct cache_entry *c = entries_undump(payload, psize);
+  struct peer_cache *c = entries_undump(payload, psize);
   int len, res;
   struct nodeID *dst;
 
@@ -60,7 +61,7 @@ int ncast_reply(const uint8_t *payload, int psize, struct cache_entry *local_cac
   return res;
 }
 
-int ncast_query_peer(struct cache_entry *local_cache, struct nodeID *dst)
+int ncast_query_peer(struct peer_cache *local_cache, struct nodeID *dst)
 {
   uint8_t pkt[1500];
   struct ncast_header *h = (struct ncast_header *)pkt;
@@ -72,7 +73,7 @@ int ncast_query_peer(struct cache_entry *local_cache, struct nodeID *dst)
   return send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);
 }
 
-int ncast_query(struct cache_entry *local_cache)
+int ncast_query(struct peer_cache *local_cache)
 {
   struct nodeID *dst;
 
@@ -85,7 +86,7 @@ int ncast_query(struct cache_entry *local_cache)
 
 int ncast_proto_init(struct nodeID *s)
 {
-  myEntry = cache_init(2);
+  myEntry = cache_init(1);
   cache_add(myEntry, s);
 
   return 0;

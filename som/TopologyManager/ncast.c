@@ -22,7 +22,7 @@
 
 static uint64_t currtime;
 static int cache_size = MAX_PEERS;
-static struct cache_entry *local_cache;
+static struct peer_cache *local_cache;
 static int period = 10000000;
 
 static uint64_t gettime(void)
@@ -84,7 +84,7 @@ int topParseData(const uint8_t *buff, int len)
 {
   if (len) {
     const struct ncast_header *h = (const struct ncast_header *)buff;
-    struct cache_entry *new, *remote_cache;
+    struct peer_cache *new, *remote_cache;
 
     if (h->protocol != MSG_TYPE_TOPOLOGY) {
       fprintf(stderr, "NCAST: Wrong protocol!\n");
@@ -96,7 +96,7 @@ int topParseData(const uint8_t *buff, int len)
       ncast_reply(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header), local_cache);
     }
     remote_cache = entries_undump(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header));
-    new = merge_caches(local_cache, remote_cache, cache_size);
+    new = merge_caches(local_cache, remote_cache);
     cache_free(remote_cache);
     if (new != NULL) {
       cache_free(local_cache);
