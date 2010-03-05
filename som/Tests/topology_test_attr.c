@@ -32,17 +32,19 @@ static int port = 6666;
 static int srv_port;
 static const char *srv_ip;
 
-struct peer_attributes {
+static struct peer_attributes {
   enum peer_state {sleep, awake, tired} state;
   char colour[20];
   char name[40];
-};
+} my_attr;
 
 static void cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "p:i:P:I:")) != -1) {
+  my_attr.state = awake;
+  sprintf(my_attr.colour, "red");
+  while ((o = getopt(argc, argv, "p:i:P:I:c:ST")) != -1) {
     switch(o) {
       case 'p':
         srv_port = atoi(optarg);
@@ -56,6 +58,15 @@ static void cmdline_parse(int argc, char *argv[])
       case 'I':
         my_addr = iface_addr(optarg);
         break;
+      case 'c':
+        sprintf(my_attr.colour, optarg);
+        break;
+      case 'S':
+        my_attr.state = sleep;
+        break;
+      case 'T':
+        my_attr.state = tired;
+        break;
       default:
         fprintf(stderr, "Error: unknown option %c\n", o);
 
@@ -67,7 +78,6 @@ static void cmdline_parse(int argc, char *argv[])
 static struct nodeID *init(void)
 {
   struct nodeID *myID;
-  struct peer_attributes my_attr;
 
   myID = net_helper_init(my_addr, port);
   if (myID == NULL) {
@@ -75,14 +85,25 @@ static struct nodeID *init(void)
 
     return NULL;
   }
-  memset(&my_attr, 0, sizeof(struct peer_attributes));
-  my_attr.state = awake;
-  sprintf(my_attr.colour, "red");
-  sprintf(my_attr.name, node_addr(myID));
 
+  sprintf(my_attr.name, node_addr(myID));
   topInit(myID, &my_attr, sizeof(struct peer_attributes));
 
   return myID;
+}
+
+static const char *status_print(enum peer_state s)
+{
+  switch (s) {
+    case sleep:
+      return "sleeping";
+    case awake:
+      return "awake";
+    case tired:
+      return "tired";
+    default:
+      return "Boh?";
+  }
 }
 
 static void loop(struct nodeID *s)
@@ -126,7 +147,7 @@ static void loop(struct nodeID *s)
         for (i = 0; i < n; i++) {
           printf("\t%d: %s", i, node_addr(neighbourhoods[i]));
           if (meta) {
-            printf("\tPeer %s is a %s peer and is %d\n", meta[i].name, meta[i].colour, meta[i].state);
+            printf("\tPeer %s is a %s peer and is %s", meta[i].name, meta[i].colour, status_print(meta[i].state));
           }
           printf("\n");
         }
