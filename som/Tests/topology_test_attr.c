@@ -106,6 +106,27 @@ static const char *status_print(enum peer_state s)
   }
 }
 
+static void status_update(void)
+{
+  struct nodeID *myself;
+
+  switch (my_attr.state) {
+    case sleep:
+      my_attr.state = awake;
+      break;
+    case awake:
+      my_attr.state = tired;
+      break;
+    case tired:
+      my_attr.state = sleep;
+      break;
+  }
+  printf("goin' %s\n", status_print(my_attr.state));
+  myself = create_node(my_addr, port);
+  topChangeMetadata(myself, &my_attr, sizeof(struct peer_attributes));
+  nodeid_free(myself);
+}
+
 static void loop(struct nodeID *s)
 {
   int done = 0;
@@ -127,6 +148,9 @@ static void loop(struct nodeID *s)
       topParseData(buff, len);
       nodeid_free(remote);
     } else {
+      if (cnt % 30 == 0) {
+        status_update();
+      }
       topParseData(NULL, 0);
       if (cnt++ % 10 == 0) {
         const struct nodeID **neighbourhoods;

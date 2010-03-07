@@ -60,6 +60,23 @@ const void *get_metadata(const struct peer_cache *c, int *size)
   return c->metadata;
 }
 
+int cache_metadata_update(struct peer_cache *c, struct nodeID *p, const void *meta, int meta_size)
+{
+  int i;
+
+  if (!meta_size || meta_size != c->metadata_size) {
+    return -3;
+  }
+  for (i = 0; i < c->current_size; i++) {
+    if (nodeid_equal(c->entries[i].id, p)) {
+      memcpy(c->metadata + i * meta_size, meta, meta_size);
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size)
 {
   int i;

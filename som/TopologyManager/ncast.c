@@ -60,6 +60,15 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size)
   return 1;
 }
 
+int topChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
+{
+  if (ncast_proto_metadata_update(peer, metadata, metadata_size) <= 0) {
+    return -1;
+  }
+
+  return 1;
+}
+
 int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 {
   if (cache_add(local_cache, neighbour, metadata, metadata_size) < 0) {

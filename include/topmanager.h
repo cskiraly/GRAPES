@@ -84,6 +84,7 @@ int topShrinkNeighbourhood(int n);
 */
 int topRemoveNeighbour(struct nodeID *neighbour);
 
+int topChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size);
 
 /**
   @brief Initialise the Topology Manager.

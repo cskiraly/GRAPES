@@ -84,6 +84,15 @@ int ncast_query(struct peer_cache *local_cache)
   return ncast_query_peer(local_cache, dst);
 }
 
+int ncast_proto_metadata_update(struct nodeID *peer, void *meta, int meta_size)
+{
+  if (cache_metadata_update(myEntry, peer, meta, meta_size) > 0) {
+    return 1;
+  }
+
+  return -1;
+}
+
 int ncast_proto_init(struct nodeID *s, void *meta, int meta_size)
 {
   myEntry = cache_init(1, meta_size);
