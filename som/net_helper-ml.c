@@ -47,7 +47,7 @@ static int timeoutFired = 0;
 static uint8_t *sendingBuffer[NH_BUFFER_SIZE];
 // pointers to the received msgs + sender nodeID
 static uint8_t *receivedBuffer[NH_BUFFER_SIZE][2];
-
+/**/ static int recv_counter =0;
 
 /**
  * Look for a free slot in the received buffer and allocates it for immediate use
@@ -172,6 +172,8 @@ static void connReady_cb (int connectionID, void *arg) {
 	p = (msgData_cb *)arg;
 	if (p == NULL) return;
 	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,NULL);
+///**/fprintf(stderr,"Sent message of type # %c and size %d\n",
+//		((char*)sendingBuffer[p->bIdx])[0]+'0', p->mSize);
 	free(sendingBuffer[p->bIdx]);
 	sendingBuffer[p->bIdx] = NULL;
 //	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
@@ -208,6 +210,7 @@ static void connError_cb (int connectionID, void *arg) {
 static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_params *arg) {
 // TODO: lacks a void* arg... moreover: recv_params has a msgtype, but there is also a msgtype explicit argument...
 //	fprintf(stderr, "Net-helper : called back with some news...\n");
+/**/ ++recv_counter;
 	char str[SOCKETID_STRING_SIZE];
 	if (arg->remote_socketID != NULL)
 		mlSocketIDToString(arg->remote_socketID,str,SOCKETID_STRING_SIZE);
@@ -215,6 +218,8 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 		sprintf(str,"!Unknown!");
 	if (arg->nrMissingBytes || !arg->firstPacketArrived) {
 	    fprintf(stderr, "Net-helper : corrupted message arrived from %s\n",str);
+/**/    fprintf(stderr, "\tMessage # %d -- Message type: %c -- Missing # %d frags\n",
+			recv_counter, buffer[0],arg->nrMissingBytes, arg->firstPacketArrived?" => Missing first!":"");
 	}
 	else {
 	//	fprintf(stderr, "Net-helper : message arrived from %s\n",str);
