@@ -94,7 +94,10 @@ struct peer *peerset_get_peer(const struct peerset *h, const struct nodeID *id)
 int peerset_remove_peer(struct peerset *h, const struct nodeID *id){
   int i = peerset_check(h,id);
   if (i >= 0) {
-    memmove(&h->elements[i], &h->elements[i+1], ((h->n_elements--) - (i+1)) * sizeof(struct peer));
+    struct peer *e = h->elements + i;
+    nodeid_free(e->id);
+    chunkID_set_free(e->bmap);
+    memmove(e, e + 1, ((h->n_elements--) - (i+1)) * sizeof(struct peer));
     return i;
   }
   return -1;
@@ -115,6 +118,14 @@ int peerset_check(const struct peerset *h, const struct nodeID *id)
 
 void peerset_clear(struct peerset *h, int size)
 {
+  int i;
+
+  for (i = 0; i < h->n_elements; i++) {
+    struct peer *e = h->elements + i;
+    nodeid_free(e->id);
+    chunkID_set_free(e->bmap);
+  }
+
   h->n_elements = 0;
   h->size = size;
   h->elements = realloc(h->elements, size * sizeof(struct peer));
