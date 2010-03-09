@@ -39,7 +39,7 @@ struct peerset *peerset_init(int size)
   return p;
 }
 
-int peerset_add_peer(struct peerset *h, const struct nodeID *id)
+int peerset_add_peer(struct peerset *h, struct nodeID *id)
 {
   struct peer *e;
   if (peerset_check(h, id) >= 0) {
@@ -66,12 +66,12 @@ int peerset_add_peer(struct peerset *h, const struct nodeID *id)
   return h->n_elements;
 }
 
-void peerset_add_peers(struct peerset *h, const struct nodeID **ids, int n)
+void peerset_add_peers(struct peerset *h, struct nodeID **ids, int n)
 {
   int i;
 
   for (i = 0; i < n; i++) {
-    peerset_add_peer(h,ids[i]);
+    peerset_add_peer(h, ids[i]);
   }
 }
 

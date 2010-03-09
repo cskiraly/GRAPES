@@ -17,7 +17,7 @@
   * @param[in] c Chunk to send
   * @return 0 on success, <0 on error
   */
-int sendChunk(const struct nodeID *to, struct chunk *c);
+int sendChunk(struct nodeID *to, const struct chunk *c);
 
 /**
   * Init the Chunk trading stuff...
