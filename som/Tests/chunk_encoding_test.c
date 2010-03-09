@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "chunk.h"
@@ -38,7 +39,7 @@ int main(int argc, char *argv[])
   src_c.id = 666;
   src_c.timestamp = 1000000000ULL;
   src_c.size = strlen("ciao") + 1;
-  src_c.data = (uint8_t *)"ciao";
+  src_c.data = strdup("ciao");
   src_c.attributes_size = 0;
 
   chunk_print(stdout, &src_c);
@@ -49,10 +50,12 @@ int main(int argc, char *argv[])
   fprintf(stdout, "Encoding in 23 bytes: %d\n", res);
   res = encodeChunk(&src_c, buff, sizeof(buff));
   fprintf(stdout, "Encoding in %d bytes: %d\n", sizeof(buff), res);
+  free(src_c.data);
 
   res = decodeChunk(&dst_c, buff, res);
   fprintf(stdout, "Decoding it: %d\n", res);
   chunk_print(stdout, &dst_c);
+  free(dst_c.data);
 
   return 0;
 }

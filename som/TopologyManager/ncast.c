@@ -71,7 +71,7 @@ int topAddNeighbour(struct nodeID *neighbour)
 int topParseData(const uint8_t *buff, int len)
 {
   if (len) {
-    struct ncast_header *h = (struct ncast_header *)buff;
+    const struct ncast_header *h = (const struct ncast_header *)buff;
     struct cache_entry *new, *remote_cache;
 
     if (h->protocol != MSG_TYPE_TOPOLOGY) {

@@ -18,7 +18,6 @@ struct tag {
 
 #define MAX_TAGS 16
 
-#warning Fix config_parse
 struct tag *config_parse(const char *cfg)
 {
   struct tag *res;
@@ -43,16 +42,17 @@ struct tag *config_parse(const char *cfg)
       if (p == NULL) {
         strcpy(res[i++].value, p1 + 1);
       } else {
-        memcpy(res[i].value, p1 + 1, p - p1 - 1);
-        res[i++].value[p - p1] = 0;
+        memcpy(res[i++].value, p1 + 1, p - p1 - 1);
         p++;
       }
     } else {
       p = NULL;
     }
   }
+  memset(res[i].name, 0, NAME_SIZE);
+  memset(res[i].value, 0, VAL_SIZE);
 
-  res = realloc(res, sizeof(struct tag) * i);
+  res = realloc(res, sizeof(struct tag) * (i + 1));
 
   return res;
 }

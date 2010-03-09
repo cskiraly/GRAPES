@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
   chunk_add(b, 10);
   chunk_add(b, 5);
   chunk_add(b, 12);
+  chunk_add(b, 12);
   chunk_add(b, 40);
   cb_print(b);
 

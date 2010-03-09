@@ -17,10 +17,10 @@ TESTS = topology_test \
         chunk_encoding_test \
         chunk_sending_test \
         chunkidset_test \
-        cb_test
+        cb_test \
+        config_test
 
 CPPFLAGS = -I$(BASE)/include
-CPPFLAGS += -I..
 
 LDFLAGS += -L..
 LDLIBS += -lgrapes

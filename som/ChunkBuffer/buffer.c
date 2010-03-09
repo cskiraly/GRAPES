@@ -50,8 +50,14 @@ static int remove_oldest_chunk(struct chunk_buffer *cb, int id)
 {
   int i, min, pos_min;
 
+  if (cb->buffer[0].id == id) {
+    return -2;
+  }
   min = cb->buffer[0].id; pos_min = 0;
   for (i = 1; i < cb->num_chunks; i++) {
+    if (cb->buffer[i].id == id) {
+      return -2;
+    }
     if (cb->buffer[i].id < min) {
       min = cb->buffer[i].id;
       pos_min = i;
@@ -117,6 +123,9 @@ int cb_add_chunk(struct chunk_buffer *cb, const struct chunk *c)
   }
   
   while(1) {
+    if (cb->buffer[i].id == c->id) {
+      return -2;
+    }
     if (cb->buffer[i].id < 0) {
       cb->buffer[i] = *c;
       cb->num_chunks++;
