@@ -134,7 +134,8 @@ static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
 		break;
 	case 2:
 	    fprintf(stderr,"Net-helper init : NAT traversal timeout while creating socket\n");
-	    exit(2);
+	    fprintf(stderr,"Net-helper init : Retrying without STUN\n");
+	    mlSetStunServer(0,NULL);
 	    break;
 	default :	// should never happen
 		//
@@ -302,7 +303,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
 	mlRegisterErrorConnectionCb(&connError_cb);
 	mlRegisterRecvConnectionCb(&receive_conn_cb);
-	mlInit(1,tout,port,IPaddr,0,NULL,&init_myNodeID_cb,base);
+	mlInit(1,tout,port,IPaddr,3478,"stun.ekiga.net",&init_myNodeID_cb,base);
 	while (me->connID<-1) {
 	//	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, &tout);
 		event_base_loop(base,EVLOOP_ONCE);
