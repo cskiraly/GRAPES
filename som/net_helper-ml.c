@@ -46,7 +46,12 @@ static int timeoutFired = 0;
 // pointers to the msgs to be send
 static uint8_t *sendingBuffer[NH_BUFFER_SIZE];
 // pointers to the received msgs + sender nodeID
-static uint8_t *receivedBuffer[NH_BUFFER_SIZE][2];
+struct receivedB {
+	struct nodeID *id;
+	int len;
+	uint8_t *data;
+};
+static struct receivedB receivedBuffer[NH_BUFFER_SIZE];
 /**/ static int recv_counter =0;
 
 /**
@@ -55,23 +60,23 @@ static uint8_t *receivedBuffer[NH_BUFFER_SIZE][2];
  */
 static int next_R() {
 	const int size = 1024;
-	if (receivedBuffer[rIdx][0]==NULL) {
-		receivedBuffer[rIdx][0] = malloc(size);
+	if (receivedBuffer[rIdx].data==NULL) {
+		receivedBuffer[rIdx].data = malloc(size);
 	}
 	else {
 		int count;
 		for (count=0;count<NH_BUFFER_SIZE;count++) {
 			rIdx = (++rIdx)%NH_BUFFER_SIZE;
-			if (receivedBuffer[rIdx][0]==NULL)
+			if (receivedBuffer[rIdx].data==NULL)
 				break;
 		}
 		if (count==NH_BUFFER_SIZE)
 			return -1;
 		else {
-			receivedBuffer[rIdx][0] = malloc(size);
+			receivedBuffer[rIdx].data = malloc(size);
 		}
 	}
-	memset(receivedBuffer[rIdx][0],0,size);
+	memset(receivedBuffer[rIdx].data,0,size);
 	return rIdx;
 }
 
@@ -227,26 +232,27 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 		int index = next_R();
 		if (index >=0) {
 		//	receivedBuffer[index][0] = malloc(buflen);
-			if (receivedBuffer[index][0] == NULL) {
+			if (receivedBuffer[index].data == NULL) {
 				fprintf(stderr, "Net-helper : memory error while creating a new message buffer \n");
 				return;
 			}
 			// creating a new sender nodedID
-			receivedBuffer[index][1] = malloc(sizeof(nodeID));
-			if (receivedBuffer[index][1]==NULL) {
-				free (receivedBuffer[index][0]);
-				receivedBuffer[index][0] = NULL;
+			receivedBuffer[index].id = malloc(sizeof(nodeID));
+			if (receivedBuffer[index].id==NULL) {
+				free (receivedBuffer[index].data);
+				receivedBuffer[index].data = NULL;
 				fprintf(stderr, "Net-helper : memory error while creating a new nodeID. Message from %s is lost.\n", str);
 				return;
 			}
 			else {
-				memset(receivedBuffer[index][1], 0, sizeof(struct nodeID));
-				nodeID *remote; remote = (nodeID*)(receivedBuffer[index][1]);
-				receivedBuffer[index][0] = realloc(receivedBuffer[index][0],buflen+sizeof(int));
-				memset(receivedBuffer[index][0],0,buflen+sizeof(int));
-				memcpy(receivedBuffer[index][0],&buflen,sizeof(int));
+				size_t lenlen = sizeof(int);
+				memset(receivedBuffer[index].id, 0, sizeof(struct nodeID));
+				nodeID *remote; remote = receivedBuffer[index].id;
+				receivedBuffer[index].data = realloc(receivedBuffer[index].data,buflen);
+				memset(receivedBuffer[index].data,0,buflen);
+				receivedBuffer[index].len = buflen;
 				//*(receivedBuffer[index][0]) = buflen;
-				memcpy((receivedBuffer[index][0])+sizeof(int),buffer,buflen);
+				memcpy(receivedBuffer[index].data,buffer,buflen);
 				  // get the socketID of the sender
 				remote->addr = malloc(SOCKETID_SIZE);
 				if (remote->addr == NULL) {
@@ -291,7 +297,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 	int i;
 	for (i=0;i<NH_BUFFER_SIZE;i++) {
 		sendingBuffer[i] = NULL;
-		receivedBuffer[i][0] = NULL;
+		receivedBuffer[i].data = NULL;
 	}
 
 	mlRegisterErrorConnectionCb(&connError_cb);
@@ -365,22 +371,22 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 {
 	int size;
 	// this should never happen... if it does, index handling is faulty...
-	if (receivedBuffer[rIdx][1]==NULL) {
+	if (receivedBuffer[rIdx].id==NULL) {
 		fprintf(stderr, "Net-helper : memory error while creating a new nodeID \n");
 		return -1;
 	}
 
-	(*remote) = (nodeID*)(receivedBuffer[rIdx][1]);
+	(*remote) = receivedBuffer[rIdx].id;
 	// retrieve a msg from the buffer
-	size = *((int*)(receivedBuffer[rIdx][0]));
+	size = receivedBuffer[rIdx].len;
 	if (size>buffer_size) {
 		fprintf(stderr, "Net-helper : recv_from_peer: buffer too small (size:%d > buffer_size: %d)!\n",size,buffer_size);
 		return -1;
 	}
-	memcpy(buffer_ptr, (receivedBuffer[rIdx][0])+sizeof(int), size);
-	free(receivedBuffer[rIdx][0]);
-	receivedBuffer[rIdx][0] = NULL;
-	receivedBuffer[rIdx][1] = NULL;
+	memcpy(buffer_ptr, receivedBuffer[rIdx].data, size);
+	free(receivedBuffer[rIdx].data);
+	receivedBuffer[rIdx].data = NULL;
+	receivedBuffer[rIdx].id = NULL;
 
 //	fprintf(stderr, "Net-helper : I've got mail!!!\n");
 
@@ -392,14 +398,14 @@ int wait4data(const struct nodeID *n, struct timeval *tout) {
 
 //	fprintf(stderr,"Net-helper : Waiting for data to come...\n");
 	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, tout);
-	while(receivedBuffer[rIdx][0]==NULL && timeoutFired==0) {
+	while(receivedBuffer[rIdx].data==NULL && timeoutFired==0) {
 	//	event_base_dispatch(base);
 		event_base_loop(base,EVLOOP_ONCE);
 	}
 	timeoutFired = 0;
 //	fprintf(stderr,"Back from eventlib loop.\n");
 
-	if (receivedBuffer[rIdx][0]!=NULL)
+	if (receivedBuffer[rIdx].data!=NULL)
 		return 1;
 	else
 		return 0;
