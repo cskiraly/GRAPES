@@ -16,6 +16,8 @@
 #include "ml.h"
 #include "ml_helpers.h"
 
+#include "msg_types.h"/**/
+
 /**
  * libevent pointer
  */
@@ -52,7 +54,8 @@ struct receivedB {
 	uint8_t *data;
 };
 static struct receivedB receivedBuffer[NH_BUFFER_SIZE];
-/**/ static int recv_counter =0;
+/**/ static int recv_counter =0; static int snd_counter =0;
+
 
 /**
  * Look for a free slot in the received buffer and allocates it for immediate use
@@ -178,8 +181,11 @@ static void connReady_cb (int connectionID, void *arg) {
 	p = (msgData_cb *)arg;
 	if (p == NULL) return;
 	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,NULL);
-///**/fprintf(stderr,"Sent message of type # %c and size %d\n",
-//		((char*)sendingBuffer[p->bIdx])[0]+'0', p->mSize);
+/**/char mt = ((char*)sendingBuffer[p->bIdx])[0]; ++snd_counter;
+	if (mt!=MSG_TYPE_TOPOLOGY &&
+		mt!=MSG_TYPE_CHUNK && mt!=MSG_TYPE_SIGNALLING) {
+			fprintf(stderr,"Net-helper ERROR! Sent message # %d of type %c and size %d\n",
+				snd_counter,mt+'0', p->mSize);}
 	free(sendingBuffer[p->bIdx]);
 	sendingBuffer[p->bIdx] = NULL;
 //	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
@@ -200,7 +206,7 @@ static void connError_cb (int connectionID, void *arg) {
 		fprintf(stderr,"Net-helper: Connection %d could not be established to send msg %d.\n ", connectionID,p->bIdx);
 		free(sendingBuffer[p->bIdx]);
 		sendingBuffer[p->bIdx] = NULL;
-		p->mSize = -1;
+		free(p);//p->mSize = -1;
 	}
 	//	event_base_loopbreak(base);
 }
