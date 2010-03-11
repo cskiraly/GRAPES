@@ -91,26 +91,72 @@ void bind_msg_type (uint8_t msgtype)
 
 int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
-  return sendto(from->fd, buffer_ptr, buffer_size, 0,
-                (const struct sockaddr *)&to->addr, sizeof(struct sockaddr_in));
+  static struct msghdr msg;
+  static uint8_t my_hdr;
+  struct iovec iov[2];
+  int res;
+
+  iov[0].iov_base = &my_hdr;
+  iov[0].iov_len = 1;
+  msg.msg_name = &to->addr;
+  msg.msg_namelen = sizeof(struct sockaddr_in);
+  msg.msg_iovlen = 2;
+  msg.msg_iov = iov;
+  
+  do {
+    iov[1].iov_base = buffer_ptr;
+    if (buffer_size > 1024 * 60) {
+      iov[1].iov_len = 1024 * 60;
+      my_hdr = 0;
+    } else {
+      iov[1].iov_len = buffer_size;
+      my_hdr = 1;
+    }
+    buffer_size -= iov[1].iov_len;
+    buffer_ptr += iov[1].iov_len;
+    res = sendmsg(from->fd, &msg, 0);
+  } while (buffer_size > 0);
+
+  return res;
 }
 
 int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
 {
-  int res;
+  int res, recv;
   struct sockaddr_in raddr;
-  socklen_t raddr_size = sizeof(struct sockaddr_in);
+  static struct msghdr msg;
+  static uint8_t my_hdr;
+  struct iovec iov[2];
+
+  iov[0].iov_base = &my_hdr;
+  iov[0].iov_len = 1;
+  msg.msg_name = &raddr;
+  msg.msg_namelen = sizeof(struct sockaddr_in);
+  msg.msg_iovlen = 2;
+  msg.msg_iov = iov;
 
   *remote = malloc(sizeof(struct nodeID));
   if (*remote == NULL) {
     return -1;
   }
-  res = recvfrom(local->fd, buffer_ptr, buffer_size, 0, (struct sockaddr *)&raddr, &raddr_size);
-  memcpy(&(*remote)->addr, &raddr, raddr_size);
-  (*remote)->fd = -1;
-  //fprintf(stderr, "Read %d from %s\n", res, inet_ntoa(raddr.sin_addr));
 
-  return res;
+  recv = 0;
+  do {
+    iov[1].iov_base = buffer_ptr;
+    if (buffer_size > 1024 * 60) {
+      iov[1].iov_len = 1024 * 60;
+    } else {
+      iov[1].iov_len = buffer_size;
+    }
+    buffer_size -= iov[1].iov_len;
+    buffer_ptr += iov[1].iov_len;
+    res = recvmsg(local->fd, &msg, 0);
+    recv += (res - 1);
+  } while ((my_hdr == 0) && (buffer_size > 0));
+  memcpy(&(*remote)->addr, &raddr, msg.msg_namelen);
+  (*remote)->fd = -1;
+
+  return recv;
 }
 
 const char *node_addr(const struct nodeID *s)
