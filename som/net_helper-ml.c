@@ -252,9 +252,8 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 				return;
 			}
 			else {
-				size_t lenlen = sizeof(int);
 				memset(receivedBuffer[index].id, 0, sizeof(struct nodeID));
-				nodeID *remote; remote = receivedBuffer[index].id;
+				nodeID *remote = receivedBuffer[index].id;
 				receivedBuffer[index].data = realloc(receivedBuffer[index].data,buflen);
 				memset(receivedBuffer[index].data,0,buflen);
 				receivedBuffer[index].len = buflen;
