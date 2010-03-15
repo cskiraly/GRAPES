@@ -385,7 +385,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 		return -1;
 	}
 	else {
-		struct timeval timeout = {0, 100*1000};
+		struct timeval timeout = {0, 500*1000};
 		event_base_once(base, -1, EV_TIMEOUT, send_to_peer_cb, (void *) p, &timeout);
 		return buffer_size; //p->mSize;
 	}
