@@ -23,7 +23,7 @@
  */
 struct event_base *base;
 
-#define NH_BUFFER_SIZE 100
+#define NH_BUFFER_SIZE 1000
 
 static int sIdx = 0;
 static int rIdx = 0;
