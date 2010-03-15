@@ -40,6 +40,8 @@ typedef struct msgData_cb {
 	int bIdx;	// index of the message in the proper buffer
 	unsigned char msgType; // message type
 	int mSize;	// message size
+	bool conn_cb_called;
+	bool cancelled;
 } msgData_cb;
 
 static nodeID *me; //TODO: is it possible to get rid of this (notwithstanding ml callback)??
@@ -170,6 +172,12 @@ static void receive_conn_cb(int connectionID, void *arg) {
 
 }
 
+void free_sending_buffer(int i)
+{
+	free(sendingBuffer[i]);
+	sendingBuffer[i] = NULL;
+}
+
 /**
  * Callback called by the ml when a connection is ready to be used to send data to a remote peer
  * @param connectionID
@@ -180,17 +188,20 @@ static void connReady_cb (int connectionID, void *arg) {
 	msgData_cb *p;
 	p = (msgData_cb *)arg;
 	if (p == NULL) return;
+	if (p->cancelled) {
+	    free(p);
+	    return;
+	}
 	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,NULL);
 /**/char mt = ((char*)sendingBuffer[p->bIdx])[0]; ++snd_counter;
 	if (mt!=MSG_TYPE_TOPOLOGY &&
 		mt!=MSG_TYPE_CHUNK && mt!=MSG_TYPE_SIGNALLING) {
 			fprintf(stderr,"Net-helper ERROR! Sent message # %d of type %c and size %d\n",
 				snd_counter,mt+'0', p->mSize);}
-	free(sendingBuffer[p->bIdx]);
-	sendingBuffer[p->bIdx] = NULL;
+	free_sending_buffer(p->bIdx);
 //	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
 	//	event_base_loopbreak(base);
-	free(p);
+	p->conn_cb_called = true;
 }
 
 /**
@@ -204,9 +215,11 @@ static void connError_cb (int connectionID, void *arg) {
 	p = (msgData_cb *)arg;
 	if (p != NULL) {
 		fprintf(stderr,"Net-helper: Connection %d could not be established to send msg %d.\n ", connectionID,p->bIdx);
-		free(sendingBuffer[p->bIdx]);
-		sendingBuffer[p->bIdx] = NULL;
-		free(p);//p->mSize = -1;
+		if (p->cancelled) {
+			free(p);//p->mSize = -1;
+		} else {
+			p->conn_cb_called = true;
+		}
 	}
 	//	event_base_loopbreak(base);
 }
@@ -326,6 +339,19 @@ void bind_msg_type (unsigned char msgtype) {
 }
 
 
+void send_to_peer_cb(int fd, short event, void *arg)
+{
+	msgData_cb *p = (msgData_cb *) arg;
+	if (p->conn_cb_called) {
+		free(p);
+	}
+	else { //don't send it anymore
+		free_sending_buffer(p->bIdx);
+		p->cancelled = true;
+		// don't free p, the other timeout will do it
+	}
+}
+
 /**
  * Called by the application to send data to a remote peer
  * @param from
@@ -340,6 +366,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 	int index = next_S();
 	if (index<0) {
 		// free(buffer_ptr);
+		fprintf(stderr,"Net-helper: buffer full\n ");
 		return -1;
 	}
 	sendingBuffer[index] = realloc(sendingBuffer[index],buffer_size);
@@ -347,18 +374,19 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 	memcpy(sendingBuffer[index],buffer_ptr,buffer_size);
 	// free(buffer_ptr);
 	msgData_cb *p = malloc(sizeof(msgData_cb));
-	p->bIdx = index; p->mSize = buffer_size; p->msgType = (unsigned char)buffer_ptr[0];
+	p->bIdx = index; p->mSize = buffer_size; p->msgType = (unsigned char)buffer_ptr[0]; p->conn_cb_called = false; p->cancelled = false;
 	int current = p->bIdx;
 	send_params params = {0,0,0,0};
 	to->connID = mlOpenConnection(to->addr,&connReady_cb,p, params);
 	if (to->connID<0) {
-		free(sendingBuffer[current]);
-		sendingBuffer[current] = NULL;
+		free_sending_buffer(current);
 		fprintf(stderr,"Net-helper: Couldn't get a connection ID to send msg %d.\n ", p->bIdx);
 		free(p);
 		return -1;
 	}
 	else {
+		struct timeval timeout = {0, 100*1000};
+		event_base_once(base, -1, EV_TIMEOUT, send_to_peer_cb, (void *) p, &timeout);
 		return buffer_size; //p->mSize;
 	}
 
