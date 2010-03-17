@@ -1,5 +1,5 @@
-#ifndef CHUNKID_SET_PRIVATE
-#define CHUNKID_SET_PRIVATE
+#ifndef PEERSET_PRIVATE
+#define PEERSET_PRIVATE
 
 struct peerset {
   int size;  //  
@@ -7,4 +7,4 @@ struct peerset {
   struct peer *elements;  // id number
 };
 
-#endif /* CHUNKID_SET_PRIVATE */
+#endif /* PEERSET_PRIVATE */
