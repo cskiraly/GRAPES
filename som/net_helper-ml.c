@@ -404,10 +404,8 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
 {
 	int size;
-	// this should never happen... if it does, index handling is faulty...
-	if (receivedBuffer[rIdx].id==NULL) {
-		fprintf(stderr, "Net-helper : memory error while creating a new nodeID \n");
-		return -1;
+	if (receivedBuffer[rIdx].id==NULL) {	//block till first message arrives
+		wait4data(local, NULL);
 	}
 
 	(*remote) = receivedBuffer[rIdx].id;
