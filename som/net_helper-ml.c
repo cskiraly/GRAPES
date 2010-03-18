@@ -431,7 +431,9 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 int wait4data(const struct nodeID *n, struct timeval *tout) {
 
 //	fprintf(stderr,"Net-helper : Waiting for data to come...\n");
-	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, tout);
+	if (tout) {	//if tout==NULL, loop wait infinitely
+		event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, tout);
+	}
 	while(receivedBuffer[rIdx].data==NULL && timeoutFired==0) {
 	//	event_base_dispatch(base);
 		event_base_loop(base,EVLOOP_ONCE);
