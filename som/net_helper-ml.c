@@ -244,7 +244,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 	if (arg->nrMissingBytes || !arg->firstPacketArrived) {
 	    fprintf(stderr, "Net-helper : corrupted message arrived from %s\n",str);
 /**/    fprintf(stderr, "\tMessage # %d -- Message type: %hhd -- Missing # %d bytes%s\n",
-			recv_counter, buffer[0],arg->nrMissingBytes, arg->firstPacketArrived?" => Missing first!":"");
+			recv_counter, buffer[0],arg->nrMissingBytes, arg->firstPacketArrived?"":", Missing first!");
 	}
 	else {
 	//	fprintf(stderr, "Net-helper : message arrived from %s\n",str);
