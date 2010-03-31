@@ -297,6 +297,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
 	struct timeval tout = {1, 0};
+	int s;
 	base = event_base_new();
 
 	me = malloc(sizeof(nodeID));
@@ -321,7 +322,13 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
 	mlRegisterErrorConnectionCb(&connError_cb);
 	mlRegisterRecvConnectionCb(&receive_conn_cb);
-	mlInit(1,tout,port,IPaddr,3478,"stun.ekiga.net",&init_myNodeID_cb,base);
+	s = mlInit(1,tout,port,IPaddr,3478,"stun.ekiga.net",&init_myNodeID_cb,base);
+	if (s < 0) {
+		fprintf(stderr, "Net-helper : error initializing ML!\n");
+		free(me);
+		return NULL;
+	}
+
 	while (me->connID<-1) {
 	//	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, &tout);
 		event_base_loop(base,EVLOOP_ONCE);
