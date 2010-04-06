@@ -14,7 +14,6 @@
 
 #include "net_helper.h"
 #include "ml.h"
-#include "ml_helpers.h"
 
 #include "msg_types.h"/**/
 
@@ -452,8 +451,16 @@ int wait4data(const struct nodeID *n, struct timeval *tout) {
 		return 0;
 }
 
+socketID_handle getRemoteSocketID(const char *ip, int port) {
+	char str[SOCKETID_STRING_SIZE];
+	socketID_handle h;
 
+	snprintf(str, SOCKETID_STRING_SIZE, "%s:%d-%s:%d", ip, port, ip, port);
+	h = malloc(SOCKETID_SIZE);
+	mlStringToSocketID(str, h);
 
+	return h;
+}
 
 struct nodeID *create_node(const char *rem_IP, int rem_port) {
 	struct nodeID *remote = malloc(sizeof(nodeID));
