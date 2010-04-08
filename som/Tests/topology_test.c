@@ -88,7 +88,7 @@ static void loop(struct nodeID *s)
     struct timeval t1;
 
     t1 = tout;
-    news = wait4data(s, &t1);
+    news = wait4data(s, &t1, NULL);
     if (news > 0) {
       struct nodeID *remote;
 
