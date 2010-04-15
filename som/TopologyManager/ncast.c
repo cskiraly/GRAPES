@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "net_helper.h"
@@ -23,6 +24,8 @@
 static uint64_t currtime;
 static int cache_size = MAX_PEERS;
 static struct peer_cache *local_cache;
+static bool bootstrap = true;
+static int bootstrap_period = 1000000;
 static int period = 10000000;
 
 static uint64_t gettime(void)
@@ -36,8 +39,9 @@ static uint64_t gettime(void)
 
 static int time_to_send(void)
 {
-  if (gettime() - currtime > period) {
-    currtime += period;
+  int p = bootstrap ? bootstrap_period : period;
+  if (gettime() - currtime > p) {
+    currtime += p;
 
     return 1;
   }
@@ -56,6 +60,7 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size)
   }
   ncast_proto_init(myID, metadata, metadata_size);
   currtime = gettime();
+  bootstrap = true;
 
   return 1;
 }
@@ -88,6 +93,8 @@ int topParseData(const uint8_t *buff, int len)
 
       return -1;
     }
+
+    bootstrap = false;
 
     if (h->type == NCAST_QUERY) {
       ncast_reply(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header), local_cache);
