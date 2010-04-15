@@ -24,6 +24,7 @@ struct event_base *base;
 
 #define NH_BUFFER_SIZE 1000
 #define NH_PACKET_TIMEOUT {0, 500*1000}
+#define NH_ML_INIT_TIMEOUT {1, 0}
 
 static int sIdx = 0;
 static int rIdx = 0;
@@ -296,7 +297,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 
 struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
-	struct timeval tout = {1, 0};
+	struct timeval tout = NH_ML_INIT_TIMEOUT;
 	int s;
 	base = event_base_new();
 
