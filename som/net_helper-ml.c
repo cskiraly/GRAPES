@@ -44,7 +44,7 @@ typedef struct nodeID {
 	int refcnt;
 #ifdef MONL
 	//n quick and dirty static vector for measures TODO: make it dinamic
-	MonHandler mhs[10];
+	MonHandler mhs[20];
 	int n_mhs;
 #endif
 //	int addrSize;
