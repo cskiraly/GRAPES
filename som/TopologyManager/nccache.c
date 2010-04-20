@@ -14,6 +14,7 @@
 #include "net_helper.h"
 #include "nccache.h"
 
+#define MAX_TIMESTAMP 5
 struct cache_entry {
   struct nodeID *id;
   uint32_t timestamp;
@@ -125,7 +126,14 @@ void cache_update(struct peer_cache *c)
   int i;
   
   for (i = 0; i < c->current_size; i++) {
-    c->entries[i].timestamp++;
+    if (c->entries[i].timestamp == MAX_TIMESTAMP) {
+      c->current_size = i;	/* The cache is ordered by timestamp...
+				   all the other entries wiil be older than
+				   this one, so remove all of them
+				*/
+    } else {
+      c->entries[i].timestamp++;
+    }
   }
 }
 
