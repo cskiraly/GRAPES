@@ -17,6 +17,15 @@
 
 #include "msg_types.h"/**/
 
+
+#ifdef MONL
+#include "mon.h"
+#include "grapes_log.h"
+#include "repoclient.h"
+#include "grapes.h"
+#endif
+
+
 /**
  * libevent pointer
  */
@@ -33,6 +42,11 @@ typedef struct nodeID {
 	socketID_handle addr;
 	int connID;	// connection associated to this node, -1 if myself
 	int refcnt;
+#ifdef MONL
+	//n quick and dirty static vector for measures TODO: make it dinamic
+	MonHandler mhs[10];
+	int n_mhs;
+#endif
 //	int addrSize;
 //	int addrStringSize;
 } nodeID;
@@ -329,6 +343,14 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 		free(me);
 		return NULL;
 	}
+
+#ifdef MONL
+	void *repoclient;
+	repInit("");
+	repoclient = repOpen("repository.napa-wine.eu:9832");
+	if (repoclient == NULL) fatal("Unable to initialize repoclient");
+	monInit(base, repoclient);
+#endif
 
 	while (me->connID<-1) {
 	//	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, &tout);
