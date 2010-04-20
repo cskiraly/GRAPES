@@ -78,7 +78,17 @@ void selectWeighted(size_t size,unsigned char *base, size_t nmemb, double(*weigh
   // calculate weights
   for (i=0; i<nmemb; i++){
      weights[i] = weight(base + size*i);
+     // weights should not be negative
+     weights[i] = MAX (weights[i], 0);
      w_sum += weights[i];
+  }
+
+  // all weights shuold not be zero, but if if happens, do something
+  if (w_sum == 0) {
+    for (i=0; i<nmemb; i++){
+      weights[i] = 1;
+      w_sum += weights[i];
+    }
   }
 
   while (s < s_max) {
