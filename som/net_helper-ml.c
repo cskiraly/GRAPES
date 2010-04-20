@@ -345,6 +345,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 	}
 
 #ifdef MONL
+	eventbase = base;
 	void *repoclient;
 	repInit("");
 	repoclient = repOpen("repository.napa-wine.eu:9832");
