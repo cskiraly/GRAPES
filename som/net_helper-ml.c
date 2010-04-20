@@ -352,7 +352,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 	grapesInitLog(DCLOG_WARNING, NULL, NULL);
 
 	repInit("");
-	repoclient = repOpen("repository.napa-wine.eu:9832",0);
+	repoclient = repOpen("repository.napa-wine.eu:9832",60);
 	if (repoclient == NULL) fatal("Unable to initialize repoclient");
 	monInit(base, repoclient);
 #endif
