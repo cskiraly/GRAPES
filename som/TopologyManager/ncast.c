@@ -25,7 +25,7 @@ static uint64_t currtime;
 static int cache_size = MAX_PEERS;
 static struct peer_cache *local_cache;
 static bool bootstrap = true;
-static int bootstrap_period = 1000000;
+static int bootstrap_period = 2000000;
 static int period = 10000000;
 
 static uint64_t gettime(void)
