@@ -58,7 +58,7 @@ int ncast_reply(const uint8_t *payload, int psize, struct peer_cache *local_cach
   h->type = NCAST_REPLY;
   len = ncast_payload_fill(pkt + sizeof(struct ncast_header), MAX_MSG_SIZE - sizeof(struct ncast_header), local_cache, dst);
 
-  res = send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);
+  res = len > 0 ? send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len) : len;
   cache_free(c);
   return res;
 }
@@ -71,8 +71,8 @@ int ncast_query_peer(struct peer_cache *local_cache, struct nodeID *dst)
 
   h->protocol = MSG_TYPE_TOPOLOGY;
   h->type = NCAST_QUERY;
-  return send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);
   len = ncast_payload_fill(pkt + sizeof(struct ncast_header), MAX_MSG_SIZE - sizeof(struct ncast_header), local_cache, dst);
+  return len > 0  ? send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len) : len;
 }
 
 int ncast_query(struct peer_cache *local_cache)
