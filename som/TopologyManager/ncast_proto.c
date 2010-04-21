@@ -14,6 +14,8 @@
 #include "ncast_proto.h"
 #include "msg_types.h"
 
+#define MAX_MSG_SIZE 1500
+
 static struct peer_cache *myEntry;
 
 static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, struct nodeID *snot)
@@ -38,7 +40,7 @@ static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, 
 
 int ncast_reply(const uint8_t *payload, int psize, struct peer_cache *local_cache)
 {
-  uint8_t pkt[1500];
+  uint8_t pkt[MAX_MSG_SIZE];
   struct ncast_header *h = (struct ncast_header *)pkt;
   struct peer_cache *c = entries_undump(payload, psize);
   int len, res;
@@ -54,7 +56,7 @@ int ncast_reply(const uint8_t *payload, int psize, struct peer_cache *local_cach
   dst = nodeid(c, 0);
   h->protocol = MSG_TYPE_TOPOLOGY;
   h->type = NCAST_REPLY;
-  len = ncast_payload_fill(pkt + sizeof(struct ncast_header), 1500 - sizeof(struct ncast_header), local_cache, dst);
+  len = ncast_payload_fill(pkt + sizeof(struct ncast_header), MAX_MSG_SIZE - sizeof(struct ncast_header), local_cache, dst);
 
   res = send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);
   cache_free(c);
@@ -63,14 +65,14 @@ int ncast_reply(const uint8_t *payload, int psize, struct peer_cache *local_cach
 
 int ncast_query_peer(struct peer_cache *local_cache, struct nodeID *dst)
 {
-  uint8_t pkt[1500];
+  uint8_t pkt[MAX_MSG_SIZE];
   struct ncast_header *h = (struct ncast_header *)pkt;
   int len;
 
   h->protocol = MSG_TYPE_TOPOLOGY;
   h->type = NCAST_QUERY;
-  len = ncast_payload_fill(pkt + sizeof(struct ncast_header), 1500 - sizeof(struct ncast_header), local_cache, dst);
   return send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct ncast_header) + len);
+  len = ncast_payload_fill(pkt + sizeof(struct ncast_header), MAX_MSG_SIZE - sizeof(struct ncast_header), local_cache, dst);
 }
 
 int ncast_query(struct peer_cache *local_cache)
