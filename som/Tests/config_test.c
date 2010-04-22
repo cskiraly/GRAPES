@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "../ChunkBuffer/config.h"
+#include "../config.h"
 
 int main(int argc, char *argv[])
 {

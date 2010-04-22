@@ -23,7 +23,8 @@ TESTS = topology_test \
 
 CPPFLAGS = -I$(BASE)/include
 
-LDFLAGS = -L../TopologyManager -L../ChunkTrading -L../ChunkBuffer -L../ChunkIDSet
+LDFLAGS += -L..
+LDLIBS += -lgrapes
 #LDFLAGS += -static
 
 all: $(TESTS)
@@ -34,33 +35,17 @@ topology_test_attr: LDLIBS += -ltopman
 
 topology_test: topology_test.o net_helpers.o
 topology_test: ../net_helper.o
-topology_test: LDLIBS += -ltopman
 
 chunk_encoding_test: chunk_encoding_test.o
-chunk_encoding_test: LDLIBS += -ltrading
 
 cb_test: cb_test.o
-cb_test: LDLIBS += -lcb
 
 chunkidset_test: chunkidset_test.o
-chunkidset_test: LDLIBS += -lsignalling
 
 chunk_sending_test: chunk_sending_test.o net_helpers.o
 chunk_sending_test: ../net_helper.o
-chunk_sending_test: LDLIBS += -ltrading
-
-config_test: config_test.o ../ChunkBuffer/config.o
-
-libtopman:
-	make -C ../TopologyManager
-libtrading:
-	make -C ../ChunkTrading
 
 clean::
 	rm -f $(TESTS)
-
-allclean: clean
-	make -C ../TopologyManager clean
-	make -C ../MsgLayer clean
 
 include ../utils.mak

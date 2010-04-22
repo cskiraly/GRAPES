@@ -23,7 +23,7 @@ CFLAGS += $(call cc-option, -funit-at-a-time)
 
 CPPFLAGS = -I$(BASE)/include -I$(BASE)/som
 
-LIBCOMMON = libsom.a
+LIBCOMMON = libgrapes.a
 
 %.a: $(OBJS)
 	ar rcs $@ $^
