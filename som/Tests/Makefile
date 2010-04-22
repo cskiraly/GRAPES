@@ -31,7 +31,6 @@ all: $(TESTS)
 
 topology_test_attr: topology_test_attr.o net_helpers.o
 topology_test_attr: ../net_helper.o
-topology_test_attr: LDLIBS += -ltopman
 
 topology_test: topology_test.o net_helpers.o
 topology_test: ../net_helper.o

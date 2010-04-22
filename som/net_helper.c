@@ -21,19 +21,25 @@ struct nodeID {
   int fd;
 };
 
-int wait4data(const struct nodeID *s, struct timeval *tout)
+int wait4data(const struct nodeID *s, struct timeval *tout, fd_set *user_fds)
 {
   fd_set fds;
   int res;
 
   FD_ZERO(&fds);
-  FD_SET(s->fd, &fds);
-  res = select(s->fd + 1, &fds, NULL, NULL, tout);
+  if (user_fds == NULL) {
+    user_fds = &fds;
+  }
+  FD_SET(s->fd, user_fds);
+  res = select(s->fd + 1, user_fds, NULL, NULL, tout);
+  if (res <= 0) {
+    return res;
+  }
   if (FD_ISSET(s->fd, &fds)) {
     return 1;
   }
 
-  return 0;
+  return 2;
 }
 
 struct nodeID *create_node(const char *IPaddr, int port)

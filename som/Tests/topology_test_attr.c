@@ -140,7 +140,7 @@ static void loop(struct nodeID *s)
     int news;
     struct timeval tout = {1, 0};
 
-    news = wait4data(s, tout);
+    news = wait4data(s, &tout, NULL);
     if (news > 0) {
       struct nodeID *remote;
 
