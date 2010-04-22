@@ -14,6 +14,7 @@ CFLAGS += $(call cc-option, -funit-at-a-time)
 
 BASE = ../..
 TESTS = topology_test \
+        topology_test_attr \
         chunk_encoding_test \
         chunk_sending_test \
         chunkidset_test \
@@ -26,6 +27,10 @@ LDFLAGS = -L../TopologyManager -L../ChunkTrading -L../ChunkBuffer -L../ChunkIDSe
 #LDFLAGS += -static
 
 all: $(TESTS)
+
+topology_test_attr: topology_test_attr.o net_helpers.o
+topology_test_attr: ../net_helper.o
+topology_test_attr: LDLIBS += -ltopman
 
 topology_test: topology_test.o net_helpers.o
 topology_test: ../net_helper.o

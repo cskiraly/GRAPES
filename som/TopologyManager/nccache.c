@@ -4,6 +4,7 @@
  *  This is free software; see lgpl-2.1.txt
  */
 
+#include <arpa/inet.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,85 +14,164 @@
 #include "net_helper.h"
 #include "nccache.h"
 
-#define MAX_PEERS 50
 struct cache_entry {
   struct nodeID *id;
-  uint64_t timestamp;
+  uint32_t timestamp;
 };
 
-struct nodeID *nodeid(const struct cache_entry *c, int i)
+struct peer_cache {
+  struct cache_entry *entries;
+  int cache_size;
+  int current_size;
+  int metadata_size;
+  uint8_t *metadata; 
+};
+
+static inline void int_cpy(uint8_t *p, int v)
 {
-  if (c[i].timestamp == 0) {
-    return NULL;
-  }
+  int tmp;
 
-  //fprintf(stderr, "Returning ID for TS=%lld: %p\n", c[i].timestamp, c[i].id);
-
-  return c[i].id;
+  tmp = htonl(v);
+  memcpy(p, &tmp, 4);
 }
 
-int cache_add(struct cache_entry *c, struct nodeID *neighbour)
+static inline int int_rcpy(const uint8_t *p)
+{
+  int tmp;
+  
+  memcpy(&tmp, p, 4);
+  tmp = ntohl(tmp);
+
+  return tmp;
+}
+
+struct nodeID *nodeid(const struct peer_cache *c, int i)
+{
+  if (i < c->current_size) {
+    return c->entries[i].id;
+  }
+
+  return NULL;
+}
+
+const void *get_metadata(const struct peer_cache *c, int *size)
+{
+  *size = c->metadata_size;
+  return c->metadata;
+}
+
+int cache_metadata_update(struct peer_cache *c, struct nodeID *p, const void *meta, int meta_size)
 {
   int i;
 
-  for (i = 0; c[i].timestamp != 0; i++) {
-    if (nodeid_equal(c[i].id, neighbour)) {
+  if (!meta_size || meta_size != c->metadata_size) {
+    return -3;
+  }
+  for (i = 0; i < c->current_size; i++) {
+    if (nodeid_equal(c->entries[i].id, p)) {
+      memcpy(c->metadata + i * meta_size, meta, meta_size);
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size)
+{
+  int i;
+
+  if (meta_size && meta_size != c->metadata_size) {
+    return -3;
+  }
+  for (i = 0; i < c->current_size; i++) {
+    if (nodeid_equal(c->entries[i].id, neighbour)) {
       return -1;
     }
   }
-  c[i].id = nodeid_dup(neighbour);
-  c[i++].timestamp = 1;
-  c[i].timestamp = 0;
-  
-  return i;
+  if (c->current_size == c->cache_size) {
+    return -2;
+  }
+  if (meta_size) {
+    memcpy(c->metadata + c->current_size * meta_size, meta, meta_size);
+  }
+  c->entries[c->current_size].id = nodeid_dup(neighbour);
+  c->entries[c->current_size++].timestamp = 1;
+
+  return c->current_size;
 }
 
-int cache_del(struct cache_entry *c, struct nodeID *neighbour)
+int cache_del(struct peer_cache *c, struct nodeID *neighbour)
 {
   int i;
   int found = 0;
 
-  for (i = 0; c[i].timestamp != 0; i++) {
-    if (nodeid_equal(c[i].id, neighbour)) {
-      nodeid_free(c[i].id);
+  for (i = 0; i < c->current_size; i++) {
+    if (nodeid_equal(c->entries[i].id, neighbour)) {
+      nodeid_free(c->entries[i].id);
+      c->current_size--;
       found = 1;
     }
     if (found) {
-      c[i] = c[i+1];
+      c->entries[i] = c->entries[i+1];
     }
   }
 
-  return i;
+  return c->current_size;
 }
 
-void cache_update(struct cache_entry *c)
+void cache_update(struct peer_cache *c)
 {
   int i;
   
-  for (i = 0; c[i].timestamp != 0; i++) {
-      c[i].timestamp++;
+  for (i = 0; i < c->current_size; i++) {
+    c->entries[i].timestamp++;
   }
 }
 
-struct cache_entry *cache_init(int n)
+struct peer_cache *cache_init(int n, int metadata_size)
 {
-  struct cache_entry *res;
+  struct peer_cache *res;
 
-  res = malloc(sizeof(struct cache_entry) * n);
-  if (res) {
-    memset(res, 0, sizeof(struct cache_entry) * n);
+  res = malloc(sizeof(struct peer_cache));
+  if (res == NULL) {
+    return NULL;
+  }
+  res->cache_size = n;
+  res->current_size = 0;
+  res->entries = malloc(sizeof(struct cache_entry) * n);
+  if (res == NULL) {
+    free(res);
+
+    return NULL;
+  }
+  
+  memset(res->entries, 0, sizeof(struct cache_entry) * n);
+  if (metadata_size) {
+    res->metadata = malloc(metadata_size * n);
+  } else {
+    res->metadata = NULL;
+  }
+
+  if (res->metadata) {
+    res->metadata_size = metadata_size;
+    memset(res->metadata, 0, metadata_size * n);
+  } else {
+    res->metadata_size = 0;
   }
 
   return res;
 }
 
-void cache_free(struct cache_entry *c)
+void cache_free(struct peer_cache *c)
 {
   int i;
 
-  for (i = 0; c[i].timestamp != 0; i++) {
-    nodeid_free(c[i].id);
+  for (i = 0; i < c->current_size; i++) {
+    nodeid_free(c->entries[i].id);
   }
+  free(c->entries);
+  free(c->metadata);
   free(c);
 }
 
@@ -103,12 +183,12 @@ int fill_cache_entry(struct cache_entry *c, const struct nodeID *s)
   return 1;
 }
 
-int in_cache(const struct cache_entry *c, const struct cache_entry *elem)
+int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
 {
   int i;
 
-  for (i = 0; c[i].timestamp != 0; i++) {
-    if (nodeid_equal(c[i].id, elem->id)) {
+  for (i = 0; i < c->current_size; i++) {
+    if (nodeid_equal(c->entries[i].id, elem->id)) {
       return 1;
     }
   }
@@ -116,89 +196,128 @@ int in_cache(const struct cache_entry *c, const struct cache_entry *elem)
   return 0;
 }
 
-struct nodeID *rand_peer(struct cache_entry *c)
+struct nodeID *rand_peer(struct peer_cache *c)
 {
-  int i, j;
+  int j;
 
-  for (i = 0; c[i].timestamp != 0; i++);
-  if (i == 0) {
+  if (c->current_size == 0) {
     return NULL;
   }
-  j = ((double)rand() / (double)RAND_MAX) * i;
+  j = ((double)rand() / (double)RAND_MAX) * c->current_size;
 
-  return c[j].id;
+  return c->entries[j].id;
 }
 
-struct cache_entry *entries_undump(const uint8_t *buff, int size)
+struct peer_cache *entries_undump(const uint8_t *buff, int size)
 {
-  struct cache_entry *res;
+  struct peer_cache *res;
   int i = 0;
   const uint8_t *p = buff;
-  
-  res = malloc(sizeof(struct cache_entry) * MAX_PEERS);
-  memset(res, 0, sizeof(struct cache_entry) * MAX_PEERS);
+  uint8_t *meta;
+  int cache_size, metadata_size;
+
+  cache_size = int_rcpy(buff);
+  metadata_size = int_rcpy(buff + 4);
+  p = buff + 8;
+  res = cache_init(cache_size, metadata_size);
+  meta = res->metadata;
   while (p - buff < size) {
     int len;
 
-    memcpy(&res[i].timestamp, p, sizeof(uint64_t));
-    p += sizeof(uint64_t);
-    res[i++].id = nodeid_undump(p, &len);
+    res->entries[i].timestamp = int_rcpy(p);
+    p += sizeof(uint32_t);
+    res->entries[i++].id = nodeid_undump(p, &len);
     p += len;
+    if (metadata_size) {
+      memcpy(meta, p, metadata_size);
+      p += metadata_size;
+      meta += metadata_size;
+    }
   }
+  res->current_size = i;
 if (p - buff != size) { fprintf(stderr, "Waz!! %d != %d\n", p - buff, size); exit(-1);}
 
   return res;
 }
 
-int entry_dump(uint8_t *b, struct cache_entry *e, int i)
+int cache_header_dump(uint8_t *b, const struct peer_cache *c)
+{
+  int_cpy(b, c->cache_size);
+  int_cpy(b + 4, c->metadata_size);
+
+  return 8;
+}
+
+int entry_dump(uint8_t *b, struct peer_cache *c, int i)
 {
   int res;
   
-  res = sizeof(uint64_t);
-  memcpy(b, &e[i].timestamp, sizeof(uint64_t));
-  res += nodeid_dump(b + res, e[i].id);
+  int_cpy(b, c->entries[i].timestamp);
+  res = 4;
+  res += nodeid_dump(b + res, c->entries[i].id);
+  if (c->metadata_size) {
+    memcpy(b + res, c->metadata + c->metadata_size * i, c->metadata_size);
+    res += c->metadata_size;
+  }
 
   return res;
 }
 
-struct cache_entry *merge_caches(struct cache_entry *c1, struct cache_entry *c2, int cache_size)
+struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2)
 {
-  int i, n1, n2;
-  struct cache_entry *new_cache;
+  int n1, n2;
+  struct peer_cache *new_cache;
+  uint8_t *meta;
 
-  new_cache = malloc(sizeof(struct cache_entry) * cache_size);
+  new_cache = cache_init(c1->cache_size, c1->metadata_size);
   if (new_cache == NULL) {
     return NULL;
   }
-  memset(new_cache, 0, sizeof(struct cache_entry) * cache_size);
 
-  for (i = 0, n1 = 0, n2 = 0; i < cache_size;) {
-    if ((c1[n1].timestamp == 0) && (c2[n2].timestamp == 0)) {
+  meta = new_cache->metadata;
+  for (n1 = 0, n2 = 0; new_cache->current_size < new_cache->cache_size;) {
+    if ((n1 == c1->current_size) && (n2 == c2->current_size)) {
       return new_cache;
     }
-    if (c1[n1].timestamp == 0) {
-      if (!in_cache(new_cache, &c2[n2])) {
-        new_cache[i++] = c2[n2];
-        c2[n2].id = NULL;
+    if (n1 == c1->current_size) {
+      if (!in_cache(new_cache, &c2->entries[n2])) {
+        if (new_cache->metadata_size) {
+          memcpy(meta, c2->metadata + n2 * c2->metadata_size, c2->metadata_size);
+          meta += new_cache->metadata_size;
+        }
+        new_cache->entries[new_cache->current_size++] = c2->entries[n2];
+        c2->entries[n2].id = NULL;
       }
       n2++;
-    } else if (c2[n2].timestamp == 0) {
-      if (!in_cache(new_cache, &c1[n1])) {
-        new_cache[i++] = c1[n1];
-        c1[n1].id = NULL;
+    } else if (n2 == c2->current_size) {
+      if (!in_cache(new_cache, &c1->entries[n1])) {
+        if (new_cache->metadata_size) {
+          memcpy(meta, c1->metadata + n1 * c1->metadata_size, c1->metadata_size);
+          meta += new_cache->metadata_size;
+        }
+        new_cache->entries[new_cache->current_size++] = c1->entries[n1];
+        c1->entries[n1].id = NULL;
       }
       n1++;
     } else {
-      if (c2[n2].timestamp > c1[n1].timestamp) {
-        if (!in_cache(new_cache, &c1[n1])) {
-          new_cache[i++] = c1[n1];
-          c1[n1].id = NULL;
+      if (c2->entries[n2].timestamp > c1->entries[n1].timestamp) {
+        if (!in_cache(new_cache, &c1->entries[n1])) {
+          if (new_cache->metadata_size) {
+            memcpy(meta, c1->metadata + n1 * c1->metadata_size, c1->metadata_size);
+            meta += new_cache->metadata_size;
+          }
+          new_cache->entries[new_cache->current_size++] = c1->entries[n1];
+          c1->entries[n1].id = NULL;
         }
         n1++;
       } else {
-        if (!in_cache(new_cache, &c2[n2])) {
-          new_cache[i++] = c2[n2];
-          c2[n2].id = NULL;
+        if (!in_cache(new_cache, &c2->entries[n2])) {
+          if (new_cache->metadata_size) {
+            memcpy(meta, c2->metadata + n2 * c2->metadata_size, c2->metadata_size);
+            meta += new_cache->metadata_size;
+          }
+          new_cache->entries[new_cache->current_size++] = c2->entries[n2];
+          c2->entries[n2].id = NULL;
         }
         n2++;
       }

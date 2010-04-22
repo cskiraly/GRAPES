@@ -22,7 +22,7 @@
 
 static uint64_t currtime;
 static int cache_size = MAX_PEERS;
-static struct cache_entry *local_cache;
+static struct peer_cache *local_cache;
 static int period = 10000000;
 
 static uint64_t gettime(void)
@@ -48,21 +48,30 @@ static int time_to_send(void)
 /*
  * Public Functions!
  */
-int topInit(struct nodeID *myID)
+int topInit(struct nodeID *myID, void *metadata, int metadata_size)
 {
-  local_cache = cache_init(cache_size);
+  local_cache = cache_init(cache_size, metadata_size);
   if (local_cache == NULL) {
     return -1;
   }
-  ncast_proto_init(myID);
+  ncast_proto_init(myID, metadata, metadata_size);
   currtime = gettime();
 
   return 1;
 }
 
-int topAddNeighbour(struct nodeID *neighbour)
+int topChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
 {
-  if (cache_add(local_cache, neighbour) < 0) {
+  if (ncast_proto_metadata_update(peer, metadata, metadata_size) <= 0) {
+    return -1;
+  }
+
+  return 1;
+}
+
+int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
+{
+  if (cache_add(local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
   }
   return ncast_query_peer(local_cache, neighbour);
@@ -72,7 +81,7 @@ int topParseData(const uint8_t *buff, int len)
 {
   if (len) {
     const struct ncast_header *h = (const struct ncast_header *)buff;
-    struct cache_entry *new, *remote_cache;
+    struct peer_cache *new, *remote_cache;
 
     if (h->protocol != MSG_TYPE_TOPOLOGY) {
       fprintf(stderr, "NCAST: Wrong protocol!\n");
@@ -84,7 +93,7 @@ int topParseData(const uint8_t *buff, int len)
       ncast_reply(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header), local_cache);
     }
     remote_cache = entries_undump(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header));
-    new = merge_caches(local_cache, remote_cache, cache_size);
+    new = merge_caches(local_cache, remote_cache);
     cache_free(remote_cache);
     if (new != NULL) {
       cache_free(local_cache);
@@ -109,6 +118,11 @@ const struct nodeID **topGetNeighbourhood(int *n)
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
   return (const struct nodeID **)r;
+}
+
+const void *topGetMetadata(int *metadata_size)
+{
+  return get_metadata(local_cache, metadata_size);
 }
 
 int topGrowNeighbourhood(int n)
