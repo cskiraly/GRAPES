@@ -94,10 +94,15 @@ int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, 
     return -2;
   }
   if (meta_size) {
-    memcpy(c->metadata + c->current_size * meta_size, meta, meta_size);
+    memmove(c->metadata + meta_size, c->metadata, c->current_size * meta_size);
+    memcpy(c->metadata, meta, meta_size);
   }
-  c->entries[c->current_size].id = nodeid_dup(neighbour);
-  c->entries[c->current_size++].timestamp = 1;
+  for (i = 0; i < c->current_size; i++) {
+    c->entries[i + 1] = c->entries[i];
+  }
+  c->entries[0].id = nodeid_dup(neighbour);
+  c->entries[0].timestamp = 1;
+  c->current_size++;
 
   return c->current_size;
 }
