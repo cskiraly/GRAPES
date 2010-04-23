@@ -13,7 +13,7 @@
 #define MAX_PEERS 5000
 static struct socketID *table[MAX_PEERS];
 
-int topInit(struct socketID *myID)
+int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
   FILE *f;
   int i = 0;

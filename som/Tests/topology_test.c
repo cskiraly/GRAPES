@@ -68,7 +68,7 @@ static struct nodeID *init(void)
 
     return NULL;
   }
-  topInit(myID, NULL, 0);
+  topInit(myID, NULL, 0, "");
 
   return myID;
 }

@@ -55,7 +55,7 @@ static void simple_test(void)
 {
   struct chunkID_set *cset;
 
-  cset = chunkID_set_init(0);
+  cset = chunkID_set_init("");
   printf("Chunk ID Set initialised: size is %d\n", chunkID_set_size(cset));
   populate(cset);
   print_set(cset);
@@ -76,7 +76,7 @@ static void encoding_test(void)
   int res, meta_len;
   void *meta;
 
-  cset = chunkID_set_init(0);
+  cset = chunkID_set_init("");
   populate(cset);
   res = encodeChunkSignaling(cset, NULL, 0, buff, sizeof(buff));
   printf("Encoding Result: %d\n", res);

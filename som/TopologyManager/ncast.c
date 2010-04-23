@@ -52,7 +52,7 @@ static int time_to_send(void)
 /*
  * Public Functions!
  */
-int topInit(struct nodeID *myID, void *metadata, int metadata_size)
+int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
   local_cache = cache_init(cache_size, metadata_size);
   if (local_cache == NULL) {

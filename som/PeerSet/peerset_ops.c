@@ -15,21 +15,28 @@
 #include "peerset.h"
 #include "chunkidset.h"
 #include "net_helper.h"
+#include "config.h"
 
 #define DEFAULT_SIZE_INCREMENT 32
 
 struct nodeID;
 
-struct peerset *peerset_init(int size)
+struct peerset *peerset_init(const char *config)
 {
   struct peerset *p;
+  struct tag *cfg_tags;
+  int res;
 
   p = malloc(sizeof(struct peerset));
   if (p == NULL) {
     return NULL;
   }
   p->n_elements = 0;
-  p->size = size;
+  res = config_value_int(cfg_tags, "size", &p->size);
+  if (res < 0) {
+    p->size = 0;
+  }
+  free(cfg_tags);
   if (p->size) {
     p->elements = malloc(p->size * sizeof(struct peer));
   } else {
