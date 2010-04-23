@@ -276,13 +276,13 @@ int entry_dump(uint8_t *b, struct peer_cache *c, int i)
   return res;
 }
 
-struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2)
+struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize)
 {
   int n1, n2;
   struct peer_cache *new_cache;
   uint8_t *meta;
 
-  new_cache = cache_init(c1->cache_size, c1->metadata_size);
+  new_cache = cache_init(newsize, c1->metadata_size);
   if (new_cache == NULL) {
     return NULL;
   }
