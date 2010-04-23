@@ -118,8 +118,8 @@ int cache_del(struct peer_cache *c, struct nodeID *neighbour)
       c->current_size--;
       found = 1;
     }
-    if (found) {
-      c->entries[i] = c->entries[i+1];
+    if (found && (i < c->current_size)) {
+      c->entries[i] = c->entries[i + 1];
     }
   }
 
