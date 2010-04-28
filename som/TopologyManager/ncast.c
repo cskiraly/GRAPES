@@ -58,7 +58,7 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
   if (local_cache == NULL) {
     return -1;
   }
-  ncast_proto_init(myID, metadata, metadata_size);
+  topo_proto_init(myID, metadata, metadata_size);
   currtime = gettime();
   bootstrap = true;
 
@@ -67,7 +67,7 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
 
 int topChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
 {
-  if (ncast_proto_metadata_update(peer, metadata, metadata_size) <= 0) {
+  if (topo_proto_metadata_update(peer, metadata, metadata_size) <= 0) {
     return -1;
   }
 
@@ -79,13 +79,13 @@ int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
   if (cache_add(local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
   }
-  return ncast_query_peer(local_cache, neighbour);
+  return topo_query_peer(local_cache, neighbour);
 }
 
 int topParseData(const uint8_t *buff, int len)
 {
   if (len) {
-    const struct ncast_header *h = (const struct ncast_header *)buff;
+    const struct topo_header *h = (const struct topo_header *)buff;
     struct peer_cache *new, *remote_cache;
 
     if (h->protocol != MSG_TYPE_TOPOLOGY) {
@@ -97,9 +97,9 @@ int topParseData(const uint8_t *buff, int len)
     bootstrap = false;
 
     if (h->type == NCAST_QUERY) {
-      ncast_reply(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header), local_cache);
+      topo_reply(buff + sizeof(struct topo_header), len - sizeof(struct topo_header), local_cache);
     }
-    remote_cache = entries_undump(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header));
+    remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     new = merge_caches(local_cache, remote_cache, cache_size);
     cache_free(remote_cache);
     if (new != NULL) {
@@ -110,7 +110,7 @@ int topParseData(const uint8_t *buff, int len)
 
   if (time_to_send()) {
     cache_update(local_cache);
-    ncast_query(local_cache);
+    topo_query(local_cache);
   }
 
   return 0;

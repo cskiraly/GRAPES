@@ -1,4 +1,4 @@
-struct ncast_header {
+struct topo_header {
   uint8_t protocol;
   uint8_t type;
 } __attribute__((packed));
