@@ -118,12 +118,18 @@ int topParseData(const uint8_t *buff, int len)
 
 const struct nodeID **topGetNeighbourhood(int *n)
 {
-  static struct nodeID *r[MAX_PEERS];
+  static struct nodeID **r;
 
-  for (*n = 0; nodeid(local_cache, *n); (*n)++) {
+  r = realloc(r, cache_size * sizeof(struct nodeID *));
+  if (r == NULL) {
+    return NULL;
+  }
+
+  for (*n = 0; nodeid(local_cache, *n) && (*n < cache_size); (*n)++) {
     r[*n] = nodeid(local_cache, *n);
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
+
   return (const struct nodeID **)r;
 }
 
