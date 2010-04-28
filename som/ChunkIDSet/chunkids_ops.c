@@ -24,6 +24,7 @@ struct chunkID_set *chunkID_set_init(const char *config)
     return NULL;
   }
   p->n_elements = 0;
+  cfg_tags = config_parse(config);
   res = config_value_int(cfg_tags, "size", &p->size);
   if (res < 0) {
     p->size = 0;
