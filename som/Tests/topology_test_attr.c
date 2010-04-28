@@ -59,7 +59,7 @@ static void cmdline_parse(int argc, char *argv[])
         my_addr = iface_addr(optarg);
         break;
       case 'c':
-        sprintf(my_attr.colour, optarg);
+        strcpy(my_attr.colour, optarg);
         break;
       case 'S':
         my_attr.state = sleep;
@@ -86,7 +86,7 @@ static struct nodeID *init(void)
     return NULL;
   }
 
-  sprintf(my_attr.name, node_addr(myID));
+  strcpy(my_attr.name, node_addr(myID));
   topInit(myID, &my_attr, sizeof(struct peer_attributes), "");
 
   return myID;
