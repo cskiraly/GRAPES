@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 #include "net_helper.h"
-#include "nccache.h"
+#include "topocache.h"
 
 #define MAX_TIMESTAMP 5
 struct cache_entry {

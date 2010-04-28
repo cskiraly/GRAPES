@@ -14,8 +14,8 @@
 
 #include "net_helper.h"
 #include "topmanager.h"
-#include "nccache.h"
-#include "ncast_proto.h"
+#include "topocache.h"
+#include "topo_proto.h"
 #include "proto.h"
 #include "msg_types.h"
 
