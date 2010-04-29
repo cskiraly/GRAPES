@@ -440,7 +440,7 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 {
 	int size;
 	if (receivedBuffer[rIdx].id==NULL) {	//block till first message arrives
-		wait4data(local, NULL);
+		wait4data(local, NULL, NULL);
 	}
 
 	(*remote) = receivedBuffer[rIdx].id;
@@ -461,7 +461,7 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 }
 
 
-int wait4data(const struct nodeID *n, struct timeval *tout) {
+int wait4data(const struct nodeID *n, struct timeval *tout, fd_set *dummy) {
 
 //	fprintf(stderr,"Net-helper : Waiting for data to come...\n");
 	if (tout) {	//if tout==NULL, loop wait infinitely
