@@ -166,7 +166,7 @@ struct peer_cache *cache_init(int n, int metadata_size)
   res->cache_size = n;
   res->current_size = 0;
   res->entries = malloc(sizeof(struct cache_entry) * n);
-  if (res == NULL) {
+  if (res->entries == NULL) {
     free(res);
 
     return NULL;
