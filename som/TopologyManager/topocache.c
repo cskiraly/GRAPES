@@ -289,7 +289,7 @@ int entry_dump(uint8_t *b, struct peer_cache *c, int i)
   return res;
 }
 
-struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, ranking_function rank, struct peer_cache *me)
+struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, struct peer_cache *me)
 {
   int n1, n2;
   struct peer_cache *new_cache;
@@ -301,6 +301,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
   }
 
   meta = new_cache->metadata;
+  *source = 0;
   for (n1 = 0, n2 = 0; new_cache->current_size < new_cache->cache_size;) {
     if ((n1 == c1->current_size) && (n2 == c2->current_size)) {
       return new_cache;
@@ -313,6 +314,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
         }
         new_cache->entries[new_cache->current_size++] = c2->entries[n2];
         c2->entries[n2].id = NULL;
+        *source |= 0x02;
       }
       n2++;
     } else if (n2 == c2->current_size) {
@@ -323,6 +325,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
         }
         new_cache->entries[new_cache->current_size++] = c1->entries[n1];
         c1->entries[n1].id = NULL;
+        *source |= 0x01;
       }
       n1++;
     } else {
@@ -344,6 +347,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
           }
           new_cache->entries[new_cache->current_size++] = c1->entries[n1];
           c1->entries[n1].id = NULL;
+          *source |= 0x01;
         }
         n1++;
       } else {
@@ -354,6 +358,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
           }
           new_cache->entries[new_cache->current_size++] = c2->entries[n2];
           c2->entries[n2].id = NULL;
+          *source |= 0x02;
         }
         n2++;
       }
@@ -363,7 +368,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
   return new_cache;
 }
 
-struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize)
+struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source)
 {
-  return merge_caches_ranked(c1, c2, newsize, NULL, NULL);
+  return merge_caches_ranked(c1, c2, newsize, source, NULL, NULL);
 }

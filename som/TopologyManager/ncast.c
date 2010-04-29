@@ -84,6 +84,8 @@ int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 
 int topParseData(const uint8_t *buff, int len)
 {
+  int dummy;
+
   if (len) {
     const struct topo_header *h = (const struct topo_header *)buff;
     struct peer_cache *new, *remote_cache;
@@ -100,7 +102,7 @@ int topParseData(const uint8_t *buff, int len)
       topo_reply(buff + sizeof(struct topo_header), len - sizeof(struct topo_header), local_cache);
     }
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
-    new = merge_caches(local_cache, remote_cache, cache_size);
+    new = merge_caches(local_cache, remote_cache, cache_size, &dummy);
     cache_free(remote_cache);
     if (new != NULL) {
       cache_free(local_cache);
