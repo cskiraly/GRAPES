@@ -613,8 +613,8 @@ int nodeid_dump(uint8_t *b, const struct nodeID *s)
 
 struct nodeID *nodeid_undump(const uint8_t *b, int *len)
 {
-  socketID_handle h = malloc(SOCKETID_SIZE);
-  memset(h,0,SOCKETID_SIZE);
+  uint8_t sid[SOCKETID_SIZE];
+  socketID_handle h = (socketID_handle) sid;
   mlStringToSocketID((char *)b,h);
   *len = strlen((char*)b) + 1;
   return id_lookup(h,-1);
