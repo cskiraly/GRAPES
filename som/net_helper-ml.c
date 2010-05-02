@@ -267,7 +267,7 @@ void free_sending_buffer(int i)
  * @param arg
  */
 static void connReady_cb (int connectionID, void *arg) {
-
+	char mt;
 	msgData_cb *p;
 	p = (msgData_cb *)arg;
 	if (p == NULL) return;
@@ -276,7 +276,7 @@ static void connReady_cb (int connectionID, void *arg) {
 	    return;
 	}
 	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,NULL);
-/**/char mt = ((char*)sendingBuffer[p->bIdx])[0]; ++snd_counter;
+/**/	mt = ((char*)sendingBuffer[p->bIdx])[0]; ++snd_counter;
 	if (mt!=MSG_TYPE_TOPOLOGY &&
 		mt!=MSG_TYPE_CHUNK && mt!=MSG_TYPE_SIGNALLING) {
 			fprintf(stderr,"Net-helper ERROR! Sent message # %d of type %c and size %d\n",
@@ -317,9 +317,9 @@ static void connError_cb (int connectionID, void *arg) {
  */
 static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_params *arg) {
 // TODO: lacks a void* arg... moreover: recv_params has a msgtype, but there is also a msgtype explicit argument...
+	char str[SOCKETID_STRING_SIZE];
 //	fprintf(stderr, "Net-helper : called back with some news...\n");
 /**/ ++recv_counter;
-	char str[SOCKETID_STRING_SIZE];
 	if (arg->remote_socketID != NULL)
 		mlSocketIDToString(arg->remote_socketID,str,SOCKETID_STRING_SIZE);
 	else
@@ -356,7 +356,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
 	struct timeval tout = NH_ML_INIT_TIMEOUT;
-	int s;
+	int s, i;
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
 
@@ -368,7 +368,6 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 	me->connID = -10;	// dirty trick to spot later if the ml has called back ...
 	me->refcnt = 1;
 
-	int i;
 	for (i=0;i<NH_BUFFER_SIZE;i++) {
 		sendingBuffer[i] = NULL;
 		receivedBuffer[i].data = NULL;
@@ -436,6 +435,10 @@ void send_to_peer_cb(int fd, short event, void *arg)
  */
 int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
+	msgData_cb *p;
+	int current;
+	send_params params = {0,0,0,0};
+
 	// if buffer is full, discard the message and return an error flag
 	int index = next_S();
 	if (index<0) {
@@ -447,10 +450,10 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 	memset(sendingBuffer[index],0,buffer_size);
 	memcpy(sendingBuffer[index],buffer_ptr,buffer_size);
 	// free(buffer_ptr);
-	msgData_cb *p = malloc(sizeof(msgData_cb));
+	p = malloc(sizeof(msgData_cb));
 	p->bIdx = index; p->mSize = buffer_size; p->msgType = (unsigned char)buffer_ptr[0]; p->conn_cb_called = false; p->cancelled = false;
-	int current = p->bIdx;
-	send_params params = {0,0,0,0};
+	current = p->bIdx;
+
 	to->connID = mlOpenConnection(to->addr,&connReady_cb,p, params);
 	if (to->connID<0) {
 		free_sending_buffer(current);
