@@ -546,11 +546,13 @@ void nodeid_free(struct nodeID *n) {
 	if (n && (--(n->refcnt) == 1)) {
 		struct nodeID **npos;
 
+/*
 	//	mlCloseConnection(n->connID);
 		npos = id_lookup(n->addr);
 		*npos = NULL;
 		mlCloseSocket(n->addr);
 		free(n);
+*/
 	}
 }
 
