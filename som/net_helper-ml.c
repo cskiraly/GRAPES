@@ -79,64 +79,61 @@ static struct receivedB receivedBuffer[NH_BUFFER_SIZE];
 /**/ static int recv_counter =0; static int snd_counter =0;
 
 
-static struct nodeID *new_node(socketID_handle peer, int conn_id) {
-	 struct nodeID *res = malloc(sizeof(struct nodeID));
-	 if (!res)
+static void connReady_cb (int connectionID, void *arg);
+static struct nodeID *new_node(socketID_handle peer) {
+	send_params params = {0,0,0,0};
+	struct nodeID *res = malloc(sizeof(struct nodeID));
+	if (!res) {
+		 fprintf(stderr, "Net-helper : memory error\n");
 		 return NULL;
-	 memset(res, 0, sizeof(struct nodeID));
-	 res->addr = malloc(SOCKETID_SIZE);
-	 if (res->addr) {
-		 memset(res->addr, 0, SOCKETID_SIZE);
-		 memcpy(res->addr, peer ,SOCKETID_SIZE);
-		 //	remote->addrSize = SOCKETID_SIZE;
-		 //	remote->addrStringSize = SOCKETID_STRING_SIZE;
-		 res->connID = conn_id;
-		 res->refcnt = 1;
-	 }
-	 else {
-		 free (res);
-		 fprintf(stderr, "Net-helper : memory error while creating a new nodeID \n");
-		 return NULL;
-	 }
+	}
+	memset(res, 0, sizeof(struct nodeID));
 
-	 return res;
+	res->addr = malloc(SOCKETID_SIZE);
+	if (! res->addr) {
+		free (res);
+		fprintf(stderr, "Net-helper : memory error while creating a new nodeID \n");
+		return NULL;
+	}
+	memset(res->addr, 0, SOCKETID_SIZE);
+	memcpy(res->addr, peer ,SOCKETID_SIZE);
+
+	res->refcnt = 1;
+
+	res->connID = mlOpenConnection(peer, &connReady_cb, NULL, params);
+
+	return res;
 }
 
 
-static struct nodeID *id_lookup(socketID_handle target, int conn_id) {
+static struct nodeID **id_lookup(socketID_handle target) {
 
 	int i,here=-1;
 	for (i=0;i<lookup_curr;i++) {
 		if (lookup_array[i] == NULL) {
-			if (here < 0)
+			if (here < 0) {
 				here = i;
-		}
-		else if (!mlCompareSocketIDs(lookup_array[i]->addr,target)) {
-			return nodeid_dup(lookup_array[i]);
-		}
-		else {
-			if (lookup_array[i]->refcnt == 1) {
-				nodeid_free(lookup_array[i]);
-				lookup_array[i] = NULL;
-				if (here < 0)
-					here = i;
 			}
+		} else if (!mlCompareSocketIDs(lookup_array[i]->addr,target)) {
+			return &lookup_array[i];
 		}
 	}
 
-	if (here >= 0) {
-		lookup_array[here] = new_node(target,conn_id);
-		return nodeid_dup(lookup_array[here]);
+	if (here == -1) {
+		here = lookup_curr++;
 	}
 
-	if (lookup_curr == lookup_max) {
+	if (lookup_curr > lookup_max) {
 		lookup_max *= 2;
 		lookup_array = realloc(lookup_array,lookup_max*sizeof(struct nodeID*));
 	}
 
-	lookup_array[lookup_curr] = new_node(target,conn_id);
-	return nodeid_dup(lookup_array[lookup_curr++]);
+	lookup_array[here] = new_node(target);
+	return &lookup_array[here];
+}
 
+static struct nodeID *id_lookup_dup(socketID_handle target) {
+	return nodeid_dup(*id_lookup(target));
 }
 
 
@@ -200,7 +197,12 @@ static int next_S() {
 static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
 	switch (errorstatus) {
 	case 0:
-		//
+		me->addr = malloc(SOCKETID_SIZE);
+		if (! me->addr) {
+			fprintf(stderr, "Net-helper : memory error while creating my new nodeID \n");
+			return;
+		}
+
 		memcpy(me->addr,local_socketID,SOCKETID_SIZE);
 	//	me->addrSize = SOCKETID_SIZE;
 	//	me->addrStringSize = SOCKETID_STRING_SIZE;
@@ -338,7 +340,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 				return;
 			}
 			// creating a new sender nodedID
-			receivedBuffer[index].id = id_lookup(arg->remote_socketID, arg->connectionID);
+			receivedBuffer[index].id = id_lookup_dup(arg->remote_socketID);
 				receivedBuffer[index].data = realloc(receivedBuffer[index].data,buflen);
 				memset(receivedBuffer[index].data,0,buflen);
 				receivedBuffer[index].len = buflen;
@@ -363,12 +365,6 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 		return NULL;
 	}
 	memset(me,0,sizeof(nodeID));
-	me->addr = malloc(SOCKETID_SIZE);
-	if (me->addr == NULL) {
-		free(me);
-		return NULL;
-	}
-	memset(me->addr,0,SOCKETID_SIZE);
 	me->connID = -10;	// dirty trick to spot later if the ml has called back ...
 	me->refcnt = 1;
 
@@ -535,25 +531,24 @@ socketID_handle getRemoteSocketID(const char *ip, int port) {
 }
 
 struct nodeID *create_node(const char *rem_IP, int rem_port) {
-	struct nodeID *remote = malloc(sizeof(nodeID));
-	if (remote == NULL) {
-		return NULL;
-	}
-	remote->addr = getRemoteSocketID(rem_IP, rem_port);
-	send_params params = {0,0,0,0};
-	remote->connID = mlOpenConnection(remote->addr,&connReady_cb,NULL, params);
-	remote->refcnt = 1;
+	socketID_handle s;
+	struct nodeID *remote;
+
+	s = getRemoteSocketID(rem_IP, rem_port);
+	remote = id_lookup_dup(s);
+	free(s);
+
 	return remote;
 }
 
 // TODO: check why closing the connection is annoying for the ML
 void nodeid_free(struct nodeID *n) {
+	if (n && (--(n->refcnt) == 1)) {
+		struct nodeID **npos;
 
-//	mlCloseConnection(n->connID);
-//	mlCloseSocket(n->addr);
-//	free(n);
-	if (n && (--(n->refcnt) == 0)) {
 	//	mlCloseConnection(n->connID);
+		npos = id_lookup(n->addr);
+		*npos = NULL;
 		mlCloseSocket(n->addr);
 		free(n);
 	}
@@ -573,24 +568,6 @@ const char *node_addr(const struct nodeID *s)
 
 struct nodeID *nodeid_dup(struct nodeID *s)
 {
-//  struct nodeID *res;
-//
-//  res = malloc(sizeof(struct nodeID));
-//  if (res != NULL) {
-//	  res->addr = malloc(SOCKETID_SIZE);
-//	  if (res->addr != NULL) {
-//		 memcpy(res->addr, s->addr, SOCKETID_SIZE);
-//	//	 res->addrSize = SOCKETID_SIZE;
-//	//	 res->addrStringSize = SOCKETID_STRING_SIZE;
-//		 res->connID = s->connID;
-//	  }
-//	  else {
-//		free(res);
-//		res = NULL;
-//		fprintf(stderr,"Net-helper : Error while duplicating nodeID...\n");
-//	  }
-//  }
-//	return res;
 	s->refcnt++;
 	return s;
 }
@@ -617,5 +594,5 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len)
   socketID_handle h = (socketID_handle) sid;
   mlStringToSocketID((char *)b,h);
   *len = strlen((char*)b) + 1;
-  return id_lookup(h,-1);
+  return id_lookup_dup(h);
 }
