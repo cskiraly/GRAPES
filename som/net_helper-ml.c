@@ -61,7 +61,7 @@ typedef struct msgData_cb {
 } msgData_cb;
 
 static struct nodeID **lookup_array;
-static int lookup_max = 1000;
+static int lookup_max = NH_LOOKUP_SIZE;
 static int lookup_curr = 0;
 
 static nodeID *me; //TODO: is it possible to get rid of this (notwithstanding ml callback)??
