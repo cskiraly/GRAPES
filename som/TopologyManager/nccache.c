@@ -97,8 +97,8 @@ int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, 
     memmove(c->metadata + meta_size, c->metadata, c->current_size * meta_size);
     memcpy(c->metadata, meta, meta_size);
   }
-  for (i = 0; i < c->current_size; i++) {
-    c->entries[i + 1] = c->entries[i];
+  for (i = c->current_size; i > 0; i--) {
+    c->entries[i] = c->entries[i - 1];
   }
   c->entries[0].id = nodeid_dup(neighbour);
   c->entries[0].timestamp = 1;
