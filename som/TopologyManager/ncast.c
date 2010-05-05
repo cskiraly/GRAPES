@@ -19,7 +19,7 @@
 #include "proto.h"
 #include "msg_types.h"
 
-#define MAX_PEERS 30
+#define MAX_PEERS 10
 
 static uint64_t currtime;
 static int cache_size = MAX_PEERS;
