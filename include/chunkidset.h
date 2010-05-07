@@ -103,4 +103,8 @@ void chunkID_set_clear(struct chunkID_set *h, int size);
   */
 void chunkID_set_free(struct chunkID_set *h);
 
+int chunkID_set_get_earliest(const struct chunkID_set *h);
+
+int chunkID_set_get_latest(const struct chunkID_set *h);
+
 #endif	/* CHUNKIDSET_H */

@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <limits.h>
 
 #include "chunkids_private.h"
 #include "chunkidset.h"
@@ -77,6 +78,30 @@ int chunkID_set_check(const struct chunkID_set *h, int chunk_id)
   }
 
   return -1;
+}
+
+int chunkID_set_get_earliest(const struct chunkID_set *h)
+{
+  int i, min;
+
+  min = INT_MAX;
+  for (i = 0; i < h->n_elements; i++) {
+    min = (h->elements[i] < min) ? h->elements[i] : min;
+  }
+
+  return min;
+}
+
+int chunkID_set_get_latest(const struct chunkID_set *h)
+{
+  int i, max;
+
+  max = INT_MIN;
+  for (i = 0; i < h->n_elements; i++) {
+    max = (h->elements[i] > max) ? h->elements[i] : max;
+  }
+
+  return max;
 }
 
 int chunkID_set_union(struct chunkID_set *h, struct chunkID_set *a)
