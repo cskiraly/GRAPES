@@ -10,25 +10,38 @@
 
 #include "chunkids_private.h"
 #include "chunkidset.h"
+#include "config.h"
 
 #define DEFAULT_SIZE_INCREMENT 32
 
-struct chunkID_set *chunkID_set_init(int size)
+struct chunkID_set *chunkID_set_init(const char *config)
 {
   struct chunkID_set *p;
+  struct tag *cfg_tags;
+  int res;
 
   p = malloc(sizeof(struct chunkID_set));
   if (p == NULL) {
     return NULL;
   }
   p->n_elements = 0;
-  p->size = size;
+  cfg_tags = config_parse(config);
+  res = config_value_int(cfg_tags, "size", &p->size);
+  if (res < 0) {
+    p->size = 0;
+  }
   if (p->size) {
     p->elements = malloc(p->size * sizeof(int));
   } else {
     p->elements = NULL;
   }
-
+  res = config_value_int(cfg_tags, "type", &p->type);
+  if (res < 0) {
+    p->type = CIST_PRIORITY;
+  }
+  if(!p->type)
+      p->type = CIST_PRIORITY;
+  free(cfg_tags);
   return p;
 }
 
