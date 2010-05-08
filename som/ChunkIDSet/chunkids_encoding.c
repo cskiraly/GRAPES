@@ -114,7 +114,7 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
             // uint8_t bitmap;
             int base;
             int byte_cnt;
-            byte_cnt = size / 8 + (size % 8) ? 1 : 0;
+            byte_cnt = size / 8 + (size % 8 ? 1 : 0);
             if (buff_len < 16 + byte_cnt + *meta_len) {
                 return NULL;
             }
