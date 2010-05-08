@@ -43,40 +43,39 @@ static void print_set(struct chunkID_set *c)
 
 static void populate(struct chunkID_set *cset)
 {
-  add_chunk(cset, 2);
-  add_chunk(cset, 1);
-  add_chunk(cset, 3);
-  add_chunk(cset, 5);
-  add_chunk(cset, 7);
-  add_chunk(cset, 11);
+  int i,c;
+  for(i = 1; i < 400; i+=3){
+    add_chunk(cset, (i%140+ i*5) );
+  }  
 }
 
 static void simple_test(void)
 {
   struct chunkID_set *cset;
-
-  cset = chunkID_set_init(0);
+  char config[32];
+  sprintf(config,"size=%d",10);
+  cset = chunkID_set_init(config);
   printf("Chunk ID Set initialised: size is %d\n", chunkID_set_size(cset));
   populate(cset);
   print_set(cset);
-
   check_chunk(cset, 4);
   check_chunk(cset, 2);
   check_chunk(cset, 3);
   check_chunk(cset, 9);
-
   chunkID_set_clear(cset, 0);
   free(cset);
 }
 
-static void encoding_test(void)
+static void encoding_test(int mode)
 {
   struct chunkID_set *cset, *cset1;
-  static uint8_t buff[1024];
+  static uint8_t buff[2048];
   int res, meta_len;
   void *meta;
 
-  cset = chunkID_set_init(0);
+  char config[32];
+  sprintf(config,"type=%d", mode);
+  cset = chunkID_set_init(config);
   populate(cset);
   res = encodeChunkSignaling(cset, NULL, 0, buff, sizeof(buff));
   printf("Encoding Result: %d\n", res);
@@ -92,7 +91,8 @@ static void encoding_test(void)
 int main(int argc, char *argv[])
 {
   simple_test();
-  encoding_test();
+  encoding_test(CIST_PRIORITY);
+  encoding_test(CIST_BITMAP);
 
   return 0;
 }
