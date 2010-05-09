@@ -62,9 +62,9 @@ int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta
                 buff[16 + (h->elements[i] - c_min) / 8] |= 1 << ((h->elements[i] - c_min) % 8);
             }
             if (meta_len) {
-                memcpy(buff + 16 + elements * 4, meta, meta_len);
+                memcpy(buff + 16 + elements, meta, meta_len);
             }
-            return 16 + elements * 4 + meta_len;
+            return 16 + elements + meta_len;
         }
         case CIST_PRIORITY:
         default:
