@@ -43,8 +43,8 @@ int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta
         {
             int elements;
             uint32_t c_min, c_max;
-            c_min = c_max = h->elements[i++];
-            for (; i < h->n_elements; i++) {
+            c_min = c_max = h->n_elements ? h->elements[0] : 0;
+            for (i = 1; i < h->n_elements; i++) {
                 if (h->elements[i] < c_min)
                     c_min = h->elements[i];
                 else if (h->elements[i] > c_max)
