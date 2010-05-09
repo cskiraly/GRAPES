@@ -52,7 +52,7 @@ static struct nodeID *init(void)
 
     return NULL;
   }
-  chunkInit(myID);
+  chunkDeliveryInit(myID);
 
   return myID;
 }
