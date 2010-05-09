@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <limits.h>
+#include <assert.h>
 
 #include "chunkids_private.h"
 #include "chunkidset.h"
@@ -27,7 +28,7 @@ struct chunkID_set *chunkID_set_init(const char *config)
   p->n_elements = 0;
   cfg_tags = config_parse(config);
   res = config_value_int(cfg_tags, "size", &p->size);
-  if (res < 0) {
+  if (!res) {
     p->size = 0;
   }
   if (p->size) {
@@ -36,7 +37,7 @@ struct chunkID_set *chunkID_set_init(const char *config)
     p->elements = NULL;
   }
   res = config_value_int(cfg_tags, "type", &p->type);
-  if (res < 0) {
+  if (!res) {
     p->type = CIST_PRIORITY;
   }
   if(!p->type)
