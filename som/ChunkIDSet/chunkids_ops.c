@@ -40,8 +40,7 @@ struct chunkID_set *chunkID_set_init(const char *config)
   if (!res) {
     p->type = CIST_PRIORITY;
   }
-  if(!p->type)
-      p->type = CIST_PRIORITY;
+  assert(p->type == CIST_PRIORITY || p->type == CIST_BITMAP);
   free(cfg_tags);
   return p;
 }
