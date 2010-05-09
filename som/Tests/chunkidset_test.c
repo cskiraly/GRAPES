@@ -45,7 +45,7 @@ static void populate(struct chunkID_set *cset)
 {
   int i,c;
   for(i = 1; i < 400; i+=3){
-    add_chunk(cset, (i%140+ i*5) );
+    add_chunk(cset, (i%140) );
   }  
 }
 
