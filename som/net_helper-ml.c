@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 
 #include "net_helper.h"
@@ -37,7 +38,8 @@ struct event_base *base;
 #define NH_ML_INIT_TIMEOUT {1, 0}
 
 static int sIdx = 0;
-static int rIdx = 0;
+static int rIdxML = 0;	//reveive from ML to this buffer position
+static int rIdxUp = 0;	//hand up to layer above at this buffer position
 
 typedef struct nodeID {
 	socketID_handle addr;
@@ -142,25 +144,14 @@ static struct nodeID *id_lookup_dup(socketID_handle target) {
  * @return the index of a free slot in the received msgs buffer, -1 if no free slot available.
  */
 static int next_R() {
-	const int size = 1024;
-	if (receivedBuffer[rIdx].data==NULL) {
-		receivedBuffer[rIdx].data = malloc(size);
+	if (receivedBuffer[rIdxML].data==NULL) {
+		int ret = rIdxML;
+		rIdxML = (rIdxML+1)%NH_BUFFER_SIZE;
+		return ret;
+	} else {
+		//TODO: handle receive overload situation!
+		return -1;
 	}
-	else {
-		int count;
-		for (count=0;count<NH_BUFFER_SIZE;count++) {
-			rIdx = (++rIdx)%NH_BUFFER_SIZE;
-			if (receivedBuffer[rIdx].data==NULL)
-				break;
-		}
-		if (count==NH_BUFFER_SIZE)
-			return -1;
-		else {
-			receivedBuffer[rIdx].data = malloc(size);
-		}
-	}
-	memset(receivedBuffer[rIdx].data,0,size);
-	return rIdx;
 }
 
 /**
@@ -333,20 +324,19 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 	//	fprintf(stderr, "Net-helper : message arrived from %s\n",str);
 		// buffering the received message only if possible, otherwise ignore it...
 		int index = next_R();
-		if (index >=0) {
-		//	receivedBuffer[index][0] = malloc(buflen);
+		if (index<0) {
+			fprintf(stderr,"Net-helper: receive buffer full\n ");
+			return;
+		} else {
+			receivedBuffer[index].data = malloc(buflen);
 			if (receivedBuffer[index].data == NULL) {
-				fprintf(stderr, "Net-helper : memory error while creating a new message buffer \n");
+				fprintf(stderr,"Net-helper: memory full, can't receive!\n ");
 				return;
 			}
-			// creating a new sender nodedID
+			receivedBuffer[index].len = buflen;
+			memcpy(receivedBuffer[index].data,buffer,buflen);
+			  // save the socketID of the sender
 			receivedBuffer[index].id = id_lookup_dup(arg->remote_socketID);
-				receivedBuffer[index].data = realloc(receivedBuffer[index].data,buflen);
-				memset(receivedBuffer[index].data,0,buflen);
-				receivedBuffer[index].len = buflen;
-				//*(receivedBuffer[index][0]) = buflen;
-				memcpy(receivedBuffer[index].data,buffer,buflen);
-				  // get the socketID of the sender
 		}
   }
 //	event_base_loopbreak(base);
@@ -481,21 +471,25 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
 {
 	int size;
-	if (receivedBuffer[rIdx].id==NULL) {	//block till first message arrives
+	if (receivedBuffer[rIdxUp].data==NULL) {	//block till first message arrives
 		wait4data(local, NULL, NULL);
 	}
 
-	(*remote) = receivedBuffer[rIdx].id;
+	assert(receivedBuffer[rIdxUp].data && receivedBuffer[rIdxUp].id);
+
+	(*remote) = receivedBuffer[rIdxUp].id;
 	// retrieve a msg from the buffer
-	size = receivedBuffer[rIdx].len;
+	size = receivedBuffer[rIdxUp].len;
 	if (size>buffer_size) {
 		fprintf(stderr, "Net-helper : recv_from_peer: buffer too small (size:%d > buffer_size: %d)!\n",size,buffer_size);
 		return -1;
 	}
-	memcpy(buffer_ptr, receivedBuffer[rIdx].data, size);
-	free(receivedBuffer[rIdx].data);
-	receivedBuffer[rIdx].data = NULL;
-	receivedBuffer[rIdx].id = NULL;
+	memcpy(buffer_ptr, receivedBuffer[rIdxUp].data, size);
+	free(receivedBuffer[rIdxUp].data);
+	receivedBuffer[rIdxUp].data = NULL;
+	receivedBuffer[rIdxUp].id = NULL;
+
+	rIdxUp = (rIdxUp+1)%NH_BUFFER_SIZE;
 
 //	fprintf(stderr, "Net-helper : I've got mail!!!\n");
 
@@ -509,14 +503,14 @@ int wait4data(const struct nodeID *n, struct timeval *tout, fd_set *dummy) {
 	if (tout) {	//if tout==NULL, loop wait infinitely
 		event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, tout);
 	}
-	while(receivedBuffer[rIdx].data==NULL && timeoutFired==0) {
+	while(receivedBuffer[rIdxUp].data==NULL && timeoutFired==0) {
 	//	event_base_dispatch(base);
 		event_base_loop(base,EVLOOP_ONCE);
 	}
 	timeoutFired = 0;
 //	fprintf(stderr,"Back from eventlib loop.\n");
 
-	if (receivedBuffer[rIdx].data!=NULL)
+	if (receivedBuffer[rIdxUp].data!=NULL)
 		return 1;
 	else
 		return 0;
