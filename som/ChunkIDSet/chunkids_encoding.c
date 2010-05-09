@@ -123,11 +123,6 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
                 if (buff[16 + (i / 8)] & 1 << (i % 8))
                     h->elements[h->n_elements++] = base + i;
             }
-            if (!realloc(h->elements, h->n_elements * sizeof (int))) {
-                fprintf(stderr, "Error in decoding chunkid set while realloc.\n");
-                return NULL;
-            }
-            h->size = h->n_elements;
             if (*meta_len) {
                 *meta = malloc(*meta_len);
                 if (*meta != NULL) {
