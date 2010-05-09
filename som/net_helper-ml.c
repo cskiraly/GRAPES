@@ -159,21 +159,15 @@ static int next_R() {
  * @return the index of a free slot in the sending msgs buffer, -1 if no free slot available.
  */
 static int next_S() {
-	const int size = 1024;
-	if (sendingBuffer[sIdx]==NULL) {
-		sendingBuffer[sIdx] = malloc(size);
-	}
-	else {
+	if (sendingBuffer[sIdx]) {
 		int count;
 		for (count=0;count<NH_BUFFER_SIZE;count++) {
-			sIdx = (++sIdx)%NH_BUFFER_SIZE;
+			sIdx = (sIdx+1)%NH_BUFFER_SIZE;
 			if (sendingBuffer[sIdx]==NULL)
 				break;
 		}
-		if (count==NH_BUFFER_SIZE)
+		if (count==NH_BUFFER_SIZE) {
 			return -1;
-		else {
-			sendingBuffer[sIdx] = malloc(size);
 		}
 	}
 	return sIdx;
@@ -433,10 +427,14 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 	int index = next_S();
 	if (index<0) {
 		// free(buffer_ptr);
-		fprintf(stderr,"Net-helper: buffer full\n ");
+		fprintf(stderr,"Net-helper: send buffer full\n ");
 		return -1;
 	}
-	sendingBuffer[index] = realloc(sendingBuffer[index],buffer_size);
+	sendingBuffer[index] = malloc(buffer_size);
+	if (! sendingBuffer[index]){
+		fprintf(stderr,"Net-helper: memory full, can't send!\n ");
+		return -1;
+	}
 	memset(sendingBuffer[index],0,buffer_size);
 	memcpy(sendingBuffer[index],buffer_ptr,buffer_size);
 	// free(buffer_ptr);
