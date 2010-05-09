@@ -367,8 +367,9 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 	}
 
 #ifdef MONL
-	eventbase = base;
+{
 	void *repoclient;
+	eventbase = base;
 
 	// Initialize logging
 	grapesInitLog(DCLOG_WARNING, NULL, NULL);
@@ -377,6 +378,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 	repoclient = repOpen("repository.napa-wine.eu:9832",60);
 	if (repoclient == NULL) fatal("Unable to initialize repoclient");
 	monInit(base, repoclient);
+}
 #endif
 
 	while (me->connID<-1) {
@@ -539,9 +541,8 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 // TODO: check why closing the connection is annoying for the ML
 void nodeid_free(struct nodeID *n) {
 	if (n && (--(n->refcnt) == 1)) {
-		struct nodeID **npos;
-
 /*
+		struct nodeID **npos;
 	//	mlCloseConnection(n->connID);
 		npos = id_lookup(n->addr);
 		*npos = NULL;
