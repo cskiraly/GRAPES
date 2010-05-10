@@ -123,7 +123,7 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
                 return NULL;
             }
             base = int_rcpy(buff + 12);
-            for (i = 0; i < size; i++) {
+            for (i = size - 1; i >= 0; i--) {
                 if (buff[16 + (i / 8)] & 1 << (i % 8))
                     h->elements[h->n_elements++] = base + i;
             }
