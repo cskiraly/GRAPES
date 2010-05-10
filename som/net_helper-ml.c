@@ -425,6 +425,11 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 	int current;
 	send_params params = {0,0,0,0};
 
+	if (buffer_size <= 0) {
+		fprintf(stderr,"Net-helper: message size problematic: %d\n", buffer_size);
+		return buffer_size;
+	}
+
 	// if buffer is full, discard the message and return an error flag
 	int index = next_S();
 	if (index<0) {
