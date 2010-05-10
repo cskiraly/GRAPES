@@ -35,10 +35,13 @@ static inline int int_rcpy(const uint8_t *p)
 int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta_len, uint8_t *buff, int buff_len)
 {
     int i;
+    int encoding;
     uint32_t type_length;
     int_cpy(buff + 4, 0);
     int_cpy(buff + 8, meta_len);
-    switch (h->type) {
+
+    encoding = h->n_elements ? h->type : CIST_PRIORITY;	//bitmap can't represent empty set.
+    switch (encoding) {
         case CIST_BITMAP:
         {
             int elements;
@@ -54,10 +57,11 @@ int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta
             type_length = elements | (h->type << ((sizeof (h->n_elements) - 1)*8));
             int_cpy(buff, type_length);
             elements = elements / 8 + (elements % 8 ? 1 : 0);
-            if (buff_len < (elements * 4) + 16 + meta_len) {
+            if (buff_len < elements + 16 + meta_len) {
                 return -1;
             }
             int_cpy(buff + 12, c_min); //first value in the bitmap, i.e., base value
+            memset(buff+16, 0, elements);
             for (i = 0; i < h->n_elements; i++) {
                 buff[16 + (h->elements[i] - c_min) / 8] |= 1 << ((h->elements[i] - c_min) % 8);
             }
