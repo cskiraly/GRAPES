@@ -29,15 +29,21 @@ void selectBestIndexes(double *weights,size_t weights_len,int *bests,size_t *bes
   for (e=0; e<weights_len; e++){
     //find insert position
     int i;
+    int p_min = 0;
+    int p;
     for (i=0; i < s; i++) {
+      if (weights[e] < weights[bests[i]]) p_min = i+1;
       if (weights[e] > weights[bests[i]]) break;
     }
 
-    if (i<s_max) {
-      memmove(&bests[i+1], &bests[i], sizeof(int)*(s_max-i-1)); //shift later ones
+    //randomize position between equals
+    p = p_min + (i-p_min) ? (rand() % (i-p_min)) : 0 ;
+
+    if (p<s_max) {
+      memmove(&bests[p+1], &bests[p], sizeof(int)*(s_max-p-1)); //shift later ones
       s = MIN(s+1,s_max);
       //put new one in the list
-      bests[i]=e;
+      bests[p]=e;
     }
   }
 
