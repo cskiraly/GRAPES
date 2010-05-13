@@ -15,7 +15,7 @@
   * peer and chunk identifiers used for scheduling
   */
 typedef struct nodeID *schedPeerID ;
-typedef struct chunk* schedChunkID ;
+typedef int schedChunkID ;
 
 /**
   * peer-chunk pair, the "atomic unit" of scheduling
