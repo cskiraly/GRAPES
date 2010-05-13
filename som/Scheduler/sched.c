@@ -133,14 +133,14 @@ void selectWithOrdering(SchedOrdering ordering, size_t size, unsigned char *base
 /**
   * Select best N of K peers with the given ordering method
   */
-void selectPeers(SchedOrdering ordering, struct peer **peers, size_t peers_len, peerEvaluateFunction peerevaluate, struct peer **selected, size_t *selected_len ){
+void selectPeers(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, peerEvaluateFunction peerevaluate, schedPeerID *selected, size_t *selected_len ){
   selectWithOrdering(ordering, sizeof(peers[0]), (void*)peers, peers_len, (evaluateFunction)peerevaluate, (void*)selected, selected_len);
 }
 
 /**
   * Select best N of K chunks with the given ordering method
   */
-void selectChunks(SchedOrdering ordering, struct chunk **chunks, size_t chunks_len, chunkEvaluateFunction chunkevaluate, struct chunk **selected, size_t *selected_len ){
+void selectChunks(SchedOrdering ordering, schedChunkID *chunks, size_t chunks_len, chunkEvaluateFunction chunkevaluate, schedChunkID *selected, size_t *selected_len ){
   selectWithOrdering(ordering, sizeof(chunks[0]), (void*)chunks,chunks_len, (evaluateFunction)chunkevaluate, (void*)selected, selected_len);
 }
 
@@ -155,8 +155,8 @@ void selectPairs(SchedOrdering ordering, struct PeerChunk *pairs, size_t pairs_l
 /**
   * Filter a list of peers. Include a peer if the filter function is true with at least one of the given chunks
   */
-void filterPeers2(struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len,
-                     struct peer **filteredpeers, size_t *filtered_len,	//out, inout
+void filterPeers2(schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len,
+                     schedPeerID *filteredpeers, size_t *filtered_len,	//out, inout
                      filterFunction filter){
   int p,c;
   int f=0;
@@ -175,8 +175,8 @@ void filterPeers2(struct peer **peers, size_t peers_len, struct chunk **chunks, 
 /**
   * Filter a list of chunks. Include a chunk if the filter function is true with at least one of the given peers
   */
-void filterChunks2(struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len,
-                     struct chunk **filtered, size_t *filtered_len,	//out, inout
+void filterChunks2(schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len,
+                     schedChunkID *filtered, size_t *filtered_len,	//out, inout
                      filterFunction filter){
   int p,c;
   int f=0;
@@ -210,26 +210,26 @@ void filterPairs(struct PeerChunk *pairs, size_t *pairs_len,
 /**
   * Select at most N of K peers, among those where filter is true with at least one of the chunks.
   */
-void selectPeersForChunks(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
-                     struct peer **selected, size_t *selected_len,	//out, inout
+void selectPeersForChunks(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
+                     schedPeerID *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      peerEvaluateFunction evaluate){
 
   size_t filtered_len=peers_len;
-  struct peer *filtered[filtered_len];
+  schedPeerID filtered[filtered_len];
 
   filterPeers2(peers, peers_len, chunks,chunks_len, filtered, &filtered_len, filter);
 
   selectPeers(ordering, filtered, filtered_len, evaluate, selected, selected_len);
 }
 
-void selectChunksForPeers(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
-                     struct chunk **selected, size_t *selected_len,	//out, inout
+void selectChunksForPeers(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
+                     schedChunkID *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      chunkEvaluateFunction evaluate){
 
   size_t filtered_len=chunks_len;
-  struct chunk *filtered[filtered_len];
+  schedChunkID filtered[filtered_len];
 
   filterChunks2(peers, peers_len, chunks,chunks_len, filtered, &filtered_len, filter);
 
@@ -237,7 +237,7 @@ void selectChunksForPeers(SchedOrdering ordering, struct peer **peers, size_t pe
 }
 
 
-void toPairsPeerFirst(struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void toPairsPeerFirst(schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *pairs, size_t *pairs_len) {	//out, inout
   size_t p,c;
   size_t i=0;
@@ -251,7 +251,7 @@ void toPairsPeerFirst(struct peer **peers, size_t peers_len, struct chunk **chun
   *pairs_len=i;
 }
 
-void toPairsChunkFirst(struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void toPairsChunkFirst(schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *pairs, size_t *pairs_len) {	//out, inout
   size_t p,c;
   size_t i=0;
@@ -265,7 +265,7 @@ void toPairsChunkFirst(struct peer **peers, size_t peers_len, struct chunk **chu
   *pairs_len=i;
 }
 
-void toPairs(struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void toPairs(schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *pairs, size_t *pairs_len)	//out, inout
 {
   toPairsChunkFirst(peers, peers_len, chunks, chunks_len, pairs, pairs_len);
@@ -273,37 +273,37 @@ void toPairs(struct peer **peers, size_t peers_len, struct chunk **chunks, size_
 
 /*----------------- scheduler_la implementations --------------*/
 
-void schedSelectPeerFirst(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void schedSelectPeerFirst(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      peerEvaluateFunction peerevaluate, chunkEvaluateFunction chunkevaluate){
 
   size_t p_len=1;
-  struct peer *p[p_len];
+  schedPeerID p[p_len];
   size_t c_len=*selected_len;
-  struct chunk *c[c_len];
+  schedChunkID c[c_len];
   selectPeersForChunks(ordering, peers, peers_len, chunks, chunks_len, p, &p_len, filter, peerevaluate);
   selectChunksForPeers(ordering, p, p_len, chunks, chunks_len, c, &c_len, filter, chunkevaluate);
 
   toPairsPeerFirst(p,p_len,c,c_len,selected,selected_len);
 }
 
-void schedSelectChunkFirst(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void schedSelectChunkFirst(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      peerEvaluateFunction peerevaluate, chunkEvaluateFunction chunkevaluate){
 
   size_t p_len=*selected_len;
-  struct peer *p[p_len];
+  schedPeerID p[p_len];
   size_t c_len=1;
-  struct chunk *c[c_len];
+  schedChunkID c[c_len];
   selectChunksForPeers(ordering, peers, peers_len, chunks, chunks_len, c, &c_len, filter, chunkevaluate);
   selectPeersForChunks(ordering, peers, peers_len, c, c_len, p, &p_len, filter, peerevaluate);
 
   toPairsChunkFirst(p,p_len,c,c_len,selected,selected_len);
 }
 
-void schedSelectHybrid(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void schedSelectHybrid(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      pairEvaluateFunction pairevaluate)
@@ -328,7 +328,7 @@ double combinedWeight(struct PeerChunk* pc){
   * Convenience function for combining peer and chunk weights
   * not thread safe!
   */
-void schedSelectComposed(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void schedSelectComposed(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      peerEvaluateFunction peerevaluate, chunkEvaluateFunction chunkevaluate, double2op weightcombine)
