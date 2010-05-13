@@ -14,7 +14,7 @@
 /**
   * peer and chunk identifiers used for scheduling
   */
-typedef struct peer* schedPeerID ;
+typedef struct nodeID *schedPeerID ;
 typedef struct chunk* schedChunkID ;
 
 /**
