@@ -1,6 +1,6 @@
 BASE = ../..
 
-OBJS = sched.o sched_random.o
+OBJS = sched.o
 
 all: libsched.a
 
