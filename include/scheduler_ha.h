@@ -45,7 +45,7 @@ int schedInit(char *cfg);
   @param[out] selected ordered list of peer-chunk pairs selected
   @param[in,out] selected_len in: maximum number of selectable pairs, also defines the allocated space for selected. out: length of the selected list
 */
-void schedSelectPushList(struct peer **peers, int peers_len, struct chunk **chunks, int chunks_len, 	//in
+void schedSelectPushList(schedPeerID  *peers, int peers_len, schedChunkID  *chunks, int chunks_len, 	//in
                      struct PeerChunk *selected, int *selected_len);	//out, inout
 
 /**
@@ -62,7 +62,7 @@ void schedSelectPushList(struct peer **peers, int peers_len, struct chunk **chun
   @param[out] selected ordered list of peer-chunk pairs selected
   @param[in,out] selected_len in: maximum number of selectable pairs, also defines the allocated space for selected. out: length of the selected list
 */
-void schedSelectRequestList(struct peer **peers, int peers_len, struct chunk **chunks, int chunks_len, 	//in
+void schedSelectRequestList(schedPeerID  *peers, int peers_len, schedChunkID  *chunks, int chunks_len, 	//in
                      struct PeerChunk *selected, int *selected_len);	//out, inout
 
 
@@ -79,7 +79,7 @@ void schedSelectRequestList(struct peer **peers, int peers_len, struct chunk **c
   @param[out] selected ordered list of peer-chunk pairs selected
   @param[in,out] selected_len in: maximum number of OCselectable pairs, also defines the allocated space for selected. out: length of the selected list
 */
-void schedSelectOfferList(struct peer **peers, int peers_len, struct chunk **chunks, int chunks_len, 	//in
+void schedSelectOfferList(schedPeerID  *peers, int peers_len, schedChunkID  *chunks, int chunks_len, 	//in
                      struct PeerChunk *selected, int *selected_len);	//out, inout
 
 /**
@@ -95,7 +95,7 @@ void schedSelectOfferList(struct peer **peers, int peers_len, struct chunk **chu
   @param[out] selected ordered list of peer-chunk pairs selected
   @param[in,out] selected_len in: maximum number of selectable pairs, also defines the allocated space for selected. out: length of the selected list
 */
-void schedSelectProposeList(struct peer **peers, int peers_len, struct chunk **chunks, int chunks_len, 	//in
+void schedSelectProposeList(schedPeerID  *peers, int peers_len, schedChunkID  *chunks, int chunks_len, 	//in
                      struct PeerChunk *selected, int *selected_len);	//out, inout
 
 /**
@@ -110,7 +110,7 @@ void schedSelectProposeList(struct peer **peers, int peers_len, struct chunk **c
   @param[out] selected ordered list of peer-chunk pairs selected
   @param[in,out] selected_len in: maximum number of selectable pairs, also defines the allocated space for selected. out: length of the selected list
 */
-void schedSelectAcceptList(struct peer **peers, int peers_len, struct chunk **chunks, int chunks_len, 	//in
+void schedSelectAcceptList(schedPeerID  *peers, int peers_len, schedChunkID  *chunks, int chunks_len, 	//in
                      struct PeerChunk *selected, int *selected_len);	//out, inout
 
 #endif /* SCHEDULER_LA_H */

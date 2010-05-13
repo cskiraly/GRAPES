@@ -28,19 +28,19 @@ typedef enum {SCHED_BEST,SCHED_WEIGHTED} SchedOrdering;
   * Prototype for filter functions that select useful peer-chunk combinations
   * @returns true if the combination is valid, false otherwise
   */
-typedef int (*filterFunction)(struct peer *,struct chunk *);
+typedef int (*filterFunction)(schedPeerID ,schedChunkID );
 
 /**
   * Prototype for function assigning a weigth to a peer
   * @returns the weight associated to the peer
   */
-typedef double (*peerEvaluateFunction)(struct peer **);
+typedef double (*peerEvaluateFunction)(schedPeerID*);
 
 /**
   * Prototype for function assigning a weigth to a given chunk
   * @returns the weight associated to the chunk
   */
-typedef double (*chunkEvaluateFunction)(struct chunk **);
+typedef double (*chunkEvaluateFunction)(schedChunkID*);
 
 /**
   * Prototype for function assigning a weigth to a peer-chunk pair
@@ -71,8 +71,8 @@ typedef double (*double2op)(double,double);
   @param [in] filter only peers that satisfy the filter condition can be selected
   @param [in] peerevaluate peers are selected based on the weight assigned by this evaluator function
  */
-void schedSelectPeers(SchedOrdering ordering, struct peer **peers, int peers_len, struct chunk **chunks, int chunks_len, 	//in
-                     struct peer **selected, int *selected_len,	//out, inout
+void schedSelectPeers(SchedOrdering ordering, schedPeerID  *peers, int peers_len, schedChunkID  *chunks, int chunks_len, 	//in
+                     schedPeerID  *selected, int *selected_len,	//out, inout
                      filterFunction filter,
                      peerEvaluateFunction peerevaluate);
 
@@ -83,8 +83,8 @@ void schedSelectPeers(SchedOrdering ordering, struct peer **peers, int peers_len
   Otherwise, if peers_len>0, only those chunks will be selected that could be interesting for at least one of the given peers.
 
  */
-void schedSelectChunks(SchedOrdering ordering, struct peer **peers, int peers_len, struct chunk **chunks, int chunks_len, 	//in
-                     struct chunk **selected, int *selected_len,	//out, inout
+void schedSelectChunks(SchedOrdering ordering, schedPeerID  *peers, int peers_len, schedChunkID  *chunks, int chunks_len, 	//in
+                     schedChunkID  *selected, int *selected_len,	//out, inout
                      filterFunction filter,
                      chunkEvaluateFunction chunkevaluate);
 
@@ -96,7 +96,7 @@ void schedSelectChunks(SchedOrdering ordering, struct peer **peers, int peers_le
   First a peer is selected based on weights assigned by the peerevaluate function.
   Then, maximum selected_len chunks are selected for the given peer based on weights assigned by the chunkevaluate function.
   */
-void schedSelectPeerFirst(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void schedSelectPeerFirst(SchedOrdering ordering, schedPeerID  *peers, size_t peers_len, schedChunkID  *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      peerEvaluateFunction peerevaluate, chunkEvaluateFunction chunkevaluate);
@@ -109,7 +109,7 @@ void schedSelectPeerFirst(SchedOrdering ordering, struct peer **peers, size_t pe
   First a chunk is selected based on weights assigned by the chunkevaluate function.
   Then, maximum selected_len peers are selected for the given chunk based on weights assigned by the peerevaluate function.
   */
-void schedSelectChunkFirst(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void schedSelectChunkFirst(SchedOrdering ordering, schedPeerID  *peers, size_t peers_len, schedChunkID  *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      peerEvaluateFunction peerevaluate, chunkEvaluateFunction chunkevaluate);
@@ -124,7 +124,7 @@ void schedSelectChunkFirst(SchedOrdering ordering, struct peer **peers, size_t p
   @param [in] peerevaluate function to assign a weight to each peer
   @param [in] weightcombine operation to combine peer and chunk weight into one weight
   */
-void schedSelectComposed(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void schedSelectComposed(SchedOrdering ordering, schedPeerID  *peers, size_t peers_len, schedChunkID  *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      peerEvaluateFunction peerevaluate, chunkEvaluateFunction chunkevaluate, double2op weightcombine);
@@ -137,7 +137,7 @@ void schedSelectComposed(SchedOrdering ordering, struct peer **peers, size_t pee
   A maximum of selected_len peer-chunk pairs are selected based on the given evaluation function.
   @param [in] pairevaluate function to assign a weight to each peer-chunk pair
   */
-void schedSelectHybrid(SchedOrdering ordering, struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void schedSelectHybrid(SchedOrdering ordering, schedPeerID  *peers, size_t peers_len, schedChunkID  *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      pairEvaluateFunction pairevaluate);

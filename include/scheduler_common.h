@@ -9,18 +9,26 @@
 
 
 #include <stdlib.h>
+
+
+/**
+  * peer and chunk identifiers used for scheduling
+  */
+typedef struct peer* schedPeerID ;
+typedef struct chunk* schedChunkID ;
+
 /**
   * peer-chunk pair, the "atomic unit" of scheduling
   */
 struct PeerChunk {
-    struct peer* peer;
-    struct chunk* chunk;
+    schedPeerID  peer;
+    schedChunkID  chunk;
 };
 
 /**
   * Comodity function to convert peer and chunk lists to list of peer-chunk pairs
   */
-void toPairs(struct peer **peers, size_t peers_len, struct chunk **chunks, size_t chunks_len, 	//in
+void toPairs(schedPeerID  *peers, size_t peers_len, schedChunkID  *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *pairs, size_t *pairs_len);	//out, inout
 
 #endif	/* SCHEDULER_COMMON_H */
