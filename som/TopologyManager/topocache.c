@@ -201,15 +201,7 @@ void cache_free(struct peer_cache *c)
   free(c);
 }
 
-int fill_cache_entry(struct cache_entry *c, const struct nodeID *s)
-{
-  c->id = nodeid_dup(s);
-  c->timestamp = 1;
-#warning Timestamps are probably wrong...
-  return 1;
-}
-
-int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
+static int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
 {
   int i;
 
