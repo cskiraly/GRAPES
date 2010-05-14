@@ -98,10 +98,10 @@ int topParseData(const uint8_t *buff, int len)
 
     bootstrap = false;
 
-    if (h->type == NCAST_QUERY) {
-      topo_reply(buff + sizeof(struct topo_header), len - sizeof(struct topo_header), local_cache);
-    }
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
+    if (h->type == NCAST_QUERY) {
+      topo_reply(remote_cache, local_cache);
+    }
     new = merge_caches(local_cache, remote_cache, cache_size, &dummy);
     cache_free(remote_cache);
     if (new != NULL) {
