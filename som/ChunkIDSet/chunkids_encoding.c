@@ -108,7 +108,9 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
         return NULL;
     }
     if (val) {
-        return h; /* Not supported yet! */
+        fprintf(stderr, "Error in decoding chunkid set - wrong val.\n");
+        chunkID_set_free(h);
+        return NULL; /* Not supported yet! */
     }
     switch (h->type) {
         case CIST_BITMAP:
@@ -118,6 +120,8 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
             int byte_cnt;
             byte_cnt = size / 8 + (size % 8 ? 1 : 0);
             if (buff_len < 16 + byte_cnt + *meta_len) {
+                fprintf(stderr, "Error in decoding chunkid set - wrong length\n");
+                chunkID_set_free(h);
                 return NULL;
             }
             base = int_rcpy(buff + 12);
@@ -141,6 +145,8 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
         default:
         {
             if (buff_len != size * 4 + 12 + *meta_len) {
+                fprintf(stderr, "Error in decoding chunkid set - wrong length.\n");
+                chunkID_set_free(h);
                 return NULL;
             }
             for (i = 0; i < size; i++) {
