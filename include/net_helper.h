@@ -84,7 +84,7 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 * Check if some data arrived for a given nodeID. It sets a timeout to return at most after a given time.
 * @param[in] n A pointer to the nodeID representing the caller.
 * @param[in] tout A pointer to a timer to be used to set the waiting timeout.
-* @param[in] fd_set A pointer to a set of FDs to be monitored.
+* @param[in] user_fds A pointer to a set of FDs to be monitored.
 * @return 1 if some data has arrived, 0 otherwise.
 */
 int wait4data(const struct nodeID *n, struct timeval *tout, fd_set *user_fds);
