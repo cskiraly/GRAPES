@@ -1,6 +1,6 @@
 /** @file trade_msg_la.h
  *
- * Chunk Delivery API - Lower Abstraction
+ * @brief Chunk Delivery API - Lower Abstraction
  *
  * The Chunk Delivery LA provides the primitives to encode the send operation of a Chunk to a target Peer and decode the Chunk reception from a Peer. The former returns a bit stream obteined by the encoding of the Chunk to send, it is the packet that will be sent. The latter decode a packet received, the bit stream, in the corresponding Chunk.
  *

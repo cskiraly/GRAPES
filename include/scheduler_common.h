@@ -3,7 +3,7 @@
 
 /**
  * @file scheduler_common.h
- * @brief Common definitions for the scheduler
+ * @brief Common definitions for the scheduler.
  *
  */
 

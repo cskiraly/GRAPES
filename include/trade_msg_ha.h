@@ -1,6 +1,6 @@
 /** @file trade_msg_ha.h
  *
- * Chunk Delivery API - Higher Abstraction
+ * @brief Chunk Delivery API - Higher Abstraction
  *
  * The Chunk Delivery HA provides the primitives for effective chunks exchange with other peers. <br>
  * This is a part of the Data Exchange Protocol which provides high level abstraction for sending chunks to a target peers.

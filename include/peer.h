@@ -1,5 +1,6 @@
 /**
  * @file:   peer.h
+ * @brief Peer structure definition.
  * @author: Alessandro Russo <russo@disi.unitn.it>
  *
  * @date December 15, 2009, 2:09 PM

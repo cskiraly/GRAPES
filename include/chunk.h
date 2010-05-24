@@ -4,7 +4,7 @@
 /** 
  * @file chunk.h
  *
- * Chunk structure.
+ * @brief Chunk structure.
  * Describes the structure of the chunk
  *
  */
