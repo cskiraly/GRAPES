@@ -1,6 +1,6 @@
 /** @file trade_sig_la.h
  *
- * Chunk Signaling  API - Lower Abstraction
+ * @brief Chunk Signaling  API - Lower Abstraction
  *
  * The Chunk Signaling LA provides a set of primitives which encode and decode the signaling messages for chunks' negotiation. The former encode the signaling message returning a bit stream which is essentially the packet that will be sent, while the latter decode the received packet returning the signaling message understandable by the protocol.
  *

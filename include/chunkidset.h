@@ -1,6 +1,6 @@
 /** @file chunkidset.h
  *
- * Chunk ID Set
+ * @brief Structure containing a set of chunk IDs.
  *
  * The Chunk ID Set is an abstract data structure that can contain a set of
  * (chunk ID, priority) couples. Few simple operations for adding chunk IDs

@@ -6,7 +6,7 @@
  * @file msg_types.h
  * @brief Basic message type mappings.
  *
- * Here the definition of the various SOM message types are collected.
+ * Here the definitions of the various SOM message types are collected.
  *
  */
 #define MSG_TYPE_TOPOLOGY   0x10

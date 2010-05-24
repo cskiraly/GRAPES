@@ -1,6 +1,6 @@
 /** @file peerset.h
  *
- * Peer Set
+ * @brief Structure containing a set of peers.
  *
  * The Peer Set is an abstract data structure that can contain a set of
  * peer structures. It handles peers by their nodeIDs. Peer structures

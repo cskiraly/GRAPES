@@ -4,7 +4,7 @@
 #include "scheduler_common.h"
 
 /** @file scheduler_la.h
-  Low level scheduling functions for chunk and peer selection. 
+  @brief Low level scheduling functions for chunk and peer selection.
 
   The interface contains highly customizable selector functions. Customization is supported along the following concepts:
 	-# evaluator functions: selector functions can be parameterized by evaluator functions.

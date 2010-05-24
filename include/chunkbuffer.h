@@ -4,7 +4,7 @@
 /** 
  * @file chunkbuffer.h
  *
- * This is the chunks buffer.
+ * @brief This is the chunk buffer of the peer.
  * 
  * The chunks buffer is responsible for storing the chunks received by a
  * peer. Each chunk is stored until the chunk buffer decides to discard it
