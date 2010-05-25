@@ -4,8 +4,7 @@
  *
  * The Chunk Delivery HA provides the primitives for effective chunks exchange with other peers. <br>
  * This is a part of the Data Exchange Protocol which provides high level abstraction for sending chunks to a target peers.
- *
- * @image html SOM_Internals.png "Data Exchange Protocol of the SOM module" width=50
+
  */
 #include "chunk.h"
 /**

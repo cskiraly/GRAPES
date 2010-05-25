@@ -3,8 +3,7 @@
  * @brief Chunk Signaling  API - Lower Abstraction
  *
  * The Chunk Signaling LA provides a set of primitives which encode and decode the signaling messages for chunks' negotiation. The former encode the signaling message returning a bit stream which is essentially the packet that will be sent, while the latter decode the received packet returning the signaling message understandable by the protocol.
- *
- * @image html SOM_Internals.png "Data Exchange Protocol of the SOM module" width=50
+
  */
 
 #ifndef TRADE_SIG_LA_H 
