@@ -18,7 +18,7 @@
 typedef struct peerset PeerSet;
 
  /**
-  * Allocate a  peer set.
+  * @brief Allocate a  peer set.
   * 
   * Create an empty peer set, and return a pointer to it.
   * 
@@ -31,7 +31,7 @@ typedef struct peerset PeerSet;
 struct peerset *peerset_init(const char *config);
 
  /**
-  * Add a peer to the set.
+  * @brief Add a peer to the set.
   * 
   * Insert a peer to the set, creating the peer structure. If the peer
   * is already in the set, nothing happens.
@@ -44,7 +44,7 @@ struct peerset *peerset_init(const char *config);
 int peerset_add_peer(struct peerset *h, struct nodeID *id);
 
  /**
-  * Add peers to the set.
+  * @brief Add peers to the set.
   * 
   * Comodity function to add several peers at the same time to the set.
   * See peerset_add_peer
@@ -56,7 +56,7 @@ int peerset_add_peer(struct peerset *h, struct nodeID *id);
 void peerset_add_peers(struct peerset *h, struct nodeID **ids, int n);
 
  /**
-  * Remove a peer from the set.
+  * @brief Remove a peer from the set.
   * 
   * Remove a peer from the set, distroying all associated data.
   * If peer exists, pointers of peerset_get_peers move backwards.
@@ -69,7 +69,7 @@ void peerset_add_peers(struct peerset *h, struct nodeID **ids, int n);
 int peerset_remove_peer(struct peerset *h, const struct nodeID *id);
 
  /**
-  * Get a peer if it is in the set
+  * @brief Get a peer if it is in the set
   * 
   * @param h a pointer to the set
   * @param id the nodeID we are searching for
@@ -79,7 +79,7 @@ int peerset_remove_peer(struct peerset *h, const struct nodeID *id);
 struct peer *peerset_get_peer(const struct peerset *h, const struct nodeID *id);
 
  /**
-  * Get the set size
+  * @brief Get the set size
   * 
   * Return the number of peers present in a set.
   *
@@ -89,7 +89,7 @@ struct peer *peerset_get_peer(const struct peerset *h, const struct nodeID *id);
 int peerset_size(const struct peerset *h);
 
  /**
-  * Get a peer from a set
+  * @brief Get a peer from a set
   * 
   * Return the peers of the set. The peer's priority is
   * assumed to depend on i.
@@ -100,7 +100,7 @@ int peerset_size(const struct peerset *h);
 struct peer *peerset_get_peers(const struct peerset *h);
 
  /**
-  * Check if a peer is in a set
+  * @brief Check if a peer is in a set
   * 
   * @param h a pointer to the set
   * @param id the nodeID we are searching for
@@ -111,7 +111,7 @@ int peerset_check(const struct peerset *h, const struct nodeID *id);
 
 
  /**
-  * Clear a set
+  * @brief Clear a set
   * 
   * Remove all the peers from a set.
   *

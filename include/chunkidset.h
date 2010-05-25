@@ -21,7 +21,7 @@
 typedef struct chunkID_set ChunkIDSet;
 
  /**
-  * Allocate a chunk ID set.
+  * @brief Allocate a chunk ID set.
   * 
   * Create an empty chunk ID set, and return a pointer to it.
   * 
@@ -35,7 +35,7 @@ typedef struct chunkID_set ChunkIDSet;
 struct chunkID_set *chunkID_set_init(const char *config);
 
  /**
-  * Add a chunk ID to the set.
+  * @brief Add a chunk ID to the set.
   * 
   * Insert a chunk ID, and its associated priority (the priority is assumed
   * to depend on the insertion order), to the set. If the chunk
@@ -49,7 +49,7 @@ struct chunkID_set *chunkID_set_init(const char *config);
 int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id);
 
  /**
-  * Get the set size
+  * @brief Get the set size
   * 
   * Return the number of chunk IDs present in a set.
   *
@@ -59,7 +59,7 @@ int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id);
 int chunkID_set_size(const struct chunkID_set *h);
 
  /**
-  * Get a chunk ID from a set
+  * @brief Get a chunk ID from a set
   * 
   * Return the i^th chunk ID from the set. The chunk's priority is
   * assumed to depend on i.
@@ -72,7 +72,7 @@ int chunkID_set_size(const struct chunkID_set *h);
 int chunkID_set_get_chunk(const struct chunkID_set *h, int i);
 
  /**
-  * Check if a chunk ID is in a set
+  * @brief Check if a chunk ID is in a set
   * 
   * @param h a pointer to the set
   * @param chunk_id the chunk ID we are searching for
@@ -107,7 +107,7 @@ int chunkID_set_union(struct chunkID_set *h, struct chunkID_set *a);
 void chunkID_set_clear(struct chunkID_set *h, int size);
 
  /**
-  * Clear a set and free all associated memory.
+  * @brief Clear a set and free all associated memory.
   *
   * @param h a pointer to the set
   */

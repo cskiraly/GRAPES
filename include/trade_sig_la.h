@@ -10,7 +10,7 @@
 #define TRADE_SIG_LA_H
 
  /**
-  * Encode a sequence of information, filling the buffer with the corresponding bit stream.
+  * @brief Decode the bit streamEncode a sequence of information, filling the buffer with the corresponding bit stream.
   * 
   * Encode a sequence of information given as parameters and fills a buffer (given as parameter) with the corresponding bit stream.
   * The main reason to encode and return the bit stream is the possibility to either send directly a packet with the encoded bit stream, or 
@@ -38,13 +38,5 @@ int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta
   */
 struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8_t *buff, int buff_len);
 
-/**
-  * Decode the bit stream contained int the buffer, transforming it in a chunk
-  * ID set.
-  *  
-  * @param[in] buff Buffer which contain the bit stream to decode
-  * @param[in] buff_len length of the buffer that contain the bit stream
-  * @param meta pointer to the metadata
-  * @param meta_len metadata lenght
-  */
+
 #endif /* TRADE_SIG_LA_H */

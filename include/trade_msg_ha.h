@@ -8,7 +8,7 @@
  */
 #include "chunk.h"
 /**
-  * Send a Chunk to a target Peer
+  * @brief Send a Chunk to a target Peer
   *
   * Send a single Chunk to a given Peer
   *
@@ -19,9 +19,9 @@
 int sendChunk(struct nodeID *to, const struct chunk *c);
 
 /**
-  * Init the Chunk trading stuff...
+  * @brief Init the Chunk trading internals.
   *
-  *
+  * Initialization facility.
   * @param myID address of this peer
   * @return >= 0 on success, <0 on error
   */
@@ -30,12 +30,12 @@ int chunkDeliveryInit(struct nodeID *myID);
 
 #if 0
 /** 
-  * Notification function for a Chunk arrival
+  * @brief Notification function for a Chunk arrival
   */
 typedef int (*ChunkNotification)(struct peer *from, struct chunk  *c);
 
 /**
-  * Register a notification for Chunk arrival
+  * @brief Register a notification for Chunk arrival
   * 
   * Register a notification function that should be called at every Chunk arrival
   *
