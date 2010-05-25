@@ -26,6 +26,8 @@
 int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta_len, uint8_t *buff, int buff_len);
 
 /**
+  * @brief Decode the bit stream.
+  *
   * Decode the bit stream contained int the buffer, filling the other parameters. This is the dual of the encode function.
   *  
   * @param[in] meta pointer to the metadata associated to the ChunkID set
