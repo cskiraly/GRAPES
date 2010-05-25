@@ -84,6 +84,21 @@ int topShrinkNeighbourhood(int n);
 */
 int topRemoveNeighbour(struct nodeID *neighbour);
 
+
+/**
+  @brief Change the metadata.
+
+  This function can be used to modify/update the metadata for a
+  peer. Because of security concerns, only the metadata for the
+  local peer can be modified.
+  @param peer the id of the peer for which the metadata should be updated
+         (only the local peer is acceptable).
+  @param metadata pointer to the new metadata associated to the peer (will be
+         gossiped).
+  @param metadata_size size of the metadata associated to the peer (must
+         be the same as for the other peers).
+  @return 0 in case of success; -1 in case of error.
+*/
 int topChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size);
 
 /**
