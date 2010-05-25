@@ -21,6 +21,8 @@
 int encodeChunk(const struct chunk *c, uint8_t *buff, int buff_len);
 
 /**
+  * @brief Decode the bit stream.
+  *
   * Decode the bit stream contained int the buffer, filling the other parameters. This is the dual of the encode function.
   *  
   * @param[in] c Chunks that has been transmitted
