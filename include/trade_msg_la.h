@@ -7,7 +7,7 @@
  */
  
  /**
-  * Encode a sequence of information, filling the buffer with the corresponding bit stream.
+  * @brief Encode a sequence of information, filling the buffer with the corresponding bit stream.
   * 
   * Encode a sequence of information given as parameters and fills a buffer (given as parameter) with the corresponding bit stream.
   * The main reason to encode a return the bit stream is the possibility to either send directly a packet with the encoded bit stream, or 
