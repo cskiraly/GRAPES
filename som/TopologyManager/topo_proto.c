@@ -38,7 +38,7 @@ static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, 
   return p - payload;
 }
 
-int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache)
+static int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache, int protocol, int type)
 {
   uint8_t pkt[MAX_MSG_SIZE];
   struct topo_header *h = (struct topo_header *)pkt;
@@ -53,8 +53,8 @@ int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache)
   }
 #endif
   dst = nodeid(c, 0);
-  h->protocol = MSG_TYPE_TOPOLOGY;
-  h->type = NCAST_REPLY;
+  h->protocol = protocol;
+  h->type = type;
   len = ncast_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst);
 
   res = len > 0 ? send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
@@ -62,27 +62,47 @@ int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache)
   return res;
 }
 
-int topo_query_peer(struct peer_cache *local_cache, struct nodeID *dst)
+static int topo_query_peer(struct peer_cache *local_cache, struct nodeID *dst, int protocol, int type)
 {
   uint8_t pkt[MAX_MSG_SIZE];
   struct topo_header *h = (struct topo_header *)pkt;
   int len;
 
-  h->protocol = MSG_TYPE_TOPOLOGY;
-  h->type = NCAST_QUERY;
+  h->protocol = protocol;
+  h->type = type;
   len = ncast_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst);
   return len > 0  ? send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
 }
 
-int topo_query(struct peer_cache *local_cache)
+int ncast_reply(const struct peer_cache *c, struct peer_cache *local_cache)
+{
+  return topo_reply(c, local_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY);
+}
+
+int tman_reply(const struct peer_cache *c, struct peer_cache *local_cache)
+{
+  return topo_reply(c, local_cache, MSG_TYPE_TMAN, TMAN_REPLY);
+}
+
+int ncast_query_peer(struct peer_cache *local_cache, struct nodeID *dst)
+{
+  return topo_query_peer(local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY);
+}
+
+int tman_query_peer(struct peer_cache *local_cache, struct nodeID *dst)
+{
+  return topo_query_peer(local_cache, dst, MSG_TYPE_TMAN, TMAN_QUERY);
+}
+
+int ncast_query(struct peer_cache *local_cache)
 {
   struct nodeID *dst;
 
-  dst = rand_peer(local_cache);
+  dst = rand_peer(local_cache, NULL);
   if (dst == NULL) {
     return 0;
   }
-  return topo_query_peer(local_cache, dst);
+  return topo_query_peer(local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY);
 }
 
 int topo_proto_metadata_update(struct nodeID *peer, void *meta, int meta_size)

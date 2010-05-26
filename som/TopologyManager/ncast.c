@@ -79,7 +79,7 @@ int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
   if (cache_add(local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
   }
-  return topo_query_peer(local_cache, neighbour);
+  return ncast_query_peer(local_cache, neighbour);
 }
 
 int topParseData(const uint8_t *buff, int len)
@@ -100,7 +100,7 @@ int topParseData(const uint8_t *buff, int len)
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == NCAST_QUERY) {
-      topo_reply(remote_cache, local_cache);
+      ncast_reply(remote_cache, local_cache);
     }
     new = merge_caches(local_cache, remote_cache, cache_size, &dummy);
     cache_free(remote_cache);
@@ -112,7 +112,7 @@ int topParseData(const uint8_t *buff, int len)
 
   if (time_to_send()) {
     cache_update(local_cache);
-    topo_query(local_cache);
+    ncast_query(local_cache);
   }
 
   return 0;
