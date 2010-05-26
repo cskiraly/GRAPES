@@ -78,9 +78,9 @@ int cache_metadata_update(struct peer_cache *c, struct nodeID *p, const void *me
   return 0;
 }
 
-int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size, ranking_function f, struct peer_cache *target)
+int cache_add_ranked(struct peer_cache *c, const struct nodeID *neighbour, const void *meta, int meta_size, ranking_function f, const void *tmeta)
 {
-  int i, msize, pos = 0;
+  int i, pos = 0;
 
   if (meta_size && meta_size != c->metadata_size) {
     return -3;
@@ -89,7 +89,7 @@ int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void 
     if (nodeid_equal(c->entries[i].id, neighbour)) {
       return -1;
     }
-    if ((f != NULL) && f(get_metadata(target, &msize), meta, c->metadata+(c->metadata_size * i)) == 2) {
+    if ((f != NULL) && f(tmeta, meta, c->metadata+(c->metadata_size * i)) == 2) {
       pos++;
     }
   }
@@ -281,7 +281,7 @@ int entry_dump(uint8_t *b, struct peer_cache *c, int i)
   return res;
 }
 
-struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, struct peer_cache *me)
+struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, void *mymetadata)
 {
   int n1, n2;
   struct peer_cache *new_cache;
@@ -325,7 +325,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
 
       nowFirst = 0;
       if (rank) {
-        nowFirst = rank(me->metadata, c1->metadata + n1 * c1->metadata_size,
+        nowFirst = rank(mymetadata, c1->metadata + n1 * c1->metadata_size,
                         c2->metadata + n2 * c2->metadata_size);
       }
       if (nowFirst == 0) {
