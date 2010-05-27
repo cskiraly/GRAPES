@@ -12,11 +12,11 @@
 #include <sys/time.h>
 
 struct peer {
-    struct nodeID *id;
-    struct timeval creation_timestamp;
-    struct chunkID_set *bmap;
-    struct timeval bmap_timestamp;
-    int cb_size;
+    struct nodeID *id; ///< NodeId associated to the peer
+    struct timeval creation_timestamp; ///< creation timestamp
+    struct chunkID_set *bmap; ///< buffermap of the peer
+    struct timeval bmap_timestamp; ///< buffermap timestamp
+    int cb_size; ///< chunk buffer size
 };
 
 
