@@ -223,7 +223,7 @@ static int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
   return 0;
 }
 
-struct nodeID *rand_peer(struct peer_cache *c, uint8_t **meta)
+struct nodeID *rand_peer(struct peer_cache *c, void **meta)
 {
   int j;
 
@@ -232,7 +232,7 @@ struct nodeID *rand_peer(struct peer_cache *c, uint8_t **meta)
   }
   j = ((double)rand() / (double)RAND_MAX) * c->current_size;
 
-  if (**meta) {
+  if (meta) {
     *meta = c->metadata + (j * c->metadata_size);
   }
 

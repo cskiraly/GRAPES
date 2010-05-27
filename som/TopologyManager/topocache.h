@@ -14,7 +14,7 @@ int cache_add_ranked(struct peer_cache *c, const struct nodeID *neighbour, const
 int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size);
 int cache_del(struct peer_cache *c, struct nodeID *neighbour);
 
-struct nodeID *rand_peer(struct peer_cache *c, uint8_t **meta);
+struct nodeID *rand_peer(struct peer_cache *c, void **meta);
 
 struct peer_cache *entries_undump(const uint8_t *buff, int size);
 int cache_header_dump(uint8_t *b, const struct peer_cache *c);
