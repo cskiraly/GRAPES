@@ -113,6 +113,15 @@ int tmanGivePeers (int n, struct nodeID **peers, void *metadata)
 	return i;
 }
 
+int tmanGetNeighbourhoodSize(void)
+{
+  int i;
+
+  for (i = 0; nodeid(local_cache, i); i++);
+
+  return i;
+}
+
 static int time_to_send(void)
 {
 	if (gettime() - currtime > period) {
@@ -140,10 +149,6 @@ const void *tmanGetMetadata(int *metadata_size)
   return get_metadata(local_cache, metadata_size);
 }
 
-
-const int tmanGetNeighbourhoodSize() {
-	return get_cache_current_size(local_cache);
-}
 
 int tmanChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
 {

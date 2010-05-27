@@ -139,7 +139,7 @@ const void *tmanGetMetadata(int *metadata_size);
 
   @return The current size of the neighborhood.
 */
-const int tmanGetNeighbourhoodSize();
+int tmanGetNeighbourhoodSize(void);
 
 /*
 	@brief Get the state of Tman.
