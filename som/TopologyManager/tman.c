@@ -222,7 +222,7 @@ int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int
 	}
 
   if (time_to_send()) {
-	void *meta;
+	uint8_t *meta;
 	struct nodeID *chosen;
 
 	cache_update(local_cache);
