@@ -5,6 +5,7 @@ typedef int (*ranking_function)(const void *target, const void *p1, const void *
 struct peer_cache *cache_init(int n, int metadata_size);
 void cache_free(struct peer_cache *c);
 void cache_update(struct peer_cache *c);
+void cache_update_tout(struct peer_cache *c);
 
 struct nodeID *nodeid(const struct peer_cache *c, int i);
 const void *get_metadata(const struct peer_cache *c, int *size);

@@ -111,7 +111,7 @@ int topParseData(const uint8_t *buff, int len)
   }
 
   if (time_to_send()) {
-    cache_update(local_cache);
+    cache_update_tout(local_cache);
     ncast_query(local_cache);
   }
 

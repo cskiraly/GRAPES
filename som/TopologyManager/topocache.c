@@ -139,7 +139,7 @@ int cache_del(struct peer_cache *c, struct nodeID *neighbour)
   return c->current_size;
 }
 
-void cache_update(struct peer_cache *c)
+void cache_update_tout(struct peer_cache *c)
 {
   int i;
   
@@ -152,6 +152,15 @@ void cache_update(struct peer_cache *c)
     } else {
       c->entries[i].timestamp++;
     }
+  }
+}
+
+void cache_update(struct peer_cache *c)
+{
+  int i;
+  
+  for (i = 0; i < c->current_size; i++) {
+      c->entries[i].timestamp++;
   }
 }
 
