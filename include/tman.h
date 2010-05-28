@@ -23,32 +23,6 @@
 */
 typedef int (*tmanRankingFunction)(const void *target, const void *p1, const void *p2);
 
-/*
-  @brief Get the peer's neighbourhood.
-
-  This function returns the current neighbourhood (i.e., the set of
-  known peers) of a peer, and its size. Note that the current neighbourhood
-  size can be different from the requested one, because of how the overlay
-  management protocols work. 
-
-  @param n pointer to an integer where the neighbourhood size is returned.
-           Is set to -1 in case of error, or 0 if the neighbourhood is empty.
-  @return a pointer to an array of nodeID describing the neighbourhood. NULL
-          in case of error, or if the neighbourhood is empty.
-*/
-//const struct nodeID **tmanGetNeighbourhood(int *n);
-
-/*
-  @brief Remove a peer from the neighbourhood.
-
-  This function can be used to remove a specified neighbour from the
-  neighbourhood. Note that the requested neighbourhood size is not
-  modified, so the peer will be soon replaced by a different one.
-  @param neighbour the id of the peer to be removed from the neighbourhood.
-  @return 0 in case of success; -1 in case of error.
-*/
-//int tmanRemoveNeighbour(struct nodeID *neighbour);
-
 /**
   @brief Initialise Tman.
 
@@ -62,24 +36,6 @@ typedef int (*tmanRankingFunction)(const void *target, const void *p1, const voi
   @return 0 in case of success; -1 in case of error.
 */
 int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, tmanRankingFunction rfun, int gossip_peers); 
-//, int max_peers, int max_idle, int periodicity
-
-/*
-  @brief Start Tman.
-
-  This function starts Tman by feeding it with fresh peers from some known source (usually a
-  peer sampling service, giving a random sample of the network).
-
-  @param peers Array of nodeID pointers to be added in tman cache.
-  @param size Number of elements in peers.
-  @param metadata Pointer to the array of metadata belonging to the peers to be added.
-  @param metadata_size Number of bytes of each metadata.
-  @param rfun Ranking function to be used to order the peers in tman cache.
-  @param best_peers
-  @param gossip_peers
-  @return 0 in case of success; -1 in case of error.
-*/
-//int tmanStart(const struct nodeID **peers, int size, const void *metadata, int metadata_size);
 
 
 /**
@@ -141,23 +97,6 @@ const void *tmanGetMetadata(int *metadata_size);
 */
 int tmanGetNeighbourhoodSize(void);
 
-/*
-	@brief Get the state of Tman.
-
-	This function tells whether Tman is active or idle.
-
-	@return 1 if Tman is active, 0 if it is idle.
-*/
-//const int tmanGetState();
-
-
-//int tmanSetRankingFunction(tmanRankingFunction f);
-
-
-//int tmanSetBestPeers(int p);
-
-
-//int tmanSetPeriod(int p);
 
 /**
  * @brief Get the highest ranked tman peers.
@@ -176,7 +115,7 @@ int tmanGetNeighbourhoodSize(void);
  * @param metadata Pointer to the array of metadata belonging to the peers to be given.
  * @return The number of elements in peers.
  */
-int tmanGivePeers (int n, struct nodeID **peers, void *metadata);//, int *metadata_size);
+int tmanGivePeers (int n, struct nodeID **peers, void *metadata);
 
 
 /**
