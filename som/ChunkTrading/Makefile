@@ -1,6 +1,6 @@
 BASE = ../..
 
-OBJS = chunk_encoding.o chunk_delivery.o
+OBJS = chunk_encoding.o chunk_delivery.o chunk_signalling.o
 
 all: libtrading.a
 
