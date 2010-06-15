@@ -57,16 +57,14 @@ struct tag *config_parse(const char *cfg)
   return res;
 }
 
-int config_value_int(const struct tag *cfg_values, const char *value, int *res)
+const char *config_value_str(const struct tag *cfg_values, const char *value)
 {
   int i, done;
 
   i = 0; done = 0;
   while (!done) {
     if (!strcmp(cfg_values[i].name, value)) {
-      *res = atoi(cfg_values[i].value);
-
-      return 1;
+      return cfg_values[i].value;
     }
     if (cfg_values[i].name[0] == 0) {
       done = 1;
@@ -75,5 +73,19 @@ int config_value_int(const struct tag *cfg_values, const char *value, int *res)
     }
   }
 
-  return 0;
+  return NULL;
+}
+
+int config_value_int(const struct tag *cfg_values, const char *value, int *res)
+{
+  const char *str_res;
+
+  str_res = config_value_str(cfg_values, value);
+  if (str_res == NULL) {
+    return 0;
+  }
+
+  *res = atoi(str_res);
+
+  return 1;
 }

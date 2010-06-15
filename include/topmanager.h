@@ -95,7 +95,7 @@ int topChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size);
   @param metadata_size size of the metadata associated to this peer.
   @return 0 in case of success; -1 in case of error.
 */
-int topInit(struct nodeID *myID, void *metadata, int metadata_size);
+int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config);
 
 /**
   @brief Insert a peer in the neighbourhood.

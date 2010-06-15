@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdint.h>
 
 #include "chunkids_private.h"
@@ -56,6 +57,7 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
 {
   int i, val, size;
   struct chunkID_set *h;
+  char cfg[32];
 
   size = int_rcpy(buff);
   val = int_rcpy(buff + 4);
@@ -63,7 +65,8 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
   if (buff_len != size * 4 + 12 + *meta_len) {
     return NULL;
   }
-  h = chunkID_set_init(size);
+  sprintf(cfg, "size=%d", size);
+  h = chunkID_set_init(cfg);
   if (h == NULL) {
     return NULL;
   }

@@ -18,11 +18,14 @@ typedef struct chunkID_set ChunkIDSet;
   * 
   * Create an empty chunk ID set, and return a pointer to it.
   * 
-  * @parameter size the expected number of chunk IDs that will be stored
-  *                 in the set; 0 if such a number is not known.
+  * @parameter config a configuration string containing tags which describe
+  *                   the chunk ID set. For example, the "size" tag indicates
+  *                   the expected number of chunk IDs that will be stored
+  *                   in the set; 0 or not present if such a number is not
+  *                   known.
   * @return the pointer to the new set on success, NULL on error
   */
-struct chunkID_set *chunkID_set_init(int size);
+struct chunkID_set *chunkID_set_init(const char *config);
 
  /**
   * Add a chunk ID to the set.

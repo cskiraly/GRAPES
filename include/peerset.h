@@ -18,11 +18,13 @@ typedef struct peerset PeerSet;
   * 
   * Create an empty peer set, and return a pointer to it.
   * 
-  * @parameter size the expected number of peers that will be stored
-  *                 in the set; 0 if such a number is not known.
+  * @parameter config a string containing tags which describe the peerset.
+  *                   For example, the "size" tag indicates the expected
+  *                   number of peers that will be stored in the set;
+  *                   0 or not present if such a number is not known.
   * @return the pointer to the new set on success, NULL on error
   */
-struct peerset *peerset_init(int size);
+struct peerset *peerset_init(const char *config);
 
  /**
   * Add a peer to the set.
