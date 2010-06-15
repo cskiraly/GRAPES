@@ -34,7 +34,7 @@ static inline uint32_t int_rcpy(const uint8_t *p)
 
 int encodeChunk(const struct chunk *c, uint8_t *buff, int buff_len)
 {
-  int64_t half_ts;
+  uint32_t half_ts;
 
   if (buff_len < 20 + c->size + c->attributes_size) {
     /* Not enough space... */
