@@ -127,7 +127,7 @@ int cache_del(struct peer_cache *c, struct nodeID *neighbour)
       found = 1;
       if (c->metadata_size && (i < c->current_size)) {
         memmove(c->metadata + c->metadata_size * i,
-                c->metadata + c->metadata_size * (found + 1),
+                c->metadata + c->metadata_size * (i + 1),
                 c->metadata_size * (c->current_size - i));
       }
     }
