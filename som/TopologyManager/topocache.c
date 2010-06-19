@@ -100,8 +100,8 @@ int cache_add_ranked(struct peer_cache *c, const struct nodeID *neighbour, const
     memmove(c->metadata + (pos + 1) * meta_size, c->metadata + pos * meta_size, (c->current_size - pos) * meta_size);
     memcpy(c->metadata + pos * meta_size, meta, meta_size);
   }
-  for (i = pos; i < c->current_size; i++) {
-    c->entries[i + 1] = c->entries[i];
+  for (i = c->current_size; i > pos; i--) {
+    c->entries[i] = c->entries[i - 1];
   }
   c->entries[pos].id = nodeid_dup(neighbour);
   c->entries[pos].timestamp = 1;
@@ -203,7 +203,9 @@ void cache_free(struct peer_cache *c)
   int i;
 
   for (i = 0; i < c->current_size; i++) {
-    nodeid_free(c->entries[i].id);
+    if(c->entries[i].id) {
+      nodeid_free(c->entries[i].id);
+    }
   }
   free(c->entries);
   free(c->metadata);
@@ -282,7 +284,10 @@ int cache_header_dump(uint8_t *b, const struct peer_cache *c)
 int entry_dump(uint8_t *b, struct peer_cache *c, int i)
 {
   int res;
-  
+ 
+  if (i && (i >= c->cache_size - 1)) {
+    return 0;
+  }
   int_cpy(b, c->entries[i].timestamp);
   res = 4;
   res += nodeid_dump(b + res, c->entries[i].id);
