@@ -170,7 +170,7 @@ int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int
 
 	if (len) {
 		const struct topo_header *h = (const struct topo_header *)buff;
-		struct peer_cache *remote_cache; int idx;
+		struct peer_cache *remote_cache;
 
 	    if (h->protocol != MSG_TYPE_TMAN) {
 	      fprintf(stderr, "TMAN: Wrong protocol!\n");
@@ -199,7 +199,7 @@ int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int
 				// TODO: put sender in tabu list (check list size, etc.), if any...
 			}
 		}
-		idx = cache_add_ranked(local_cache, nodeid(remote_cache,0), mdata, msize, rankFunct, mymeta);
+		cache_add_ranked(local_cache, nodeid(remote_cache,0), mdata, msize, rankFunct, mymeta);
 //		fprintf(stderr, "\tidx = %d\n",idx);
 		new = merge_caches_ranked(local_cache, remote_cache, cache_size, &source, rankFunct, mymeta);
 
@@ -212,9 +212,7 @@ int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int
 		if (new!=NULL) {
 		  cache_free(local_cache);
 		  local_cache = new;
-                }
-                if (source) {
-		  if (idx>=0 || source!=1) {
+		  if (source > 1) {
                   	active = IDLE_TIME;
                   }
                   else {
@@ -233,21 +231,21 @@ int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int
 	cache_update(local_cache);
 	if (active == 0) {
 		struct peer_cache *ncache;
-		int j, res = 0;
+		int j;
 
 		ncache = cache_init(size,metadata_size);
-		for (j=0;j<size && res!=-3;j++)
-			res = cache_add_ranked(ncache, peers[j],(const uint8_t *)metadata + j * metadata_size, metadata_size, rankFunct, mymeta);
+		for (j=0;j<size;j++)
+			cache_add_ranked(ncache, peers[j],(const uint8_t *)metadata + j * metadata_size, metadata_size, rankFunct, mymeta);
 		if (nodeid(ncache, 0)) {
 			new = merge_caches_ranked(local_cache, ncache, cache_size, &source, rankFunct, mymeta);
                         if (new) {
 				cache_free(local_cache);
 				local_cache = new;
-			}
-			if (source!=1) {
-				active = TMAN_IDLE_TIME;
+			if (source > 1) {
+				active = IDLE_TIME;
 			}
 			do_resize = 0;
+		}
 		}
 		cache_free(ncache);
 	}
