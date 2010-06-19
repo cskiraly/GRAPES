@@ -88,7 +88,7 @@ int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, ranking_fun
     MAX_GOSSIPING_PEERS = gossip_peers;
   }
   MAX_PREFERRED_PEERS = TMAN_MAX_PREFERRED_PEERS;
-  active = IDLE_TIME;
+  active = 0;
   currtime = gettime();
 
   return 0;
@@ -126,8 +126,7 @@ static int time_to_send(void)
 {
 	if (gettime() - currtime > period) {
 		currtime += period;
-		if (active > 0)
-			return 1;
+		return 1;
 	}
 
   return 0;
@@ -233,7 +232,8 @@ int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int
 		struct peer_cache *ncache;
 		int j;
 
-		ncache = cache_init(size,metadata_size);
+		if (size) ncache = cache_init(size,metadata_size);
+		else {return 1;}
 		for (j=0;j<size;j++)
 			cache_add_ranked(ncache, peers[j],(const uint8_t *)metadata + j * metadata_size, metadata_size, rankFunct, mymeta);
 		if (nodeid(ncache, 0)) {
