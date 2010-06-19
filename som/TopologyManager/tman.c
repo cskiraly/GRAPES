@@ -101,11 +101,11 @@ int tmanGivePeers (int n, struct nodeID **peers, void *metadata)
 	int i;
 
         mdata = get_metadata(local_cache, &metadata_size);
-	for (i=0; nodeid(local_cache, i) && (i < n); i++)
+	for (i=0; nodeid(local_cache, i) && (i < n); i++) {
 			peers[i] = nodeid(local_cache,i);
 			if (metadata_size)
-				memcpy((uint8_t *)metadata + i * metadata_size, mdata + i *metadata_size, metadata_size);
-
+				memcpy((uint8_t *)metadata + i * metadata_size, mdata + i * metadata_size, metadata_size);
+	}
 	if (i != n) {
 		active = 0;
         }
