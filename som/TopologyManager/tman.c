@@ -172,7 +172,7 @@ int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int
 		const struct topo_header *h = (const struct topo_header *)buff;
 		struct peer_cache *remote_cache; int idx;
 
-	    if (h->protocol != MSG_TYPE_TOPOLOGY) {
+	    if (h->protocol != MSG_TYPE_TMAN) {
 	      fprintf(stderr, "TMAN: Wrong protocol!\n");
 	      return -1;
 	    }
