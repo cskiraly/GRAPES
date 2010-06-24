@@ -53,7 +53,7 @@ int chunkSignalingInit(struct nodeID *myID) {
     return 1;
 }
 
-int sendSignallingBIS(int type, const struct nodeID *to_id, const struct nodeID *owner_id, struct chunkID_set *cset, int max_deliver, int cb_size, int trans_id)
+int sendSignalling(int type, const struct nodeID *to_id, const struct nodeID *owner_id, struct chunkID_set *cset, int max_deliver, int cb_size, int trans_id)
 {
     int buff_len, meta_len, msg_len, ret;
     uint8_t *buff;
@@ -188,34 +188,8 @@ int deliverChunks(const struct nodeID *to, ChunkIDSet *cset, int cset_len, int m
 
 int offerChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id)
 {
-  return sendSignallingBIS(MSG_SIG_OFF, to, NULL, cset, max_deliver, -1, trans_id);
+  return sendSignalling(MSG_SIG_OFF, to, NULL, cset, max_deliver, -1, trans_id);
 }
-/*
-int offerChunks(const struct nodeID *to, ChunkIDSet *cset, int cset_len, int max_deliver, int trans_id) {
-    int buff_len;
-    int res;
-    uint8_t *buff;
-    struct sig_nal *sigmex;
-    sigmex = malloc(sizeof(struct sig_nal));
-    sigmex->type = MSG_SIG_OFF;
-    sigmex->max_deliver = max_deliver;
-    sigmex->trans_id = trans_id;
-    fprintf(stdout, "SIG_HEADER: Type %d Tx %d PP %d\n", sigmex->type, sigmex->trans_id, sigmex->third_peer);
-    buff_len = cset_len * 4 + 12 + sizeof(struct sig_nal); // Signaling type + set len
-    buff = malloc(buff_len + 1);
-    res = encodeChunkSignaling(cset, sigmex, sizeof(struct sig_nal), buff+1, buff_len);
-    if (res < 0) {
-        fprintf(stderr, "Error in encoding chunk set for chunks request\n");
-        return -1;
-    } else {
-        buff[0] = MSG_TYPE_SIGNALLING; //the message type is CHUNK
-        res = send_to_peer(localID, to, buff, buff_len + 1); //actual send chunk
-        free(buff); //free memory allocated for the buffer
-        free(sigmex);
-    }
-    return 1;
-}*/
-
 
 /**
  * Accept a (sub)set of chunks from a Peer.
@@ -230,32 +204,8 @@ int offerChunks(const struct nodeID *to, ChunkIDSet *cset, int cset_len, int max
  * @return 1 on success, <0 on error
  */
 int acceptChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id) {
-  return sendSignallingBIS(MSG_SIG_ACC, to, NULL, cset, max_deliver, -1, trans_id);
-}/*
-int acceptChunks(const struct nodeID *to, ChunkIDSet *cset, int cset_len, int max_deliver, int trans_id) {
-    int buff_len;
-    int res;
-    uint8_t *buff;
-    struct sig_nal *sigmex;
-    sigmex = malloc(sizeof(struct sig_nal));
-    sigmex->type = MSG_SIG_ACC;
-    sigmex->max_deliver = max_deliver;
-    sigmex->trans_id = trans_id;
-    fprintf(stdout, "SIG_HEADER: Type %d Tx %d PP %d\n", sigmex->type, sigmex->trans_id, sigmex->third_peer);
-    buff_len = cset_len * 4 + 12 + sizeof(struct sig_nal); // Signaling type + set len
-    buff = malloc(buff_len + 1);
-    res = encodeChunkSignaling(cset, sigmex, sizeof(struct sig_nal), buff+1, buff_len);
-    if (res < 0) {
-        fprintf(stderr, "Error in encoding chunk set for chunks request\n");
-        return -1;
-    } else {
-        buff[0] = MSG_TYPE_SIGNALLING; //the message type is CHUNK
-        res = send_to_peer(localID, to, buff, buff_len + 1); //actual send chunk
-        free(buff); //free memory allocated for the buffer
-        free(sigmex);
-    }
-    return 1;
-}*/
+  return sendSignalling(MSG_SIG_ACC, to, NULL, cset, max_deliver, -1, trans_id);
+}
 
 /**
  * Send a BufferMap to a Peer.
@@ -268,37 +218,11 @@ int acceptChunks(const struct nodeID *to, ChunkIDSet *cset, int cset_len, int ma
  * @param[in] bmap_len length of the buffer map
  * @param[in] trans_id transaction number associated with this send
  * @return 1 on success, <0 on error
- *//*
-int sendBufferMap(const struct nodeID *to, const struct nodeID *owner, ChunkIDSet *bmap, int bmap_len, int trans_id) {
-    int buff_len;
-    int res;
-    uint8_t *buff;
-    struct sig_nal *sigmex;
-    sigmex = malloc(sizeof(struct sig_nal));
-    sigmex->type = MSG_SIG_BMOFF;
-    sigmex->trans_id = trans_id;
-
-     //sigmex->third_peer->fd = owner->fd ;
-    //sigmex->third_peer->refcnt = owner->refcnt ;
-    //socklen_t raddr_size = sizeof(struct sockaddr_in);
-    //memcpy(&sigmex->third_peer->addr,&owner->addr, raddr_size);
-
-    fprintf(stdout, "SIG_HEADER: Type %d Tx %d\n", sigmex->type, sigmex->trans_id);
-    buff_len = bmap_len * 4 + 12 + sizeof(struct sig_nal); // Signaling type + set len
-    buff = malloc(buff_len + 1);
-    res = encodeChunkSignaling(bmap, sigmex, sizeof(struct sig_nal), buff+1, buff_len);
-    if (res < 0) {
-        fprintf(stderr, "Error in encoding chunk set for chunks request\n");
-        return -1;
-    } else {
-        buff[0] = MSG_TYPE_SIGNALLING; //the message type is CHUNK
-        res = send_to_peer(localID, to, buff, buff_len + 1); //actual send chunk
-        free(buff); //free memory allocated for the buffer
-        free(sigmex);
-    }
-    return 1;
+ */
+int sendBufferMap(const struct nodeID *to, const struct nodeID *owner_id, struct chunkID_set *bmap, int bmap_len, int trans_id) {
+  return sendSignalling(MSG_SIG_BMOFF, to, (!owner_id?localID:owner_id), bmap, 0, bmap_len, trans_id);//owner NULL -> my buffermap
 }
-*/
+
 
 /**
  * Request a BufferMap to a Peer.

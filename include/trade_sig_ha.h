@@ -97,7 +97,7 @@ int acceptChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deli
  * @param[in] trans_id transaction number associated with this send.
  * @return 1 Success, <0 on error.
  */
-//int sendBufferMap(const struct nodeID *to, const struct nodeID *owner, struct chunkID_set *bmap, int bmap_len, int trans_id);
+int sendBufferMap(const struct nodeID *to, const struct nodeID *owner, struct chunkID_set *bmap, int bmap_len, int trans_id);
 
 /**
  * Request a BufferMap to a Peer.
