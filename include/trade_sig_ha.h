@@ -65,12 +65,11 @@ int chunkSignalingInit(struct nodeID *myID);
  *
  * @param[in] to target peer to offer the ChunkIDs.
  * @param[in] cset array of ChunkIDs.
- * @param[in] cset_len length of the ChunkID set.
  * @param[in] max_deliver deliver at most this number of Chunks.
  * @param[in] trans_id transaction number associated with this request.
  * @return 1 on success, <0 on error.
  */
-//int offerChunks(const struct nodeID *to, struct chunkID_set *cset, int cset_len, int max_deliver, int trans_id);
+int offerChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id);
 
 /**
  * Accept a (sub)set of chunks from a Peer.
