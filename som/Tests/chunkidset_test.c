@@ -43,7 +43,8 @@ static void print_set(struct chunkID_set *c)
 
 static void populate(struct chunkID_set *cset)
 {
-  int i,c;
+  int i;
+
   for(i = 1; i < 400; i+=3){
     add_chunk(cset, (i%140) );
   }  
