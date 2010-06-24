@@ -14,8 +14,8 @@
 
 #include "net_helper.h"
 #include "topmanager.h"
-#include "nccache.h"
-#include "ncast_proto.h"
+#include "topocache.h"
+#include "topo_proto.h"
 #include "proto.h"
 #include "msg_types.h"
 
@@ -52,13 +52,13 @@ static int time_to_send(void)
 /*
  * Public Functions!
  */
-int topInit(struct nodeID *myID, void *metadata, int metadata_size)
+int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
   local_cache = cache_init(cache_size, metadata_size);
   if (local_cache == NULL) {
     return -1;
   }
-  ncast_proto_init(myID, metadata, metadata_size);
+  topo_proto_init(myID, metadata, metadata_size);
   currtime = gettime();
   bootstrap = true;
 
@@ -67,7 +67,7 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size)
 
 int topChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
 {
-  if (ncast_proto_metadata_update(peer, metadata, metadata_size) <= 0) {
+  if (topo_proto_metadata_update(peer, metadata, metadata_size) <= 0) {
     return -1;
   }
 
@@ -84,8 +84,10 @@ int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 
 int topParseData(const uint8_t *buff, int len)
 {
+  int dummy;
+
   if (len) {
-    const struct ncast_header *h = (const struct ncast_header *)buff;
+    const struct topo_header *h = (const struct topo_header *)buff;
     struct peer_cache *new, *remote_cache;
 
     if (h->protocol != MSG_TYPE_TOPOLOGY) {
@@ -96,11 +98,11 @@ int topParseData(const uint8_t *buff, int len)
 
     bootstrap = false;
 
+    remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == NCAST_QUERY) {
-      ncast_reply(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header), local_cache);
+      ncast_reply(remote_cache, local_cache);
     }
-    remote_cache = entries_undump(buff + sizeof(struct ncast_header), len - sizeof(struct ncast_header));
-    new = merge_caches(local_cache, remote_cache, cache_size);
+    new = merge_caches(local_cache, remote_cache, cache_size, &dummy);
     cache_free(remote_cache);
     if (new != NULL) {
       cache_free(local_cache);
@@ -109,7 +111,7 @@ int topParseData(const uint8_t *buff, int len)
   }
 
   if (time_to_send()) {
-    cache_update(local_cache);
+    cache_update_tout(local_cache);
     ncast_query(local_cache);
   }
 

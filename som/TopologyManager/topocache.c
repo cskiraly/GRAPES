@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 #include "net_helper.h"
-#include "nccache.h"
+#include "topocache.h"
 
 #define MAX_TIMESTAMP 5
 struct cache_entry {
@@ -78,33 +78,41 @@ int cache_metadata_update(struct peer_cache *c, struct nodeID *p, const void *me
   return 0;
 }
 
-int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size)
+int cache_add_ranked(struct peer_cache *c, const struct nodeID *neighbour, const void *meta, int meta_size, ranking_function f, const void *tmeta)
 {
-  int i;
+  int i, pos = 0;
 
   if (meta_size && meta_size != c->metadata_size) {
     return -3;
+  }
+  if (c->current_size == c->cache_size) {
+    return -2;
   }
   for (i = 0; i < c->current_size; i++) {
     if (nodeid_equal(c->entries[i].id, neighbour)) {
       return -1;
     }
-  }
-  if (c->current_size == c->cache_size) {
-    return -2;
+    if ((f != NULL) && f(tmeta, meta, c->metadata+(c->metadata_size * i)) == 2) {
+      pos++;
+    }
   }
   if (meta_size) {
-    memmove(c->metadata + meta_size, c->metadata, c->current_size * meta_size);
-    memcpy(c->metadata, meta, meta_size);
+    memmove(c->metadata + (pos + 1) * meta_size, c->metadata + pos * meta_size, (c->current_size - pos) * meta_size);
+    memcpy(c->metadata + pos * meta_size, meta, meta_size);
   }
-  for (i = c->current_size; i > 0; i--) {
+  for (i = c->current_size; i > pos; i--) {
     c->entries[i] = c->entries[i - 1];
   }
-  c->entries[0].id = nodeid_dup(neighbour);
-  c->entries[0].timestamp = 1;
+  c->entries[pos].id = nodeid_dup(neighbour);
+  c->entries[pos].timestamp = 1;
   c->current_size++;
 
   return c->current_size;
+}
+
+int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size)
+{
+  return cache_add_ranked(c, neighbour, meta, meta_size, NULL, NULL);
 }
 
 int cache_del(struct peer_cache *c, struct nodeID *neighbour)
@@ -117,6 +125,11 @@ int cache_del(struct peer_cache *c, struct nodeID *neighbour)
       nodeid_free(c->entries[i].id);
       c->current_size--;
       found = 1;
+      if (c->metadata_size && (i < c->current_size)) {
+        memmove(c->metadata + c->metadata_size * i,
+                c->metadata + c->metadata_size * (i + 1),
+                c->metadata_size * (c->current_size - i));
+      }
     }
     if (found && (i < c->current_size)) {
       c->entries[i] = c->entries[i + 1];
@@ -126,7 +139,7 @@ int cache_del(struct peer_cache *c, struct nodeID *neighbour)
   return c->current_size;
 }
 
-void cache_update(struct peer_cache *c)
+void cache_update_tout(struct peer_cache *c)
 {
   int i;
   
@@ -142,6 +155,15 @@ void cache_update(struct peer_cache *c)
   }
 }
 
+void cache_update(struct peer_cache *c)
+{
+  int i;
+  
+  for (i = 0; i < c->current_size; i++) {
+      c->entries[i].timestamp++;
+  }
+}
+
 struct peer_cache *cache_init(int n, int metadata_size)
 {
   struct peer_cache *res;
@@ -153,7 +175,7 @@ struct peer_cache *cache_init(int n, int metadata_size)
   res->cache_size = n;
   res->current_size = 0;
   res->entries = malloc(sizeof(struct cache_entry) * n);
-  if (res == NULL) {
+  if (res->entries == NULL) {
     free(res);
 
     return NULL;
@@ -190,15 +212,7 @@ void cache_free(struct peer_cache *c)
   free(c);
 }
 
-int fill_cache_entry(struct cache_entry *c, const struct nodeID *s)
-{
-  c->id = nodeid_dup(s);
-  c->timestamp = 1;
-#warning Timestamps are probably wrong...
-  return 1;
-}
-
-int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
+static int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
 {
   int i;
 
@@ -211,7 +225,7 @@ int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
   return 0;
 }
 
-struct nodeID *rand_peer(struct peer_cache *c)
+struct nodeID *rand_peer(struct peer_cache *c, void **meta)
 {
   int j;
 
@@ -219,6 +233,10 @@ struct nodeID *rand_peer(struct peer_cache *c)
     return NULL;
   }
   j = ((double)rand() / (double)RAND_MAX) * c->current_size;
+
+  if (meta) {
+    *meta = c->metadata + (j * c->metadata_size);
+  }
 
   return c->entries[j].id;
 }
@@ -281,7 +299,7 @@ int entry_dump(uint8_t *b, struct peer_cache *c, int i)
   return res;
 }
 
-struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize)
+struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, void *mymetadata)
 {
   int n1, n2;
   struct peer_cache *new_cache;
@@ -293,6 +311,7 @@ struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, in
   }
 
   meta = new_cache->metadata;
+  *source = 0;
   for (n1 = 0, n2 = 0; new_cache->current_size < new_cache->cache_size;) {
     if ((n1 == c1->current_size) && (n2 == c2->current_size)) {
       return new_cache;
@@ -305,6 +324,7 @@ struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, in
         }
         new_cache->entries[new_cache->current_size++] = c2->entries[n2];
         c2->entries[n2].id = NULL;
+        *source |= 0x02;
       }
       n2++;
     } else if (n2 == c2->current_size) {
@@ -315,10 +335,21 @@ struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, in
         }
         new_cache->entries[new_cache->current_size++] = c1->entries[n1];
         c1->entries[n1].id = NULL;
+        *source |= 0x01;
       }
       n1++;
     } else {
-      if (c2->entries[n2].timestamp > c1->entries[n1].timestamp) {
+      int nowFirst;
+
+      nowFirst = 0;
+      if (rank) {
+        nowFirst = rank(mymetadata, c1->metadata + n1 * c1->metadata_size,
+                        c2->metadata + n2 * c2->metadata_size);
+      }
+      if (nowFirst == 0) {
+        nowFirst = c2->entries[n2].timestamp > c1->entries[n1].timestamp ? 1 : 2;
+      }
+      if (nowFirst == 1) {
         if (!in_cache(new_cache, &c1->entries[n1])) {
           if (new_cache->metadata_size) {
             memcpy(meta, c1->metadata + n1 * c1->metadata_size, c1->metadata_size);
@@ -326,6 +357,7 @@ struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, in
           }
           new_cache->entries[new_cache->current_size++] = c1->entries[n1];
           c1->entries[n1].id = NULL;
+          *source |= 0x01;
         }
         n1++;
       } else {
@@ -336,6 +368,7 @@ struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, in
           }
           new_cache->entries[new_cache->current_size++] = c2->entries[n2];
           c2->entries[n2].id = NULL;
+          *source |= 0x02;
         }
         n2++;
       }
@@ -343,4 +376,9 @@ struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, in
   }
 
   return new_cache;
+}
+
+struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source)
+{
+  return merge_caches_ranked(c1, c2, newsize, source, NULL, NULL);
 }

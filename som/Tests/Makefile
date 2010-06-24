@@ -19,7 +19,8 @@ TESTS = topology_test \
         chunk_sending_test \
         chunkidset_test \
         cb_test \
-        config_test
+        config_test \
+        tman_test
 
 CPPFLAGS = -I$(BASE)/include
 
@@ -43,6 +44,9 @@ chunkidset_test: chunkidset_test.o
 
 chunk_sending_test: chunk_sending_test.o net_helpers.o
 chunk_sending_test: ../net_helper.o
+
+tman_test: tman_test.o topology.o peer.o net_helpers.o
+tman_test: ../net_helper.o
 
 clean::
 	rm -f $(TESTS)

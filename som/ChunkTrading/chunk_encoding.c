@@ -16,15 +16,15 @@
 
 static inline void int_cpy(uint8_t *p, int v)
 {
-  int tmp;
+  uint32_t tmp;
   
   tmp = htonl(v);
   memcpy(p, &tmp, 4);
 }
 
-static inline int int_rcpy(const uint8_t *p)
+static inline uint32_t int_rcpy(const uint8_t *p)
 {
-  int tmp;
+  uint32_t tmp;
   
   memcpy(&tmp, p, 4);
   tmp = ntohl(tmp);

@@ -55,6 +55,7 @@ static void simple_test(void)
   char config[32];
   sprintf(config,"size=%d",10);
   cset = chunkID_set_init(config);
+
   printf("Chunk ID Set initialised: size is %d\n", chunkID_set_size(cset));
   populate(cset);
   print_set(cset);
@@ -72,8 +73,8 @@ static void encoding_test(int mode)
   static uint8_t buff[2048];
   int res, meta_len;
   void *meta;
-
   char config[32];
+
   sprintf(config,"type=%d", mode);
   cset = chunkID_set_init(config);
   populate(cset);
