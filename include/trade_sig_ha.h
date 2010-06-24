@@ -78,13 +78,12 @@ int offerChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliv
  * (attempted to receive: i.e., the receiver peer would like to receive at most this number of Chunks from the set offered before).
  *
  * @param[in] to target peer to accept the ChunkIDs.
- * @param[in] cset array of ChunkIDs.
- * @param[in] cset_len length of the ChunkID set.
+ * @param[in] cset array of ChunkIDs. 
  * @param[in] max_deliver accept at most this number of Chunks.
  * @param[in] trans_id transaction number associated with this request.
  * @return 1 on success, <0 on error.
  */
-//int acceptChunks(const struct nodeID *to, struct chunkID_set *cset, int cset_len, int max_deliver, int trans_id);
+int acceptChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id);
 
 /**
  * Send a BufferMap to a Peer.

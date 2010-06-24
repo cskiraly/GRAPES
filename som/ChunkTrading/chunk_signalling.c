@@ -225,12 +225,13 @@ int offerChunks(const struct nodeID *to, ChunkIDSet *cset, int cset_len, int max
  *
  * @param[in] to target peer to accept the ChunkIDs
  * @param[in] cset array of ChunkIDs
- * @param[in] cset_len length of the ChunkID set
  * @param[in] max_deliver accept at most this number of Chunks
  * @param[in] trans_id transaction number associated with this request
  * @return 1 on success, <0 on error
  */
-/*
+int acceptChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id) {
+  return sendSignallingBIS(MSG_SIG_ACC, to, NULL, cset, max_deliver, -1, trans_id);
+}/*
 int acceptChunks(const struct nodeID *to, ChunkIDSet *cset, int cset_len, int max_deliver, int trans_id) {
     int buff_len;
     int res;
