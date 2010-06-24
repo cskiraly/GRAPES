@@ -26,7 +26,7 @@ int sendChunk(struct nodeID *to, const struct chunk *c);
   * @param myID address of this peer
   * @return >= 0 on success, <0 on error
   */
-int chunkInit(struct nodeID *myID);
+int chunkDeliveryInit(struct nodeID *myID);
 
 
 #if 0

@@ -46,7 +46,7 @@ int sendChunk(struct nodeID *to, const struct chunk *c)
     return (EXIT_SUCCESS);
 }
 
-int chunkInit(struct nodeID *myID)
+int chunkDeliveryInit(struct nodeID *myID)
 {
   localID = myID;
   return 1;
