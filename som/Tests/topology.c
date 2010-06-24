@@ -65,7 +65,7 @@ const struct nodeID **topoGetNeighbourhood(int *n)
 		mdata = calloc(*n,msize);
 		tmanGivePeers(*n,neighbors,mdata);
 		free(mdata);
-		return neighbors;
+		return (const struct nodeID **)neighbors;
 	}
 	else
 		return topGetNeighbourhood(n);

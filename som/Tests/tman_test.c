@@ -30,6 +30,9 @@
 #include "topmanager.h"
 #include "net_helpers.h"
 
+#include "topology.h"
+#include "peer_util.h"
+
 static const char *my_addr = "127.0.0.1";
 static unsigned int port = 6666;
 static int srv_port=0; int srv_metadata =0; int my_metadata;
@@ -37,14 +40,22 @@ static const char *srv_ip;
 tmanRankingFunction funct = NULL;
 
 int testRanker (const void *tin, const void *p1in, const void *p2in) {
-	struct nodeID *n; int tt, pp1, pp2, s;
-        const uint8_t *t = tin, *p1 = p1in, *p2 = p2in;
+	struct nodeID *n; const int *tt, *pp1, *pp2; int s;
+      const uint8_t *t = tin, *p1 = p1in, *p2 = p2in;
 
-	n = nodeid_undump(t,&s); tt = *((int *)(t+s)); nodeid_free(n);
-	n = nodeid_undump(p1,&s);  pp1 = *((int *)(p1+s)); nodeid_free(n);
-	n = nodeid_undump(p2,&s);  pp2 = *((int *)(p2+s)); nodeid_free(n);
+	n = nodeid_undump(t,&s);
+	tt = ((const int *)(t+s));
+	nodeid_free(n);
 
-	return (abs(tt-pp1) == abs(tt-pp2))?0:(abs(tt-pp1) < abs(tt-pp2))?1:2;
+	n = nodeid_undump(p1,&s);
+	pp1 = ((const int *)(p1+s));
+	nodeid_free(n);
+
+	n = nodeid_undump(p2,&s);
+	pp2 = ((const int *)(p2+s));
+	nodeid_free(n);
+
+	return (abs(*tt-*pp1) == abs(*tt-*pp2))?0:(abs(*tt-*pp1) < abs(*tt-*pp2))?1:2;
 }
 
 static void cmdline_parse(int argc, char *argv[])
@@ -133,14 +144,15 @@ static void loop(struct nodeID *s)
     } else
       topoParseData(NULL, 0, funct);
     if (++cnt % 1 == 0) {
-    	const struct nodeID **neighbours; struct nodeID *neigh; uint8_t *mdata;
-    	int n, i,*d, msize,si;
+    	const struct nodeID **neighbours; struct nodeID *neigh; const uint8_t *mdata;
+    	int n, i, msize,si;
     	mdata = topoGetMetadata(&msize);
     	neighbours = topoGetNeighbourhood(&n);
     	fprintf(stderr, "\tMy metadata = %d\nIteration # %d -- Cache size now is : %d -- I have %d neighbours:\n",my_metadata,cnt,now,n);
     	for (i = 0; i < n; i++) {
+    		const int *d;
     		neigh = nodeid_undump(mdata+i*msize,&si);
-    		d = (int*)((mdata+i*msize)+si);
+    		d = (const int*)((mdata+i*msize)+si);
     		fprintf(stderr, "\t%d: %s -- %d\n", i, node_addr(neighbours[i]), //node_addr(neigh),
 				*d);
     		nodeid_free(neigh);
