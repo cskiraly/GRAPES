@@ -111,7 +111,7 @@ static struct nodeID *init()
 
 static void loop(struct nodeID *s)
 {
-  int done = 0;
+  int done = 0; int more,less,now;
 #define BUFFSIZE 1524
   static uint8_t buff[BUFFSIZE];
   int cnt = 0;
@@ -137,25 +137,25 @@ static void loop(struct nodeID *s)
     	int n, i,*d, msize,si;
     	mdata = topoGetMetadata(&msize);
     	neighbours = topoGetNeighbourhood(&n);
-    	printf("\tMy metadata = %d\nIteration # %d -- I have %d neighbours:\n",my_metadata,cnt,n);
+    	fprintf(stderr, "\tMy metadata = %d\nIteration # %d -- Cache size now is : %d -- I have %d neighbours:\n",my_metadata,cnt,now,n);
     	for (i = 0; i < n; i++) {
     		neigh = nodeid_undump(mdata+i*msize,&si);
     		d = (int*)((mdata+i*msize)+si);
-    		printf("\t%d: %s -- %d\n", i, node_addr(neighbours[i]), //node_addr(neigh),
+    		fprintf(stderr, "\t%d: %s -- %d\n", i, node_addr(neighbours[i]), //node_addr(neigh),
 				*d);
     		nodeid_free(neigh);
     	}
     }
-    //      if (cnt % 30 == 0) {
-    //    	  int more = 20;//((double)rand() / (double)RAND_MAX)*10;
-    //    	  int now = topoGrowNeighbourhood(more);
-    //    	  printf("Growing : +%d -- Cache size now is : %d\n", more,now);
-    //      }
-    //      if (cnt % 10 == 0) {
-    //    	  int less = ((double)rand() / (double)RAND_MAX)*10;
-    //    	  int now = topoShrinkNeighbourhood(less);
-    //    	  printf("Shrinking : -%d -- Cache size now is : %d\n", less,now);
-    //      }
+          if (cnt % 13 == 0) {
+        	  more = ((double)rand() / (double)RAND_MAX)*10;
+        	  now = topoGrowNeighbourhood(more);
+        	  printf("Growing : +%d -- Cache size now is : %d\n", more,now);
+          }
+          if (cnt % 10 == 0) {
+        	  less = ((double)rand() / (double)RAND_MAX)*10;
+        	  now = topoShrinkNeighbourhood(less);
+        	  printf("Shrinking : -%d -- Cache size now is : %d\n", less,now);
+          }
   }
 
 }
