@@ -53,7 +53,7 @@ int chunkSignalingInit(struct nodeID *myID) {
     return 1;
 }
 
-int sendSignalling(int type, const struct nodeID *to_id, const struct nodeID *owner_id, struct chunkID_set *cset, int max_deliver, int cb_size, int trans_id)
+int sendSignalling(int type, struct nodeID *to_id, const struct nodeID *owner_id, struct chunkID_set *cset, int max_deliver, int cb_size, int trans_id)
 {
     int buff_len, meta_len, msg_len, ret;
     uint8_t *buff;
@@ -186,7 +186,7 @@ int deliverChunks(const struct nodeID *to, ChunkIDSet *cset, int cset_len, int m
  * @return 1 on success, <0 on error
  */
 
-int offerChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id)
+int offerChunks(struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id)
 {
   return sendSignalling(MSG_SIG_OFF, to, NULL, cset, max_deliver, -1, trans_id);
 }
@@ -203,7 +203,7 @@ int offerChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliv
  * @param[in] trans_id transaction number associated with this request
  * @return 1 on success, <0 on error
  */
-int acceptChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id) {
+int acceptChunks(struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id) {
   return sendSignalling(MSG_SIG_ACC, to, NULL, cset, max_deliver, -1, trans_id);
 }
 
@@ -219,7 +219,7 @@ int acceptChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deli
  * @param[in] trans_id transaction number associated with this send
  * @return 1 on success, <0 on error
  */
-int sendBufferMap(const struct nodeID *to, const struct nodeID *owner_id, struct chunkID_set *bmap, int bmap_len, int trans_id) {
+int sendBufferMap(struct nodeID *to, const struct nodeID *owner_id, struct chunkID_set *bmap, int bmap_len, int trans_id) {
   return sendSignalling(MSG_SIG_BMOFF, to, (!owner_id?localID:owner_id), bmap, 0, bmap_len, trans_id);//owner NULL -> my buffermap
 }
 

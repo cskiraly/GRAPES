@@ -69,7 +69,7 @@ int chunkSignalingInit(struct nodeID *myID);
  * @param[in] trans_id transaction number associated with this request.
  * @return 1 on success, <0 on error.
  */
-int offerChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id);
+int offerChunks(struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id);
 
 /**
  * Accept a (sub)set of chunks from a Peer.
@@ -83,7 +83,7 @@ int offerChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliv
  * @param[in] trans_id transaction number associated with this request.
  * @return 1 on success, <0 on error.
  */
-int acceptChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id);
+int acceptChunks(struct nodeID *to, struct chunkID_set *cset, int max_deliver, int trans_id);
 
 /**
  * Send a BufferMap to a Peer.
@@ -97,7 +97,7 @@ int acceptChunks(const struct nodeID *to, struct chunkID_set *cset, int max_deli
  * @param[in] trans_id transaction number associated with this send.
  * @return 1 Success, <0 on error.
  */
-int sendBufferMap(const struct nodeID *to, const struct nodeID *owner, struct chunkID_set *bmap, int bmap_len, int trans_id);
+int sendBufferMap(struct nodeID *to, const struct nodeID *owner, struct chunkID_set *bmap, int bmap_len, int trans_id);
 
 /**
  * Request a BufferMap to a Peer.
