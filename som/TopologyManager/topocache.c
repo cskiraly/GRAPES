@@ -268,7 +268,7 @@ struct peer_cache *entries_undump(const uint8_t *buff, int size)
     }
   }
   res->current_size = i;
-if (p - buff != size) { fprintf(stderr, "Waz!! %ld != %d\n", p - buff, size); exit(-1);}
+if (p - buff != size) { fprintf(stderr, "Waz!! %d != %d\n", (int)(p - buff), size); exit(-1);}
 
   return res;
 }
