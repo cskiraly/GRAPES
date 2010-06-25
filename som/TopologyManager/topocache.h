@@ -10,7 +10,7 @@ void cache_update_tout(struct peer_cache *c);
 struct nodeID *nodeid(const struct peer_cache *c, int i);
 const void *get_metadata(const struct peer_cache *c, int *size);
 int cache_metadata_update(struct peer_cache *c, struct nodeID *p, const void *meta, int meta_size);
-int cache_add_ranked(struct peer_cache *c, const struct nodeID *neighbour, const void *meta, int meta_size, ranking_function f, const void *tmeta);
+int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size, ranking_function f, const void *tmeta);
 int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size);
 int cache_del(struct peer_cache *c, struct nodeID *neighbour);
 
