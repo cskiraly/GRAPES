@@ -251,7 +251,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 	}
 		
 	mdata = get_metadata(local_cache,&msize);
-	chosen = rand_peer(local_cache, &meta);		//MAX_PREFERRED_PEERS
+	chosen = rand_peer(local_cache, (void **)&meta);		//MAX_PREFERRED_PEERS
 	new = rank_cache(local_cache, chosen, meta);
 	if (new==NULL) {
 		fprintf(stderr, "TMAN: No cache could be sent to remote peer!\n");
