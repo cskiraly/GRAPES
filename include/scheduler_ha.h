@@ -5,7 +5,7 @@
 
 /** @file scheduler_ha.h
 
-  Scheduling functions for chunk and peer selection.
+  @brief Scheduling functions for chunk and peer selection.
 
   The chunk & peer scheduler (or simply ``scheduler'') is
   responsible for selecting a list of peer-chunk pairs whenever chunks or trade

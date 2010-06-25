@@ -4,7 +4,7 @@
 /** 
  * @file chunkbuffer.h
  *
- * This is the chunks buffer.
+ * @brief This is the chunk buffer of the peer.
  * 
  * The chunks buffer is responsible for storing the chunks received by a
  * peer. Each chunk is stored until the chunk buffer decides to discard it
@@ -56,7 +56,7 @@ int cb_add_chunk(struct chunk_buffer *cb, const struct chunk *c);
  *
  * Provide an (ordered) list of the chunks which are currently stored in
  * the specified chunk buffer. Such list is stored in a C arrary (so,
- * after calling chunks_array = cb_get_chunks(cb), chunks\_array[i]
+ * after calling chunks_array = cb_get_chunks(cb), chunks_array[i]
  * contains the i^th chunk).
  *
  * @param cb a pointer to the chunks buffer
@@ -92,6 +92,17 @@ void cb_destroy(struct chunk_buffer *cb);
 /*
  * HA Functions
  */
+
+/**
+ * Get a specific chunk from a buffer
+ *
+ * Provide one single chunk from the specified chunkbuffer,
+ * with the requested identifier.
+ *
+ * @param cb a pointer to the chunk buffer
+ * @param id the identifier of the chunk to be returned
+ * @return a pointer to the requested chunk
+*/
 const struct chunk *cb_get_chunk(const struct chunk_buffer *cb, int id);
 
 #endif	/* CHUNKBUFFER_H */

@@ -4,7 +4,7 @@
 #include "scheduler_common.h"
 
 /** @file scheduler_la.h
-  Low level scheduling functions for chunk and peer selection. 
+  @brief Low level scheduling functions for chunk and peer selection.
 
   The interface contains highly customizable selector functions. Customization is supported along the following concepts:
 	-# evaluator functions: selector functions can be parameterized by evaluator functions.
@@ -25,38 +25,38 @@
 typedef enum {SCHED_BEST,SCHED_WEIGHTED} SchedOrdering;
 
 /**
-  * Prototype for filter functions that select useful peer-chunk combinations
-  * @returns true if the combination is valid, false otherwise
+  * @brief Prototype for filter functions that select useful peer-chunk combinations
+  * @return true if the combination is valid, false otherwise
   */
 typedef int (*filterFunction)(schedPeerID ,schedChunkID );
 
 /**
-  * Prototype for function assigning a weigth to a peer
-  * @returns the weight associated to the peer
+  * @brief Prototype for function assigning a weigth to a peer
+  * @return the weight associated to the peer
   */
 typedef double (*peerEvaluateFunction)(schedPeerID*);
 
 /**
-  * Prototype for function assigning a weigth to a given chunk
-  * @returns the weight associated to the chunk
+  * @brief Prototype for function assigning a weigth to a given chunk
+  * @return the weight associated to the chunk
   */
 typedef double (*chunkEvaluateFunction)(schedChunkID*);
 
 /**
-  * Prototype for function assigning a weigth to a peer-chunk pair
-  * @returns the weight associated to the peer-chunk pair
+  * @brief Prototype for function assigning a weigth to a peer-chunk pair
+  * @return the weight associated to the peer-chunk pair
   */
 typedef double (*pairEvaluateFunction)(struct PeerChunk*);
 
 /**
-  * Prototype for a two operand double function used to combine weights
+  * @brief Prototype for a two operand double function used to combine weights
   */
 typedef double (*double2op)(double,double);
 
 
 
 /**
-  Low level scheduler function for selecting peers.
+  @brief Low level scheduler function for selecting peers.
 
   If called with chunks_len=0, it will not consider chunks in the selection.
   Otherwise, if chunks_len>0, only those peers will be selected that could be interesting for at least one of the given chunks.
@@ -77,7 +77,7 @@ void schedSelectPeers(SchedOrdering ordering, schedPeerID  *peers, int peers_len
                      peerEvaluateFunction peerevaluate);
 
 /**
-  Low level scheduler function for selecting chunks.
+  @brief Low level scheduler function for selecting chunks.
 
   If called with peers_len=0, it will not consider peers in the selection.
   Otherwise, if peers_len>0, only those chunks will be selected that could be interesting for at least one of the given peers.
@@ -91,7 +91,7 @@ void schedSelectChunks(SchedOrdering ordering, schedPeerID  *peers, int peers_le
 /*---PeerFirst----------------*/
 
 /**
-  Low level scheduler function for selecting peer-chunk pairs in chunk first order.
+  @brief Low level scheduler function for selecting peer-chunk pairs in chunk first order.
 
   First a peer is selected based on weights assigned by the peerevaluate function.
   Then, maximum selected_len chunks are selected for the given peer based on weights assigned by the chunkevaluate function.
@@ -104,7 +104,7 @@ void schedSelectPeerFirst(SchedOrdering ordering, schedPeerID  *peers, size_t pe
 /*---ChunkFirst----------------*/
 
 /**
-  * Low level scheduler function for selecting peer-chunk pairs in peer first order.
+  * @brief Low level scheduler function for selecting peer-chunk pairs in peer first order.
 
   First a chunk is selected based on weights assigned by the chunkevaluate function.
   Then, maximum selected_len peers are selected for the given chunk based on weights assigned by the peerevaluate function.
@@ -117,7 +117,7 @@ void schedSelectChunkFirst(SchedOrdering ordering, schedPeerID  *peers, size_t p
 /*---Composed----------------*/
 
 /**
-  * Low level scheduler function for selecting peer-chunk pairs based on a composed evaluation function.
+  * @brief Low level scheduler function for selecting peer-chunk pairs based on a composed evaluation function.
 
   A maximum of selected_len peer-chunk pairs are selected based on a composed weight function.
   @param [in] chunkevaluate function to assign a weight to each chunk
@@ -132,7 +132,7 @@ void schedSelectComposed(SchedOrdering ordering, schedPeerID  *peers, size_t pee
 /*---Hybrid----------------*/
 
 /**
-  * Low level scheduler function for selecting peer-chunk pairs based on a hybrid evaluation function.
+  * @brief Low level scheduler function for selecting peer-chunk pairs based on a hybrid evaluation function.
 
   A maximum of selected_len peer-chunk pairs are selected based on the given evaluation function.
   @param [in] pairevaluate function to assign a weight to each peer-chunk pair
