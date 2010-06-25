@@ -78,7 +78,7 @@ int cache_metadata_update(struct peer_cache *c, struct nodeID *p, const void *me
   return 0;
 }
 
-int cache_add_ranked(struct peer_cache *c, const struct nodeID *neighbour, const void *meta, int meta_size, ranking_function f, const void *tmeta)
+int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size, ranking_function f, const void *tmeta)
 {
   int i, pos = 0;
 
@@ -145,6 +145,12 @@ void cache_update_tout(struct peer_cache *c)
   
   for (i = 0; i < c->current_size; i++) {
     if (c->entries[i].timestamp == MAX_TIMESTAMP) {
+      int j = i;
+
+      while(j < c->current_size && c->entries[j].id) {
+        nodeid_free(c->entries[j].id);
+        c->entries[j++].id = NULL;
+      }
       c->current_size = i;	/* The cache is ordered by timestamp...
 				   all the other entries wiil be older than
 				   this one, so remove all of them
