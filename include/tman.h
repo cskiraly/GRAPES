@@ -65,7 +65,7 @@ int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size
   @param metadata_size Number of bytes of each metadata.
   @return 0 in case of success; -1 in case of error.
 */
-int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int size, const void *metadata, int metadata_size);
+int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size, const void *metadata, int metadata_size);
 
 
 /**

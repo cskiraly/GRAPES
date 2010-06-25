@@ -159,7 +159,7 @@ int tmanChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
 }
 
 
-int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int size, const void *metadata, int metadata_size)
+int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size, const void *metadata, int metadata_size)
 {
         int msize,s;
         const uint8_t *mdata;
@@ -240,7 +240,7 @@ int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int
 	}
 		
 	mdata = get_metadata(local_cache,&msize);
-	chosen = rand_peer(local_cache, &meta);		//MAX_PREFERRED_PEERS
+	chosen = rand_peer(local_cache, (void **)&meta);		//MAX_PREFERRED_PEERS
 	new = rank_cache(local_cache, chosen, meta);
 	if (new==NULL) {
 		fprintf(stderr, "TMAN: No cache could be sent to remote peer!\n");

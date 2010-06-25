@@ -78,7 +78,7 @@ int cache_metadata_update(struct peer_cache *c, struct nodeID *p, const void *me
   return 0;
 }
 
-int cache_add_ranked(struct peer_cache *c, const struct nodeID *neighbour, const void *meta, int meta_size, ranking_function f, const void *tmeta)
+int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size, ranking_function f, const void *tmeta)
 {
   int i, pos = 0;
 
