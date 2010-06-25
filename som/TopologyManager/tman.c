@@ -160,7 +160,7 @@ int tmanChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
 }
 
 
-int tmanParseData(const uint8_t *buff, int len, const struct nodeID **peers, int size, const void *metadata, int metadata_size)
+int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size, const void *metadata, int metadata_size)
 {
         int msize,s;
         const uint8_t *mdata;
