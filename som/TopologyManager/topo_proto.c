@@ -24,14 +24,16 @@ static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, 
   uint8_t *p = payload;
 
   p += cache_header_dump(p, c);
-  p += entry_dump(p, myEntry, 0);
+  p += entry_dump(p, myEntry, 0, size - (p - payload));
   for (i = 0; nodeid(c, i); i++) {
     if (!nodeid_equal(nodeid(c, i), snot)) {
-      if (p - payload > size - 32 /* FIXME */) {
+      int res;
+      res = entry_dump(p, c, i, size - (p - payload));
+      if (res < 0) {
         fprintf(stderr, "too many entries!\n");
         return -1;
       }
-      p += entry_dump(p, c, i);
+      p += res;
     }
   }
 
