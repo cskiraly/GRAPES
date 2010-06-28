@@ -39,7 +39,7 @@ void peerDelete (struct peer *p) {
 int peerDump(const struct peer *p, uint8_t **buf) {
 
 	uint8_t id[256];
-	int id_size = nodeid_dump(id, p->id);
+	int id_size = nodeid_dump(id, p->id, 256);
 	int res = id_size+sizeof(int);
 	*buf = realloc(*buf, res);
 	memcpy(*buf,id,id_size);
