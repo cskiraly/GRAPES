@@ -580,8 +580,10 @@ int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 	return (mlCompareSocketIDs(s1->addr,s2->addr) == 0);
 }
 
-int nodeid_dump(uint8_t *b, const struct nodeID *s)
+int nodeid_dump(uint8_t *b, const struct nodeID *s, size_t max_write_size)
 {
+  if (max_write_size < SOCKETID_STRING_SIZE) return -1;
+
   mlSocketIDToString(s->addr,(char *)b,SOCKETID_STRING_SIZE);
   //fprintf(stderr,"Dumping nodeID : ho scritto %s (%d bytes)\n",b, strlen((char *)b));
 
