@@ -35,7 +35,7 @@ int wait4data(const struct nodeID *s, struct timeval *tout, fd_set *user_fds)
   if (res <= 0) {
     return res;
   }
-  if (FD_ISSET(s->fd, &fds)) {
+  if (FD_ISSET(s->fd, user_fds)) {
     return 1;
   }
 
