@@ -21,6 +21,11 @@ CFLAGS += $(call cc-option, -Wundef)
 
 CFLAGS += $(call cc-option, -funit-at-a-time)
 
+ifdef GPROF
+CFLAGS += -pg
+LDFLAGS += -pg
+endif
+
 CPPFLAGS = -I$(BASE)/include -I$(BASE)/som
 
 LIBCOMMON = libgrapes.a
