@@ -31,7 +31,7 @@ int wait4data(const struct nodeID *s, struct timeval *tout, fd_set *user_fds)
     user_fds = &fds;
   }
   FD_SET(s->fd, user_fds);
-  res = select(s->fd + 1, user_fds, NULL, NULL, tout);
+  res = select(FD_SETSIZE, user_fds, NULL, NULL, tout); //FIXME FD_SETSIZE uses more resources
   if (res <= 0) {
     return res;
   }
