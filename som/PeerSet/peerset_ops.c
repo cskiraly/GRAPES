@@ -34,7 +34,7 @@ struct peerset *peerset_init(const char *config)
   p->n_elements = 0;
   cfg_tags = config_parse(config);
   res = config_value_int(cfg_tags, "size", &p->size);
-  if (res < 0) {
+  if (!res) {
     p->size = 0;
   }
   free(cfg_tags);
