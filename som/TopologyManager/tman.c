@@ -19,11 +19,11 @@
 #include "msg_types.h"
 #include "tman.h"
 
-#define TMAN_INIT_PEERS 20 // max # of neighbors in local cache (should be >= than the next)
-#define TMAN_MAX_PREFERRED_PEERS 20 // # of peers to choose a receiver among (should be <= than the previous)
-#define TMAN_MAX_GOSSIPING_PEERS 20 // # size of the view to be sent to receiver peer (should be <= than the previous)
+#define TMAN_INIT_PEERS 10 // max # of neighbors in local cache (should be >= than the next)
+#define TMAN_MAX_PREFERRED_PEERS 10 // # of peers to choose a receiver among (should be <= than the previous)
+#define TMAN_MAX_GOSSIPING_PEERS 10 // # size of the view to be sent to receiver peer (should be <= than the previous)
 #define TMAN_IDLE_TIME 10 // # of iterations to wait before switching to inactive state
-#define TMAN_STD_PERIOD 3000000
+#define TMAN_STD_PERIOD 10000000
 #define TMAN_INIT_PERIOD 1000000
 
 static  int max_preferred_peers = TMAN_MAX_PREFERRED_PEERS;
@@ -88,7 +88,7 @@ int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, ranking_fun
     max_gossiping_peers = gossip_peers;
   }
   max_preferred_peers = TMAN_MAX_PREFERRED_PEERS;
-  active = 0;
+  active = -1;
   currtime = gettime();
 
   return 0;
@@ -234,7 +234,8 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 	struct nodeID *chosen;
 
 	cache_update(local_cache);
-	if (active == 0) {
+
+	if (active <= 0) {
 		struct peer_cache *ncache;
 		int j;
 
@@ -245,13 +246,18 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		if (nodeid(ncache, 0)) {
 			restart_peer = nodeid_dup(nodeid(ncache, 0));
 			mdata = get_metadata(ncache, &msize);
-			new = rank_cache(local_cache, restart_peer, mdata);
+			new = rank_cache(active<0?ncache:local_cache, restart_peer, mdata);
 			if (new) {
 				tman_query_peer(new, restart_peer);
 				cache_free(new);
 			}
 		}
-		cache_free(ncache);
+		if (active < 0) {
+			local_cache = ncache;
+			active = 0;
+		} else {
+			cache_free(ncache);
+		}
 	}
 	else {
 	chosen = rand_peer(local_cache, (void **)&meta);		//MAX_PREFERRED_PEERS
