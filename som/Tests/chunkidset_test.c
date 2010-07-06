@@ -68,7 +68,7 @@ static void simple_test(void)
   free(cset);
 }
 
-static void encoding_test(int mode)
+static void encoding_test(enum chunkID_set_encoding_type mode)
 {
   struct chunkID_set *cset, *cset1;
   static uint8_t buff[2048];
@@ -93,8 +93,8 @@ static void encoding_test(int mode)
 int main(int argc, char *argv[])
 {
   simple_test();
-  encoding_test(CIST_PRIORITY);
-  encoding_test(CIST_BITMAP);
+  encoding_test(priority);
+  encoding_test(bitmap);
 
   return 0;
 }

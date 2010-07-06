@@ -19,7 +19,7 @@ struct chunkID_set *chunkID_set_init(const char *config)
 {
   struct chunkID_set *p;
   struct tag *cfg_tags;
-  int res;
+  int res, type;
 
   p = malloc(sizeof(struct chunkID_set));
   if (p == NULL) {
@@ -36,12 +36,24 @@ struct chunkID_set *chunkID_set_init(const char *config)
   } else {
     p->elements = NULL;
   }
-  res = config_value_int(cfg_tags, "type", &p->type);
-  if (!res) {
-    p->type = CIST_PRIORITY;
+  p->type = CIST_PRIORITY;
+  res = config_value_int(cfg_tags, "type", &type);
+  free(cfg_tags);
+  if (res) {
+    switch (type) {
+      case priority:
+        p->type = CIST_PRIORITY;
+        break;
+      case bitmap:
+        p->type = CIST_BITMAP;
+        break;
+      default:
+        chunkID_set_free(p);
+
+        return NULL; 
+    }
   }
   assert(p->type == CIST_PRIORITY || p->type == CIST_BITMAP);
-  free(cfg_tags);
   return p;
 }
 

@@ -109,12 +109,13 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
     *meta_len = int_rcpy(buff + 8);
 
     if (type != -1) {
-        sprintf(cfg, "size=%d,type=%d", size, type);
+        sprintf(cfg, "size=%d", size);
         h = chunkID_set_init(cfg);
         if (h == NULL) {
             fprintf(stderr, "Error in decoding chunkid set - not enough memory to create a chunkID set.\n");
             return NULL;
         }
+        h->type = type;
     } else {
         h = NULL;
     }
