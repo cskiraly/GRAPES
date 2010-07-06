@@ -36,11 +36,12 @@ int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta
 {
     int i;
     uint8_t *meta_p;
+    uint32_t type = h ? h->type : -1;
   
-    int_cpy(buff + 4, h->type);
+    int_cpy(buff + 4, type);
     int_cpy(buff + 8, meta_len);
 
-    switch (h->type) {
+    switch (type) {
         case CIST_BITMAP:
         {
             int elements;
@@ -77,8 +78,12 @@ int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta
             meta_p = buff + 12 + h->n_elements * 4;
 
             break;
+        case -1:
+            int_cpy(buff, 0);
+            meta_p = buff + 12;
+            break;
         default:
-            fprintf(stderr, "Invalid ChunkID encoding type %d\n", h->type);
+            fprintf(stderr, "Invalid ChunkID encoding type %d\n", type);
 
             return -1;
     }
@@ -94,7 +99,7 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
 {
     int i;
     uint32_t size;
-    uint8_t type;
+    uint32_t type;
     struct chunkID_set *h;
     char cfg[32];
     const uint8_t *meta_p;
@@ -103,14 +108,18 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
     type = int_rcpy(buff + 4);
     *meta_len = int_rcpy(buff + 8);
 
-    sprintf(cfg, "size=%d,type=%d", size, type);
-    h = chunkID_set_init(cfg);
-    if (h == NULL) {
-        fprintf(stderr, "Error in decoding chunkid set - not enough memory to create a chunkID set.\n");
-        return NULL;
+    if (type != -1) {
+        sprintf(cfg, "size=%d,type=%d", size, type);
+        h = chunkID_set_init(cfg);
+        if (h == NULL) {
+            fprintf(stderr, "Error in decoding chunkid set - not enough memory to create a chunkID set.\n");
+            return NULL;
+        }
+    } else {
+        h = NULL;
     }
 
-    switch (h->type) {
+    switch (type) {
         case CIST_BITMAP:
         {
             // uint8_t bitmap;
@@ -142,6 +151,9 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
             }
             h->n_elements = size;
             meta_p = buff + 12 + size * 4;
+            break;
+        case -1:
+            meta_p = buff + 12;
             break;
         default:
             fprintf(stderr, "Error in decoding chunkid set - wrong val.\n");
