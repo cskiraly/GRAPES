@@ -79,13 +79,12 @@ int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id,
                    struct chunkID_set **cset, int *max_deliver, int *trans_id,
                    enum signaling_type *sig_type)
 {
-    struct sig_nal *signal;
     int meta_len = 0;
     void *meta;
 
     *cset = decodeChunkSignaling(&meta, &meta_len, buff, buff_len);
     if (meta_len) {
-        signal = meta;
+        struct sig_nal *signal = meta;
         int dummy;
 
         switch (signal->type) {
@@ -130,14 +129,14 @@ static int sendSignaling(int type, struct nodeID *to_id,
     int buff_len, meta_len, msg_len, ret;
     uint8_t *buff;
     struct sig_nal *sigmex;
-    uint8_t *meta;
+
     ret = 1;
-    meta = malloc(1024);
-    if (!meta) {
+    sigmex = malloc(1024);
+    if (!sigmex) {
         fprintf(stderr, "Error allocating meta-buffer\n");
+
         return -1;
     }
-    sigmex = (struct sig_nal*) meta;
     sigmex->type = type;
     sigmex->max_deliver = max_deliver;    
     sigmex->trans_id = trans_id;
@@ -150,20 +149,23 @@ static int sendSignaling(int type, struct nodeID *to_id,
     buff = malloc(buff_len);
     if (!buff) {
         fprintf(stderr, "Error allocating buffer\n");
-        free(meta);
+        free(sigmex);
+
         return -1;
     }
 
     buff[0] = MSG_TYPE_SIGNALLING;
-    msg_len = 1 + encodeChunkSignaling(cset, meta, meta_len, buff+1, buff_len-1);
-    free(meta);
+    msg_len = 1 + encodeChunkSignaling(cset, sigmex, meta_len, buff+1, buff_len-1);
+    free(sigmex);
     if (msg_len <= 0) {
       fprintf(stderr, "Error in encoding chunk set for sending a buffermap\n");
+
       ret = -1;
     } else {
       send_to_peer(localID, to_id, buff, msg_len);
     }    
     free(buff);
+
     return ret;
 }
 
