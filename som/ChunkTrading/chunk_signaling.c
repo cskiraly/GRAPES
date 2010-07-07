@@ -112,7 +112,7 @@ int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id,
         }
         *max_deliver = signal->max_deliver;
         *trans_id = signal->trans_id;
-        *owner_id = (signal->third_peer ? nodeid_undump(&(signal->third_peer), &dummy) : NULL);
+        *owner_id = (meta_len > sizeof(struct sig_nal) - 1 ? nodeid_undump(&(signal->third_peer), &dummy) : NULL);
         free(meta);
     } else {
         return -1;
