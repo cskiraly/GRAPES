@@ -86,7 +86,8 @@ int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id,
     third_peer = meta_len = 0;
     *cset = decodeChunkSignaling(&meta, &meta_len, buff, buff_len);
     if (meta_len) {
-        signal = (struct sig_nal *) meta;
+        signal = meta;
+
         switch (signal->type) {
             case MSG_SIG_OFF:
                 *sig_type = sig_offer;
@@ -107,18 +108,17 @@ int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id,
                 *sig_type = sig_request_buffermap;
                 break;
             default:
-                fprintf(stderr, "Error invalid signaling message\n");                
+                fprintf(stderr, "Error invalid signaling message: type %d\n", signal->type);
                 return -1;
         }
         *max_deliver = signal->max_deliver;
         *trans_id = signal->trans_id;
         *owner_id = (signal->third_peer ? nodeid_undump(&(signal->third_peer), &third_peer) : NULL);
         free(meta);
+    } else {
+        return -1;
     }
-    ret = (!*cset || !meta_len) ? -1 : 1;
-    if (ret < 0) {
-        fprintf(stderr, "Error parsing invalid signaling message\n");
-    }
+
     return ret;
 }
 
