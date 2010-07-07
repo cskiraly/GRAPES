@@ -168,7 +168,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 {
         int msize,s;
         const uint8_t *mdata;
-	struct peer_cache *new = NULL;
+	struct peer_cache *new = NULL, *temp;
 	int source;
 
 	if (len) {
@@ -190,7 +190,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 			return 1;
 		}
 
-		if (h->type == TMAN_QUERY && !restart_peer) {
+		if (h->type == TMAN_QUERY) {
 			new = rank_cache(local_cache, nodeid(remote_cache, 0), get_metadata(remote_cache, &msize));
 			if (new) {
 				tman_reply(remote_cache, new);
@@ -201,8 +201,9 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		}
 
 		if (restart_peer && nodeid_equal(restart_peer, nodeid(remote_cache,0))) { // restart phase : receiving new cache from chosen alive peer...
-			struct peer_cache *temp = cache_init(cache_size,s);
-			if (temp) {
+				cache_size = TMAN_INIT_PEERS;
+				temp = cache_init(cache_size,s);
+				if (temp) { // flush away old entries and store the newcomers
 				cache_add_ranked(temp, nodeid(remote_cache,0), mdata, msize, rankFunct, mymeta);
 				cache_del(remote_cache,nodeid(remote_cache,0));
 				new = merge_caches_ranked(temp, remote_cache, cache_size, &source, rankFunct, mymeta);
@@ -213,7 +214,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 			nodeid_free(restart_peer);
 			restart_peer = NULL;
 		}
-		else {
+		else {	// normal phase
 		cache_add_ranked(local_cache, nodeid(remote_cache,0), mdata, msize, rankFunct, mymeta);
 		cache_del(remote_cache,nodeid(remote_cache,0));
 		new = merge_caches_ranked(local_cache, remote_cache, cache_size, &source, rankFunct, mymeta);
@@ -223,9 +224,9 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		if (new!=NULL) {
 		  cache_free(local_cache);
 		  local_cache = new;
-		  if (source > 1) {
+		  if (source > 1) { // cache is different than before
 			  period = TMAN_INIT_PERIOD;
-                  	active = idle_time;
+			  if(!restart_peer) active = idle_time;
                   }
                   else {
                   	period = TMAN_STD_PERIOD;
@@ -242,31 +243,33 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 
 	cache_update(local_cache);
 
-	if (active <= 0) {
+	if (active <= 0) {	// active < 0 -> bootstrap phase ; active = 0 -> restart phase
 		struct peer_cache *ncache;
-		int j;
+		int j,nsize;
 
-		if (size) ncache = cache_init(size,metadata_size);
+		nsize = TMAN_INIT_PEERS > size ? TMAN_INIT_PEERS : size + 1;
+		if (size) ncache = cache_init(nsize,metadata_size);
 		else {return 1;}
 		for (j=0;j<size;j++)
 			cache_add_ranked(ncache, peers[j],(const uint8_t *)metadata + j * metadata_size, metadata_size, rankFunct, mymeta);
 		if (nodeid(ncache, 0)) {
 			restart_peer = nodeid_dup(nodeid(ncache, 0));
 			mdata = get_metadata(ncache, &msize);
-			new = rank_cache(active<0?ncache:local_cache, restart_peer, mdata);
+			new = rank_cache(active < 0 ? ncache : local_cache, restart_peer, mdata);
 			if (new) {
 				tman_query_peer(new, restart_peer);
 				cache_free(new);
 			}
 		}
-		if (active < 0) {
+		if (active < 0) { // bootstrap
 			local_cache = ncache;
+			cache_size = nsize;
 			active = 0;
-		} else {
+		} else { // restart
 			cache_free(ncache);
 		}
 	}
-	else {
+	else { // normal phase
 	chosen = rand_peer(local_cache, (void **)&meta);		//MAX_PREFERRED_PEERS
 	new = rank_cache(local_cache, chosen, meta);
 	if (new==NULL) {
