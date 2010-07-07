@@ -157,9 +157,10 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
             meta_p = buff + 12;
             break;
         default:
-            fprintf(stderr, "Error in decoding chunkid set - wrong val.\n");
+            fprintf(stderr, "Error in decoding chunkid set - wrong type %d\n", type);
             chunkID_set_free(h);
-            return NULL; /* Not supported yet! */
+
+            return NULL;
     }
 
     if (*meta_len) {
