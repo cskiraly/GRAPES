@@ -126,11 +126,10 @@ static int sendSignaling(int type, struct nodeID *to_id,
                          const struct chunkID_set *cset, int max_deliver,
                          int trans_id)
 {
-    int buff_len, meta_len, msg_len, ret;
+    int buff_len, meta_len, msg_len;
     uint8_t *buff;
     struct sig_nal *sigmex;
 
-    ret = 1;
     sigmex = malloc(1024);
     if (!sigmex) {
         fprintf(stderr, "Error allocating meta-buffer\n");
@@ -159,14 +158,15 @@ static int sendSignaling(int type, struct nodeID *to_id,
     free(sigmex);
     if (msg_len <= 0) {
       fprintf(stderr, "Error in encoding chunk set for sending a buffermap\n");
+      free(buff);
 
-      ret = -1;
+      return -1;
     } else {
       send_to_peer(localID, to_id, buff, msg_len);
     }    
     free(buff);
 
-    return ret;
+    return 1;
 }
 
 int requestChunks(struct nodeID *to, const ChunkIDSet *cset,
