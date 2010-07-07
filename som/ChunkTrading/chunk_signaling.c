@@ -80,13 +80,13 @@ int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id,
                    enum signaling_type *sig_type)
 {
     struct sig_nal *signal;
-    int ret, third_peer, meta_len;
+    int meta_len = 0;
     void *meta;
 
-    third_peer = meta_len = 0;
     *cset = decodeChunkSignaling(&meta, &meta_len, buff, buff_len);
     if (meta_len) {
         signal = meta;
+        int dummy;
 
         switch (signal->type) {
             case MSG_SIG_OFF:
@@ -113,13 +113,13 @@ int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id,
         }
         *max_deliver = signal->max_deliver;
         *trans_id = signal->trans_id;
-        *owner_id = (signal->third_peer ? nodeid_undump(&(signal->third_peer), &third_peer) : NULL);
+        *owner_id = (signal->third_peer ? nodeid_undump(&(signal->third_peer), &dummy) : NULL);
         free(meta);
     } else {
         return -1;
     }
 
-    return ret;
+    return 1;
 }
 
 static int sendSignaling(int type, struct nodeID *to_id,
