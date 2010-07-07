@@ -96,7 +96,7 @@ int chunkSignalingInit(struct nodeID *myID) {
  * @param[out] sig_type Type of signaling message.
  * @return 1 on success, <0 on error.
  */
-int parseSignaling(uint8_t *buff, int buff_len, const struct nodeID *owner_id, struct chunkID_set **cset,
+int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id, struct chunkID_set **cset,
         int *max_deliver, int *trans_id, int *sig_type) {
     struct sig_nal *signal;
     int ret, third_peer, meta_len;
@@ -131,7 +131,7 @@ int parseSignaling(uint8_t *buff, int buff_len, const struct nodeID *owner_id, s
         }
         *max_deliver = signal->max_deliver;
         *trans_id = signal->trans_id;
-        owner_id = (signal->third_peer ? nodeid_undump(&(signal->third_peer), &third_peer) : NULL);
+        *owner_id = (signal->third_peer ? nodeid_undump(&(signal->third_peer), &third_peer) : NULL);
         free(meta);
     }
     ret = (!*cset || !meta_len) ? -1 : 1;
