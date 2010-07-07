@@ -41,8 +41,9 @@ int chunkSignalingInit(struct nodeID *myID);
  * @param[out] sig_type Type of signaling message.
  * @return 1 on success, <0 on error.
  */
-int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id, struct chunkID_set **cset,
-        int *max_deliver, int *trans_id, int *sig_type);
+int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id,
+                   struct chunkID_set **cset, int *max_deliver, int *trans_id,
+                   enum signaling_type *sig_type);
 
 /**
  * @brief Request a set of chunks from a Peer.

@@ -103,11 +103,13 @@ int main(int argc, char *argv[])
   } else {
     /* Receive a chunk and print it! */        
     struct nodeID *owner;
-    int sig_type, max_deliver, trans_id;
+    int max_deliver, trans_id;
+    enum signaling_type sig_type;
     int ret;
     struct nodeID *remote;    
     static uint8_t buff[BUFFSIZE];
-    sig_type = max_deliver = trans_id = ret = 0;
+
+    max_deliver = trans_id = ret = 0;
     ret = recv_from_peer(my_sock, &remote, buff, BUFFSIZE);   
     /* TODO: Error check! */
     if (buff[0] != MSG_TYPE_SIGNALLING) {

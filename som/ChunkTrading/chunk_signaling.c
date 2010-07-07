@@ -77,7 +77,7 @@ int chunkSignalingInit(struct nodeID *myID)
 
 int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id,
                    struct chunkID_set **cset, int *max_deliver, int *trans_id,
-                   int *sig_type)
+                   enum signaling_type *sig_type)
 {
     struct sig_nal *signal;
     int ret, third_peer, meta_len;
