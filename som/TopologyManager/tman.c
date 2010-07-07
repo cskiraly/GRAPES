@@ -196,7 +196,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 			return 1;
 		}
 
-		if (h->type == TMAN_QUERY) {
+		if (h->type == TMAN_QUERY && active >= 0) {
 			new = rank_cache(local_cache, nodeid(remote_cache, 0), get_metadata(remote_cache, &msize));
 			if (new) {
 				tman_reply(remote_cache, new);
