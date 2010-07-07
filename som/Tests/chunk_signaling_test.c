@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
     nodeid_free(dst);    
   } else {
     /* Receive a chunk and print it! */        
-    struct nodeID **owner;
+    struct nodeID *owner;
     int sig_type, max_deliver, trans_id;
     int ret;
     struct nodeID *remote;    
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
       return -1;
     }    
     fprintf(stdout,"Received message of %d bytes\n",ret);
-    ret = parseSignaling(buff+1,ret-1,owner, &cset, &max_deliver, &trans_id, &sig_type);
+    ret = parseSignaling(buff+1,ret-1, &owner, &cset, &max_deliver, &trans_id, &sig_type);
     if(cset){
     fprintf(stdout, "Chunk %d= %d\n",3, chunkID_set_check(cset,3));
     fprintf(stdout, "Chunk %d= %d\n",4, chunkID_set_check(cset,4));
@@ -146,7 +146,6 @@ int main(int argc, char *argv[])
     fprintf(stdout, "Trans_id = %d; Max_del = %d\n", trans_id,max_deliver);
     nodeid_free(remote);
     chunkID_set_free(cset);
-    free(my_addr);    
   }
   nodeid_free(my_sock);
   
