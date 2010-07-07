@@ -223,6 +223,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		else {	// normal phase
 		cache_add_ranked(local_cache, nodeid(remote_cache,0), mdata, msize, rankFunct, mymeta);
 		cache_del(remote_cache,nodeid(remote_cache,0));
+		cache_size = ((current_size/2)*3) > cache_size ? current_size*2 : cache_size;
 		new = merge_caches_ranked(local_cache, remote_cache, cache_size, &source, rankFunct, mymeta);
 		}
 
