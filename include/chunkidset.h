@@ -16,10 +16,6 @@
 */
 typedef struct chunkID_set ChunkIDSet;
 
-enum chunkID_set_encoding_type {
-  bitmap, priority
-};
-
  /**
   * @brief Allocate a chunk ID set.
   * 

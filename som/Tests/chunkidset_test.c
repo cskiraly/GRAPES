@@ -69,7 +69,7 @@ static void simple_test(void)
   free(cset);
 }
 
-static void encoding_test(enum chunkID_set_encoding_type mode)
+static void encoding_test(const char *mode)
 {
   struct chunkID_set *cset, *cset1;
   static uint8_t buff[2048];
@@ -77,7 +77,7 @@ static void encoding_test(enum chunkID_set_encoding_type mode)
   void *meta;
   char config[32];
 
-  sprintf(config,"type=%d", mode);
+  sprintf(config,"type=%s", mode);
   cset = chunkID_set_init(config);
   populate(cset);
   res = encodeChunkSignaling(cset, NULL, 0, buff, sizeof(buff));
@@ -117,8 +117,8 @@ static void metadata_test(void)
 int main(int argc, char *argv[])
 {
   simple_test();
-  encoding_test(priority);
-  encoding_test(bitmap);
+  encoding_test("priority");
+  encoding_test("bitmap");
   metadata_test();
 
   return 0;
