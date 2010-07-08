@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
     }
     fprintf(stdout, "Trans_id = %d; Max_del = %d\n", trans_id,max_deliver);
     nodeid_free(remote);
-    chunkID_set_free(cset);
+    if (cset) chunkID_set_free(cset);
   }
   nodeid_free(my_sock);
   
