@@ -57,7 +57,7 @@ static struct peer_cache *rank_cache (const struct peer_cache *c, const struct n
         }
 
         for (i=0; nodeid(c,i); i++) {
-		if (!nodeid_equal(nodeid(c,i),target))
+		if (!target || !nodeid_equal(nodeid(c,i),target))
 			cache_add_ranked(res,nodeid(c,i),mdata+i*msize,msize, rankFunct, target_meta);
 	}
 
