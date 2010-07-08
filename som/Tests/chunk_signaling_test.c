@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     //res = sendBufferMap(dst,dst,cset,88);
     //res = requestBufferMap(dst,NULL,99);
     fprintf(stdout,"done: %d\n",res);
-    free(cset);
+    chunkID_set_free(cset);
     nodeid_free(dst);    
   } else {
     /* Receive a chunk and print it! */        
