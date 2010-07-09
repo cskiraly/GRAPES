@@ -11,14 +11,14 @@
 #ifndef CHUNKIDSET_H
 #define CHUNKIDSET_H
 
-#define CIST_BITMAP 1
-#define CIST_PRIORITY 2
-
-
 /**
 * Opaque data type representing a Chunk ID Set
 */
 typedef struct chunkID_set ChunkIDSet;
+
+enum chunkID_set_encoding_type {
+  bitmap, priority
+};
 
  /**
   * @brief Allocate a chunk ID set.

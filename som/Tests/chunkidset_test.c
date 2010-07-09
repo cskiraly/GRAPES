@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "chunkidset.h"
 #include "trade_sig_la.h"
 
@@ -68,7 +69,7 @@ static void simple_test(void)
   free(cset);
 }
 
-static void encoding_test(int mode)
+static void encoding_test(enum chunkID_set_encoding_type mode)
 {
   struct chunkID_set *cset, *cset1;
   static uint8_t buff[2048];
@@ -90,11 +91,35 @@ static void encoding_test(int mode)
   free(cset1);
 }
 
+static void metadata_test(void)
+{
+  struct chunkID_set *cset;
+  static uint8_t buff[2048];
+  int res, meta_len;
+  void *meta;
+
+  meta = strdup("This is a test");
+  res = encodeChunkSignaling(NULL, meta, strlen(meta) + 1, buff, sizeof(buff));
+  printf("Encoding Result: %d\n", res);
+  free(meta);
+  
+  cset = decodeChunkSignaling(&meta, &meta_len, buff, res);
+  printf("Decoded MetaData: %s (%d)\n", (char *)meta, meta_len);
+
+  if (cset) {
+    chunkID_set_clear(cset, 0);
+    free(cset);
+  }
+
+  free(meta);
+}
+
 int main(int argc, char *argv[])
 {
   simple_test();
-  encoding_test(CIST_PRIORITY);
-  encoding_test(CIST_BITMAP);
+  encoding_test(priority);
+  encoding_test(bitmap);
+  metadata_test();
 
   return 0;
 }

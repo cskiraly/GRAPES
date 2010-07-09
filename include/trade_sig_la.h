@@ -34,7 +34,7 @@ int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta
   * @param[in] meta_len length of the metadata
   * @param[in] buff Buffer which contain the bit stream to decode, filling the above parameters
   * @param[in] buff_len length of the buffer that contain the bit stream
-  * @return a pointer to the chunk ID set on success, NULL on error
+  * @return a pointer to the chunk ID set or NULL with meta-data when on success, NULL with empty values on error.
   */
 struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8_t *buff, int buff_len);
 
