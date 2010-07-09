@@ -22,6 +22,7 @@
 #include "chunkidset.h"
 #include "trade_sig_la.h"
 #include "trade_sig_ha.h"
+#include "int_coding.h"
 
 //Type of signaling message
 //Request a ChunkIDSet
@@ -47,25 +48,6 @@ struct sig_nal {
 
 //set the local node ID
 static struct nodeID *localID;
-
-
-static inline void int_cpy(uint8_t *p, int v)
-{
-  int tmp;
-
-  tmp = htonl(v);
-  memcpy(p, &tmp, 4);
-}
-
-static inline int int_rcpy(const uint8_t *p)
-{
-  int tmp;
-
-  memcpy(&tmp, p, 4);
-  tmp = ntohl(tmp);
-
-  return tmp;
-}
 
 int chunkSignalingInit(struct nodeID *myID)
 {
