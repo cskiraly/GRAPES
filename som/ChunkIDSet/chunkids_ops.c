@@ -110,9 +110,10 @@ int chunkID_set_check(const struct chunkID_set *h, int chunk_id)
 
 int chunkID_set_get_earliest(const struct chunkID_set *h)
 {
-  int i, min;
+  int i;
+  uint32_t min;
 
-  min = INT_MAX;
+  min = (uint32_t)-1;
   for (i = 0; i < h->n_elements; i++) {
     min = (h->elements[i] < min) ? h->elements[i] : min;
   }
@@ -122,9 +123,10 @@ int chunkID_set_get_earliest(const struct chunkID_set *h)
 
 int chunkID_set_get_latest(const struct chunkID_set *h)
 {
-  int i, max;
+  int i;
+  uint32_t max;
 
-  max = INT_MIN;
+  max = 0;
   for (i = 0; i < h->n_elements; i++) {
     max = (h->elements[i] > max) ? h->elements[i] : max;
   }
