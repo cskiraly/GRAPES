@@ -35,6 +35,9 @@ struct chunkID_set *chunkID_set_init(const char *config)
   }
   if (p->size) {
     p->elements = malloc(p->size * sizeof(int));
+    if (p->elements == NULL) {
+      p->size = 0;
+    }
   } else {
     p->elements = NULL;
   }
