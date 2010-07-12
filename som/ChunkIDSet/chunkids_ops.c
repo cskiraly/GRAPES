@@ -109,41 +109,6 @@ int chunkID_set_check(const struct chunkID_set *h, int chunk_id)
   return -1;
 }
 
-int chunkID_set_get_earliest(const struct chunkID_set *h)
-{
-  int i, min;
-
-  min = INT_MAX;
-  for (i = 0; i < h->n_elements; i++) {
-    min = (h->elements[i] < min) ? h->elements[i] : min;
-  }
-
-  return min;
-}
-
-int chunkID_set_get_latest(const struct chunkID_set *h)
-{
-  int i, max;
-
-  max = INT_MIN;
-  for (i = 0; i < h->n_elements; i++) {
-    max = (h->elements[i] > max) ? h->elements[i] : max;
-  }
-
-  return max;
-}
-
-int chunkID_set_union(struct chunkID_set *h, struct chunkID_set *a)
-{
-  int i;
-
-  for (i = 0; i < a->n_elements; i++) {
-    int ret = chunkID_set_add_chunk(h,a->elements[i]);
-    if (ret < 0) return ret;
-  }
-  return h->n_elements;
-}
-
 void chunkID_set_clear(struct chunkID_set *h, int size)
 {
   h->n_elements = 0;
