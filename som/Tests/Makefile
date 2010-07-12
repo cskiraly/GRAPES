@@ -46,7 +46,7 @@ chunkidset_test: chunkidset_test.o chunkid_set_h.o
 chunk_sending_test: chunk_sending_test.o net_helpers.o
 chunk_sending_test: ../net_helper.o
 
-chunk_signaling_test: chunk_signaling_test.o net_helpers.o
+chunk_signaling_test: chunk_signaling_test.o net_helpers.o chunkid_set_h.o
 chunk_signaling_test: ../net_helper.o
 
 tman_test: tman_test.o topology.o peer.o net_helpers.o
