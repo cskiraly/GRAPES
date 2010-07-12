@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "chunk.h"
 #include "trade_msg_la.h"
 
@@ -16,7 +17,7 @@ static void chunk_print(FILE *f, const struct chunk *c)
   const uint8_t *p;
 
   fprintf(f, "Chunk %d:\n", c->id);
-  fprintf(f, "\tTS: %llu\n", c->timestamp);
+  fprintf(f, "\tTS: %"PRIx64"\n", c->timestamp);
   fprintf(f, "\tPayload size: %d\n", c->size);
   fprintf(f, "\tAttributes size: %d\n", c->attributes_size);
   p = c->data;
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
   res = encodeChunk(&src_c, buff, 23);
   fprintf(stdout, "Encoding in 23 bytes: %d\n", res);
   res = encodeChunk(&src_c, buff, sizeof(buff));
-  fprintf(stdout, "Encoding in %d bytes: %d\n", sizeof(buff), res);
+  fprintf(stdout, "Encoding in %"PRIx64" bytes: %d\n", sizeof(buff), res);
   free(src_c.data);
 
   res = decodeChunk(&dst_c, buff, res);
