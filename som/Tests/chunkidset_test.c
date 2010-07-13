@@ -32,6 +32,8 @@ static void simple_test(void)
   check_chunk(cset, 2);
   check_chunk(cset, 3);
   check_chunk(cset, 9);
+  printf("Earliest chunk %d\nLatest chunk %d.\n",
+          chunkID_set_get_earliest(cset), chunkID_set_get_latest(cset));
   chunkID_set_clear(cset, 0);
   free(cset);
 }
