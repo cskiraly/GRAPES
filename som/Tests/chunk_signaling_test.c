@@ -135,7 +135,7 @@ int client_side(struct nodeID *my_sock)
     enum signaling_type sig_type;
 
     dst = create_node(dst_ip, dst_port);
-    fprintf(stdout,"Sending signal ");
+    fprintf(stdout,"Sending signal\n");
     switch (sig) {
         case offer:
             cset = chunkID_set_init("size=10");
