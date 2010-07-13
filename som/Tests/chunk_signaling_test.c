@@ -129,7 +129,7 @@ static enum signaling_type sig_receive(struct nodeID *my_sock, struct nodeID **r
 int client_side(struct nodeID *my_sock)
 {
     struct nodeID *dst;
-    struct chunkID_set *cset;
+    struct chunkID_set *cset = NULL;
     struct chunkID_set *rcset = NULL;
     int ret;
     enum signaling_type sig_type;
