@@ -13,8 +13,6 @@
 #include "net_helper.h"
 #include "net_helpers.h"
 #include "chunk.h"
-#include "trade_msg_la.h"
-#include "trade_msg_ha.h"
 #include "chunkidset.h"
 #include "msg_types.h"
 #include "trade_sig_ha.h"
@@ -30,14 +28,6 @@ static int random_bmap = 0;
 enum sigz { offer, request, sendbmap, reqbmap, unknown
 };
 static enum sigz sig = unknown;
-static struct chunkID_set *cset = NULL;
-static struct chunkID_set *rcset = NULL;
-static struct nodeID *remote;
-static uint8_t buff[BUFFSIZE];
-static int max_deliver, trans_id, ret, chunktosend;
-static enum signaling_type sig_type;
-static struct nodeID *owner;
-
 
 static struct nodeID *init(void)
 {
@@ -94,12 +84,56 @@ static void cmdline_parse(int argc, char *argv[])
   }
 }
 
+static enum signaling_type sig_receive(struct nodeID *my_sock, struct nodeID **r, int *id, struct chunkID_set **cset)
+{
+    static uint8_t buff[BUFFSIZE];
+    int ret;
+    struct nodeID *owner;
+    struct nodeID *remote;
+    enum signaling_type sig_type;
+    int max_deliver = 0, trans_id = 0;
+
+    ret = recv_from_peer(my_sock, &remote, buff, BUFFSIZE);
+
+    /* TODO: Error check! */
+    if (buff[0] != MSG_TYPE_SIGNALLING) {
+      fprintf(stderr, "Wrong message type!!!\n");
+
+      return -1;
+    }
+    fprintf(stdout,"Received message of %d bytes\n",ret);
+    ret = parseSignaling(buff + 1, ret - 1, &owner, cset, &max_deliver, &trans_id, &sig_type);
+    fprintf(stdout,"Parsed %d bytes: trans_id %d, Max_deliver %d\n", ret, trans_id, max_deliver);
+    switch (sig_type) {
+        case sig_accept:
+            fprintf(stdout, "Accept of %d chunks\n", chunkID_set_size(*cset));
+            break;
+        case sig_deliver:
+            fprintf(stdout, "Deliver of %d chunks\n", chunkID_set_size(*cset));
+            break;
+        case sig_send_buffermap:
+            fprintf(stdout, "I received a buffer of %d chunks\n", chunkID_set_size(*cset));
+            break;
+    }
+    if(owner)nodeid_free(owner);
+    if (r) {
+      *r = remote;
+    } else {
+      nodeid_free(remote);
+    }
+    if (id) *id = trans_id;
+
+    return sig_type;
+}
 
 int client_side(struct nodeID *my_sock)
 {
     struct nodeID *dst;
+    struct chunkID_set *cset;
+    struct chunkID_set *rcset = NULL;
+    int ret;
+    enum signaling_type sig_type;
 
-    max_deliver = trans_id = ret = 0;
     dst = create_node(dst_ip, dst_port);
     fprintf(stdout,"Sending signal ");
     switch (sig) {
@@ -148,50 +182,26 @@ int client_side(struct nodeID *my_sock)
     }
     fprintf(stdout, "done: %d\n", ret);
     nodeid_free(dst);
-    ret = recv_from_peer(my_sock, &remote, buff, BUFFSIZE);
-    if (buff[0] != MSG_TYPE_SIGNALLING) {
-      fprintf(stderr, "Wrong message type!!!\n");
 
-      return -1;
-    }
-    fprintf(stdout,"Received message of %d bytes\n",ret);
-    ret = parseSignaling(buff+1,ret-1, &owner, &rcset, &max_deliver, &trans_id, &sig_type);
-    fprintf(stdout, "Trans_id = %d; Max_del = %d\n", trans_id,max_deliver);
-    switch (sig_type){
-        case sig_accept:
-            fprintf(stdout, "Accept of %d chunks\n", chunkID_set_size(rcset));
-            break;
-        case sig_deliver:
-            fprintf(stdout, "Deliver of %d chunks\n", chunkID_set_size(rcset));
-            break;
-        case sig_send_buffermap:
-            fprintf(stdout, "I received a buffer of %d chunks\n", chunkID_set_size(rcset));
-            break;
-    }
+    sig_type = sig_receive(my_sock, NULL, NULL, &rcset);
     printChunkID_set(rcset);
-    fprintf(stdout, "Trans_id = %d; Max_del = %d\n", trans_id,max_deliver);
     if (cset) chunkID_set_free(cset);
     if (rcset) chunkID_set_free(rcset);
-    if(owner)nodeid_free(owner);
-    nodeid_free(remote);
 
     return 1;
 }
 
 int server_side(struct nodeID *my_sock)
 {
-    max_deliver = trans_id = ret = 0;
-    ret = recv_from_peer(my_sock, &remote, buff, BUFFSIZE);
+    int trans_id = 0;
+    int chunktosend;
+    struct chunkID_set *cset = NULL;
+    struct chunkID_set *rcset;
+    struct nodeID *remote;
+    enum signaling_type sig_type;
 
-    /* TODO: Error check! */
-    if (buff[0] != MSG_TYPE_SIGNALLING) {
-      fprintf(stderr, "Wrong message type!!!\n");
-
-      return -1;
-    }
-    fprintf(stdout,"Received message of %d bytes: trans_id %d, Max_deliver %d\n",ret,trans_id,max_deliver);
-    ret = parseSignaling(buff+1,ret-1, &owner, &cset, &max_deliver, &trans_id, &sig_type);
-    switch(sig_type){
+    sig_type = sig_receive(my_sock, &remote, &trans_id, &cset);
+    switch(sig_type) {
         case sig_offer:
             fprintf(stdout, "1) Message OFFER: peer offers %d chunks\n", chunkID_set_size(cset));
             chunktosend = chunkID_set_get_latest(cset);
@@ -237,7 +247,6 @@ int server_side(struct nodeID *my_sock)
             break;
     }
     nodeid_free(remote);
-    if(owner)nodeid_free(owner);
     if (cset) chunkID_set_free(cset);
     if (rcset) chunkID_set_free(rcset);
 
@@ -252,10 +261,11 @@ int main(int argc, char *argv[])
     cmdline_parse(argc, argv);
     my_sock = init();
     ret = 0;
-    if (dst_port != 0)
+    if (dst_port != 0) {
         ret = client_side(my_sock);
-     else
-        ret = server_side(my_sock);//receiver side
+    } else {
+        ret = server_side(my_sock);
+    }
     nodeid_free(my_sock);
 
     return ret;
