@@ -141,6 +141,7 @@ int client_side(struct nodeID *my_sock)
             cset = chunkID_set_init("size=10");
             if (!cset) {
                 fprintf(stderr,"Unable to allocate memory for cset\n");
+                nodeid_free(dst);
 
                 return -1;
             }
@@ -152,6 +153,7 @@ int client_side(struct nodeID *my_sock)
             cset = chunkID_set_init("size=10");
             if (!cset) {
                 fprintf(stderr,"Unable to allocate memory for cset\n");
+                nodeid_free(dst);
 
                 return -1;
             }
@@ -164,6 +166,7 @@ int client_side(struct nodeID *my_sock)
             cset = chunkID_set_init("type=bitmap,size=10");
             if (!cset) {
                 fprintf(stderr,"Unable to allocate memory for cset\n");
+                nodeid_free(dst);
 
                 return -1;
             }
@@ -177,6 +180,7 @@ int client_side(struct nodeID *my_sock)
             break;
         default:
             printf("Please select one operation (O)ffer, (R)equest, send (B)map, request (b)map\n");
+            nodeid_free(dst);
 
             return -1;
     }
