@@ -17,8 +17,9 @@ TESTS = topology_test \
         topology_test_attr \
         chunk_encoding_test \
         chunk_sending_test \
-	chunk_signaling_test \
+        chunk_signaling_test \
         chunkidset_test \
+        chunkidset_test_bug \
         cb_test \
         config_test \
         tman_test
@@ -42,6 +43,8 @@ chunk_encoding_test: chunk_encoding_test.o
 cb_test: cb_test.o
 
 chunkidset_test: chunkidset_test.o chunkid_set_h.o
+
+chunkidset_test_bug: chunkidset_test_bug.o chunkid_set_h.o
 
 chunk_sending_test: chunk_sending_test.o net_helpers.o
 chunk_sending_test: ../net_helper.o
