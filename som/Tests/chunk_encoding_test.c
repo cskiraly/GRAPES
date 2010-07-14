@@ -17,7 +17,7 @@ static void chunk_print(FILE *f, const struct chunk *c)
   const uint8_t *p;
 
   fprintf(f, "Chunk %d:\n", c->id);
-  fprintf(f, "\tTS: %"PRIx64"\n", c->timestamp);
+  fprintf(f, "\tTS: %"PRIu64"\n", c->timestamp);
   fprintf(f, "\tPayload size: %d\n", c->size);
   fprintf(f, "\tAttributes size: %d\n", c->attributes_size);
   p = c->data;
