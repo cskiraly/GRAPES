@@ -67,7 +67,7 @@ int peerset_add_peer(struct peerset *h, struct nodeID *id)
   e = &(h->elements[h->n_elements++]);
   e->id = nodeid_dup(id);
   gettimeofday(&e->creation_timestamp,NULL);
-  e->bmap = chunkID_set_init("type=1");
+  e->bmap = chunkID_set_init("type=bitmap");
   timerclear(&e->bmap_timestamp);
   e->cb_size = INT_MAX;
 
