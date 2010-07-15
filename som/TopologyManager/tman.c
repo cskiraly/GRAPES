@@ -21,8 +21,8 @@
 
 #define TMAN_INIT_PEERS 10 // max # of neighbors in local cache (should be >= than the next)
 #define TMAN_MAX_PREFERRED_PEERS 10 // # of peers to choose a receiver among (should be <= than the previous)
-#define TMAN_MAX_GOSSIPING_PEERS 10 // # size of the view to be sent to receiver peer (should be <= than the previous)
-#define TMAN_IDLE_TIME 10 // # of iterations to wait before switching to inactive state
+#define TMAN_MAX_GOSSIPING_PEERS 20 // # size of the view to be sent to receiver peer (should be <= than the previous)
+#define TMAN_IDLE_TIME 20 // # of iterations to wait before switching to inactive state
 #define TMAN_STD_PERIOD 1000000
 #define TMAN_INIT_PERIOD 1000000
 
@@ -107,9 +107,6 @@ int tmanGivePeers (int n, struct nodeID **peers, void *metadata)
 			if (metadata_size)
 				memcpy((uint8_t *)metadata + i * metadata_size, mdata + i * metadata_size, metadata_size);
 	}
-	if (i != n) {
-		active = 0;
-        }
 
 	return i;
 }
@@ -173,6 +170,9 @@ int tmanChangeMetadata(void *metadata, int metadata_size)
 	cache_free(local_cache);
 	local_cache = new;
   }
+
+  active = 0;
+  countdown = idle_time*2;
 
   return 1;
 }
