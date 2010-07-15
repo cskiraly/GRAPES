@@ -12,6 +12,16 @@
 #include "trade_sig_la.h"
 #include "chunkid_set_h.h"
 
+static void display_cset(struct chunkID_set *cset)
+{
+  printf("Chunk ID Set initialised: size is %d\n", chunkID_set_size(cset));
+  printChunkID_set(cset);
+  printf("Earliest chunk %u\n", chunkID_set_get_earliest(cset));
+  check_chunk(cset, 0);
+  printf("Latest chunk %u.\n", chunkID_set_get_latest(cset));
+  check_chunk(cset, 0);
+}
+
 static void simple_test(void)
 {
   struct chunkID_set *cset;
@@ -25,12 +35,11 @@ static void simple_test(void)
     return;
   }
 
-  printf("Chunk ID Set initialised: size is %d\n", chunkID_set_size(cset));
-  printChunkID_set(cset);
-  printf("Earliest chunk %u\n", chunkID_set_get_earliest(cset));
-  check_chunk(cset, 0);
-  printf("Latest chunk %u.\n", chunkID_set_get_latest(cset));
-  check_chunk(cset, 0);
+  display_cset(cset);
+  chunkID_set_add_chunk(cset, 7);
+  chunkID_set_add_chunk(cset, 2);
+  display_cset(cset);
+
   chunkID_set_free(cset);
 }
 
