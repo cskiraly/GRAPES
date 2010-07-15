@@ -16,6 +16,8 @@
 */
 typedef struct chunkID_set ChunkIDSet;
 
+#define CHUNKID_INVALID ((2^32) - 1)
+
  /**
   * @brief Allocate a chunk ID set.
   * 
@@ -109,8 +111,8 @@ void chunkID_set_clear(struct chunkID_set *h, int size);
   */
 void chunkID_set_free(struct chunkID_set *h);
 
-int chunkID_set_get_earliest(const struct chunkID_set *h);
+uint32_t chunkID_set_get_earliest(const struct chunkID_set *h);
 
-int chunkID_set_get_latest(const struct chunkID_set *h);
+uint32_t chunkID_set_get_latest(const struct chunkID_set *h);
 
 #endif	/* CHUNKIDSET_H */

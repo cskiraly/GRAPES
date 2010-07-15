@@ -6,17 +6,17 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <limits.h>
 #include <assert.h>
 
 #include "chunkidset.h"
 
-int chunkID_set_get_earliest(const struct chunkID_set *h)
+uint32_t chunkID_set_get_earliest(const struct chunkID_set *h)
 {
-  int i, min;
+  int i;
+  uint32_t min;
 
   if (chunkID_set_size(h) == 0) {
-    return -1;
+    return CHUNKID_INVALID;
   }
   min = chunkID_set_get_chunk(h, 0);
   for (i = 1; i < chunkID_set_size(h); i++) {
@@ -28,12 +28,13 @@ int chunkID_set_get_earliest(const struct chunkID_set *h)
   return min;
 }
 
-int chunkID_set_get_latest(const struct chunkID_set *h)
+uint32_t chunkID_set_get_latest(const struct chunkID_set *h)
 {
-  int i, max;
+  int i;
+  uint32_t  max;
 
   if (chunkID_set_size(h) == 0) {
-    return -1;
+    return CHUNKID_INVALID;
   }
   max = chunkID_set_get_chunk(h, 0);
   for (i = 1; i < chunkID_set_size(h); i++) {
