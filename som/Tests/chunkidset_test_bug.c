@@ -16,11 +16,15 @@
 
 static void display_cset(struct chunkID_set *cset)
 {
+  uint32_t ret;
+
   printf("Chunk ID Set initialised: size is %d\n", chunkID_set_size(cset));
   printChunkID_set(cset);
-  printf("Earliest chunk %"PRIu32"\n", chunkID_set_get_earliest(cset));
+  printf("Earliest chunk %"PRIu32"\n", (ret = chunkID_set_get_earliest(cset)));
+  printf("%s chunk\n",(ret == CHUNKID_INVALID ? "Invalid" : "Valid"));
   check_chunk(cset, 0);
-  printf("Latest chunk %"PRIu32"\n", chunkID_set_get_latest(cset));
+  printf("Latest chunk %"PRIu32"\n", (ret = chunkID_set_get_latest(cset)));
+  printf("%s chunk\n",(ret == CHUNKID_INVALID ? "Invalid" : "Valid"));
   check_chunk(cset, 0);
 }
 
