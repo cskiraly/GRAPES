@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
   res = encodeChunk(&src_c, buff, 23);
   fprintf(stdout, "Encoding in 23 bytes: %d\n", res);
   res = encodeChunk(&src_c, buff, sizeof(buff));
-  fprintf(stdout, "Encoding in %d bytes: %d\n", sizeof(buff), res);
+  fprintf(stdout, "Encoding in %zu bytes: %d\n", sizeof(buff), res);
   free(src_c.data);
 
   res = decodeChunk(&dst_c, buff, res);
