@@ -19,7 +19,7 @@ struct chunkID_set *chunkID_set_init(const char *config)
 {
   struct chunkID_set *p;
   struct tag *cfg_tags;
-  int res;
+  int res, type;
 
   p = malloc(sizeof(struct chunkID_set));
   if (p == NULL) {
@@ -33,15 +33,30 @@ struct chunkID_set *chunkID_set_init(const char *config)
   }
   if (p->size) {
     p->elements = malloc(p->size * sizeof(int));
+    if (p->elements == NULL) {
+      p->size = 0;
+    }
   } else {
     p->elements = NULL;
   }
-  res = config_value_int(cfg_tags, "type", &p->type);
-  if (!res) {
-    p->type = CIST_PRIORITY;
+  p->type = CIST_PRIORITY;
+  res = config_value_int(cfg_tags, "type", &type);
+  free(cfg_tags);
+  if (res) {
+    switch (type) {
+      case priority:
+        p->type = CIST_PRIORITY;
+        break;
+      case bitmap:
+        p->type = CIST_BITMAP;
+        break;
+      default:
+        chunkID_set_free(p);
+
+        return NULL; 
+    }
   }
   assert(p->type == CIST_PRIORITY || p->type == CIST_BITMAP);
-  free(cfg_tags);
   return p;
 }
 
@@ -95,9 +110,10 @@ int chunkID_set_check(const struct chunkID_set *h, int chunk_id)
 
 int chunkID_set_get_earliest(const struct chunkID_set *h)
 {
-  int i, min;
+  int i;
+  uint32_t min;
 
-  min = INT_MAX;
+  min = h->n_elements ? h->elements[0] : 0;
   for (i = 0; i < h->n_elements; i++) {
     min = (h->elements[i] < min) ? h->elements[i] : min;
   }
@@ -107,9 +123,10 @@ int chunkID_set_get_earliest(const struct chunkID_set *h)
 
 int chunkID_set_get_latest(const struct chunkID_set *h)
 {
-  int i, max;
+  int i;
+  uint32_t max;
 
-  max = INT_MIN;
+  max = h->n_elements ? h->elements[0] : 0;
   for (i = 0; i < h->n_elements; i++) {
     max = (h->elements[i] > max) ? h->elements[i] : max;
   }

@@ -1,0 +1,62 @@
+/** @mainpage
+
+   @section intro Introduction
+
+   GRAPES (Generic Resource-Aware P2P Environment for Streaming) is a
+   library of functionalities providing some ``building blocks'' for P2P
+   streaming applications. Each application is decomposed in a set of
+   <i>modules</i> (or <i>\em components</i>), and the library contain
+   various alternative implementations of the modules, exported through
+   the public GRAPES API (see the list of .h files).
+
+   Ideally, a P2P streaming application can be built by linking such
+   functionalities with a minimum amount of C code (in the best of the possible
+   worlds, we would have some kind of GUI - like a graph editor - allowing
+   to combine the various modules in different ways and to automatically
+   generate the glue code for building the P2P program).
+
+   One of the design goals of the GRAPES library is not to force
+   any particular structure in the applications using it, and it should be
+   possible to use its APIs in either multi-threaded programs, multi-process
+   applications, single-threaded (event based) architectures, etc...
+   Moreover, there should not be any dependency on external libraries, and
+   the code should be fairly portable.
+
+@section structure GRAPES Structure
+
+   The following Components/Modules can be identified:
+	- a Scheduler
+	- a @link topmanager.h Peer Sampling @endlink mechanism
+        - a @link peerset.h Peer Set @endlink data type
+        - a @link chunkbuffer.h Chunk Buffer @endlink
+        - a @link chunkidset.h Chunk ID Set @endlink data type
+	- a @ref trade_sig Module
+	- a @ref trade_msg module (send \& receive chunks)
+
+   Each module is separated into a sub-directory within the source tree,
+   is described by a well-defined interface, and can have different
+   implementations and/or bindings to different programming languages
+   (for the moment, only C bindings are provided wrapper for other
+   programming languages can be implemented based on the C library).
+   The public Application Programming Interfaces (APIs) of the various
+   modules are located in the <i>include/</i> sub-directory.
+
+@section trade_msg Chunk Transport
+   Chunk Transport is a module of the GRAPES libary which is responsible for
+   sending and receiving chunks (described by the struct chunk from chunk.h).
+
+   As for other modules, chunk transport is provided through two kinds
+   of APIs: the @link trade_msg_ha.h <i>high abstraction</i> @endlink and
+   the @link trade_msg_la.h <i>low abstraction</i> @endlink API.
+
+   By design, the chunk trading API should be generic
+   enough to support both push and pull styles of streaming.
+
+@section trade_sig Signalling
+  The Signalling functionalities allow the caller to offer/request chunks, or
+  to send buffermaps (Chunk ID Sets) between peers.
+
+  The signalling API is divided in @link trade_sig_ha.h <i>high
+  abstraction</i> @endlink and @link trade_sig_la.h <i>low
+  abstraction</i> @endlink
+*/

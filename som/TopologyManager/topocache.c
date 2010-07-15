@@ -13,6 +13,7 @@
 
 #include "net_helper.h"
 #include "topocache.h"
+#include "int_coding.h"
 
 #define MAX_TIMESTAMP 5
 struct cache_entry {
@@ -27,24 +28,6 @@ struct peer_cache {
   int metadata_size;
   uint8_t *metadata; 
 };
-
-static inline void int_cpy(uint8_t *p, int v)
-{
-  int tmp;
-
-  tmp = htonl(v);
-  memcpy(p, &tmp, 4);
-}
-
-static inline int int_rcpy(const uint8_t *p)
-{
-  int tmp;
-  
-  memcpy(&tmp, p, 4);
-  tmp = ntohl(tmp);
-
-  return tmp;
-}
 
 struct nodeID *nodeid(const struct peer_cache *c, int i)
 {
