@@ -49,7 +49,7 @@ static struct peer_cache *rank_cache (const struct peer_cache *c, const struct n
 	const uint8_t *mdata;
 
         mdata = get_metadata(c,&msize);
-	res = cache_init(cache_size,msize);
+	res = cache_init(cache_size, msize, 0);
         if (res == NULL) {
           return res;
         }
@@ -78,7 +78,7 @@ int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, ranking_fun
   topo_proto_init(myID, metadata, metadata_size);
   mymeta = metadata;
   
-  local_cache = cache_init(cache_size, metadata_size);
+  local_cache = cache_init(cache_size, metadata_size, 0);
   if (local_cache == NULL) {
     return -1;
   }
@@ -221,7 +221,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		struct peer_cache *ncache;
 		int j;
 
-		if (size) ncache = cache_init(size,metadata_size);
+		if (size) ncache = cache_init(size, metadata_size, 0);
 		else {return 1;}
 		for (j=0;j<size;j++)
 			cache_add_ranked(ncache, peers[j],(const uint8_t *)metadata + j * metadata_size, metadata_size, rankFunct, mymeta);

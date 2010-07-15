@@ -21,6 +21,7 @@
 #include "msg_types.h"
 
 #define DEFAULT_CACHE_SIZE 10
+#define DEFAULT_MAX_TIMESTAMP 5
 
 static uint64_t currtime;
 static int cache_size;
@@ -56,16 +57,20 @@ static int time_to_send(void)
 int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
   struct tag *cfg_tags;
-  int res;
+  int res, max_timestamp;
 
   cfg_tags = config_parse(config);
   res = config_value_int(cfg_tags, "cache_size", &cache_size);
   if (!res) {
     cache_size = DEFAULT_CACHE_SIZE;
   }
+  res = config_value_int(cfg_tags, "max_timestamp", &max_timestamp);
+  if (!res) {
+    max_timestamp = DEFAULT_MAX_TIMESTAMP;
+  }
   free(cfg_tags);
   
-  local_cache = cache_init(cache_size, metadata_size);
+  local_cache = cache_init(cache_size, metadata_size, max_timestamp);
   if (local_cache == NULL) {
     return -1;
   }

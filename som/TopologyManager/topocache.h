@@ -2,7 +2,7 @@ struct peer_cache;
 struct cache_entry;
 typedef int (*ranking_function)(const void *target, const void *p1, const void *p2);	// FIXME!
 
-struct peer_cache *cache_init(int n, int metadata_size);
+struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp);
 void cache_free(struct peer_cache *c);
 void cache_update(struct peer_cache *c);
 void cache_update_tout(struct peer_cache *c);
