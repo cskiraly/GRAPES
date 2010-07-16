@@ -18,7 +18,7 @@ struct nodeID *rand_peer(struct peer_cache *c, void **meta);
 
 struct peer_cache *entries_undump(const uint8_t *buff, int size);
 int cache_header_dump(uint8_t *b, const struct peer_cache *c);
-int entry_dump(uint8_t *b, struct peer_cache *e, int i);
+int entry_dump(uint8_t *b, struct peer_cache *e, int i, size_t max_write_size);
 
 struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, void *mymeta);
 struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source);

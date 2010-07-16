@@ -120,8 +120,9 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len);
 * Serialize a nodeID in a byte array.
 * @param[in] b A pointer to the byte array that will contain the nodeID serialization.
 * @param[in] s A pointer to the nodeID to be serialized.
-* @return The number of bytes written in the buffer.
+* @param[in] max_write_size A number of bytes available in b
+* @return The number of bytes written in the buffer, or -1 if error
 */
-int nodeid_dump(uint8_t *b, const struct nodeID *s);
+int nodeid_dump(uint8_t *b, const struct nodeID *s, size_t max_write_size);
 
 #endif /* NET_HELPER_H */

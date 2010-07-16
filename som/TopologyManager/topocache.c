@@ -270,22 +270,32 @@ int cache_header_dump(uint8_t *b, const struct peer_cache *c)
   return 8;
 }
 
-int entry_dump(uint8_t *b, struct peer_cache *c, int i)
+int entry_dump(uint8_t *b, struct peer_cache *c, int i, size_t max_write_size)
 {
   int res;
+  int size = 0;
  
   if (i && (i >= c->cache_size - 1)) {
     return 0;
   }
   int_cpy(b, c->entries[i].timestamp);
-  res = 4;
-  res += nodeid_dump(b + res, c->entries[i].id);
+  size = +4;
+  res = nodeid_dump(b + size, c->entries[i].id, max_write_size - size);
+  if (res < 0 ) {
+    fprintf (stderr,"cavolo1\n");
+    return -1;
+  }
+  size += res;
   if (c->metadata_size) {
-    memcpy(b + res, c->metadata + c->metadata_size * i, c->metadata_size);
-    res += c->metadata_size;
+    if (c->metadata_size > max_write_size - size) {
+      fprintf (stderr,"cavolo2\n");
+      return -1;
+    }
+    memcpy(b + size, c->metadata + c->metadata_size * i, c->metadata_size);
+    size += c->metadata_size;
   }
 
-  return res;
+  return size;
 }
 
 struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, void *mymetadata)
