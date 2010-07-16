@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <limits.h>
+#include <string.h>
 #include <assert.h>
 
 #include "chunkids_private.h"
@@ -19,7 +20,8 @@ struct chunkID_set *chunkID_set_init(const char *config)
 {
   struct chunkID_set *p;
   struct tag *cfg_tags;
-  int res, type;
+  int res;
+  const char *type;
 
   p = malloc(sizeof(struct chunkID_set));
   if (p == NULL) {
@@ -40,23 +42,22 @@ struct chunkID_set *chunkID_set_init(const char *config)
     p->elements = NULL;
   }
   p->type = CIST_PRIORITY;
-  res = config_value_int(cfg_tags, "type", &type);
-  free(cfg_tags);
-  if (res) {
-    switch (type) {
-      case priority:
-        p->type = CIST_PRIORITY;
-        break;
-      case bitmap:
-        p->type = CIST_BITMAP;
-        break;
-      default:
-        chunkID_set_free(p);
+  type = config_value_str(cfg_tags, "type");
+  if (type) {
+    if (!memcmp(type, "priority", strlen(type) - 1)) {
+      p->type = CIST_PRIORITY;
+    } else if (!memcmp(type, "bitmap", strlen(type) - 1)) {
+      p->type = CIST_BITMAP;
+    } else {
+      chunkID_set_free(p);
+      free(cfg_tags);
 
-        return NULL; 
+      return NULL; 
     }
   }
+  free(cfg_tags);
   assert(p->type == CIST_PRIORITY || p->type == CIST_BITMAP);
+
   return p;
 }
 
@@ -106,43 +107,6 @@ int chunkID_set_check(const struct chunkID_set *h, int chunk_id)
   }
 
   return -1;
-}
-
-int chunkID_set_get_earliest(const struct chunkID_set *h)
-{
-  int i;
-  uint32_t min;
-
-  min = h->n_elements ? h->elements[0] : 0;
-  for (i = 0; i < h->n_elements; i++) {
-    min = (h->elements[i] < min) ? h->elements[i] : min;
-  }
-
-  return min;
-}
-
-int chunkID_set_get_latest(const struct chunkID_set *h)
-{
-  int i;
-  uint32_t max;
-
-  max = h->n_elements ? h->elements[0] : 0;
-  for (i = 0; i < h->n_elements; i++) {
-    max = (h->elements[i] > max) ? h->elements[i] : max;
-  }
-
-  return max;
-}
-
-int chunkID_set_union(struct chunkID_set *h, struct chunkID_set *a)
-{
-  int i;
-
-  for (i = 0; i < a->n_elements; i++) {
-    int ret = chunkID_set_add_chunk(h,a->elements[i]);
-    if (ret < 0) return ret;
-  }
-  return h->n_elements;
 }
 
 void chunkID_set_clear(struct chunkID_set *h, int size)
