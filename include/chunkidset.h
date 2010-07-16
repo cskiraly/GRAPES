@@ -16,7 +16,7 @@
 */
 typedef struct chunkID_set ChunkIDSet;
 
-#define CHUNKID_INVALID ((2^32) - 1)
+#define CHUNKID_INVALID (uint32_t)-1
 
  /**
   * @brief Allocate a chunk ID set.
