@@ -312,6 +312,41 @@ int entry_dump(uint8_t *b, struct peer_cache *c, int i)
   return res;
 }
 
+struct peer_cache *cache_rank (const struct peer_cache *c, ranking_function rank, const struct nodeID *target, const void *target_meta)
+{
+	struct peer_cache *res;
+	int i,j,pos;
+
+	res = cache_init(c->cache_size,c->metadata_size);
+	if (res == NULL) {
+		return res;
+	}
+
+	for (i = 0; i < c->current_size; i++) {
+		if (!target || !nodeid_equal(c->entries[i].id,target)) {
+			pos = 0;
+			for (j=0; j<res->current_size;j++) {
+				if (((rank != NULL) && rank(target_meta, c->metadata+(c->metadata_size * i), res->metadata+(res->metadata_size * j)) == 2) ||
+					((rank == NULL) && res->entries[j].timestamp < c->entries[i].timestamp)) {
+					pos++;
+				}
+			}
+			if (c->metadata_size) {
+				memmove(res->metadata + (pos + 1) * res->metadata_size, res->metadata + pos * res->metadata_size, (res->current_size - pos) * res->metadata_size);
+				memcpy(res->metadata + pos * res->metadata_size, c->metadata+(c->metadata_size * i), res->metadata_size);
+			}
+			for (j = res->current_size; j > pos; j--) {
+				res->entries[j] = res->entries[j - 1];
+			}
+			res->entries[pos].id = nodeid_dup(c->entries[i].id);
+			res->entries[pos].timestamp = c->entries[i].timestamp;
+			res->current_size++;
+		}
+	}
+
+	return res;
+}
+
 struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, void *mymetadata)
 {
   int n1, n2;
