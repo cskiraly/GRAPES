@@ -32,12 +32,12 @@ static  int idle_time = TMAN_IDLE_TIME;
 
 static uint64_t currtime;
 static int cache_size = TMAN_INIT_PEERS;
-static struct peer_cache *local_cache = NULL;
+static struct peer_cache *local_cache;
 static int period = TMAN_INIT_PERIOD;
-static int active = 0;
-static int do_resize = 0;
+static int active;
+static int do_resize;
 static void *mymeta;
-static struct nodeID *restart_peer = NULL;
+static struct nodeID *restart_peer;
 
 static tmanRankingFunction rankFunct;
 
