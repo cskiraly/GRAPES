@@ -124,7 +124,7 @@ static int sendSignaling(int type, struct nodeID *to_id,
     sigmex->third_peer = 0;
     meta_len = sizeof(*sigmex) - 1;
     if (owner_id) {
-        meta_len += nodeid_dump(&sigmex->third_peer, owner_id);
+        meta_len += nodeid_dump(&sigmex->third_peer, owner_id, 1024 - meta_len);
     }
     buff_len = 1 + (cset ? chunkID_set_size(cset):0) * 4 + 12 + meta_len; // this should be enough
     buff = malloc(buff_len);
