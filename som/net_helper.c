@@ -58,12 +58,7 @@ struct nodeID *create_node(const char *IPaddr, int port)
     return NULL;
   }
 
-  s->fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (s->fd < 0) {
-    free(s);
-    
-    return NULL;
-  }
+  s->fd = -1;
 
   return s;
 }
@@ -76,6 +71,12 @@ struct nodeID *net_helper_init(const char *my_addr, int port)
   myself = create_node(my_addr, port);
   if (myself == NULL) {
     fprintf(stderr, "Error creating my socket (%s:%d)!\n", my_addr, port);
+  }
+  myself->fd =  socket(AF_INET, SOCK_DGRAM, 0);
+  if (myself->fd < 0) {
+    free(myself);
+    
+    return NULL;
   }
   fprintf(stderr, "My sock: %d\n", myself->fd);
 
