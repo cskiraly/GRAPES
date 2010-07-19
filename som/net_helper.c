@@ -206,6 +206,7 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len)
   res = malloc(sizeof(struct nodeID));
   if (res != NULL) {
     memcpy(&res->addr, b, sizeof(struct sockaddr_in));
+    res->fd = -1;
   }
   *len = sizeof(struct sockaddr_in);
 
