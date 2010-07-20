@@ -96,9 +96,13 @@ int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void 
       pos++;
     }
   }
-  if (meta_size) {
-    memmove(c->metadata + (pos + 1) * meta_size, c->metadata + pos * meta_size, (c->current_size - pos) * meta_size);
-    memcpy(c->metadata + pos * meta_size, meta, meta_size);
+  if (c->metadata_size) {
+    memmove(c->metadata + (pos + 1) * c->metadata_size, c->metadata + pos * c->metadata_size, (c->current_size - pos) * c->metadata_size);
+    if (meta_size) {
+      memcpy(c->metadata + pos * c->metadata_size, meta, meta_size);
+    } else {
+      memset(c->metadata + pos * c->metadata_size, 0, c->metadata_size);
+    }
   }
   for (i = c->current_size; i > pos; i--) {
     c->entries[i] = c->entries[i - 1];
