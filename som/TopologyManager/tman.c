@@ -273,7 +273,6 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 				tman_query_peer(new, restart_peer);
 				cache_free(new);
 			}
-		}
 		if (active < 0) { // bootstrap
 			local_cache = ncache;
 			current_size = size;
@@ -281,6 +280,12 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 			active = 0;
 		} else { // restart
 			cache_free(ncache);
+		}
+		}
+		else {
+			cache_free(ncache);
+			fprintf(stderr, "TMAN: No peer available from peer sampler!\n");
+			return 1;
 		}
 	}
 	else { // normal phase
