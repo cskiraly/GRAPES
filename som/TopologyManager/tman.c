@@ -161,10 +161,18 @@ const void *tmanGetMetadata(int *metadata_size)
 
 int tmanChangeMetadata(void *metadata, int metadata_size)
 {
+  struct peer_cache *new = NULL;
+
   if (topo_proto_metadata_update(metadata, metadata_size) <= 0) {
     return -1;
   }
   mymeta = metadata;
+
+  new = rank_cache(local_cache, NULL, mymeta);
+  if (new) {
+	cache_free(local_cache);
+	local_cache = new;
+  }
 
   return 1;
 }
