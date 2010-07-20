@@ -23,3 +23,5 @@ int entry_dump(uint8_t *b, struct peer_cache *e, int i);
 struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, void *mymeta);
 struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source);
 struct peer_cache *cache_rank (const struct peer_cache *c, ranking_function rank, const struct nodeID *target, const void *target_meta);
+struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int *size);
+int cache_resize (struct peer_cache *c, int size);

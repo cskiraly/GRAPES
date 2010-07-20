@@ -347,6 +347,84 @@ struct peer_cache *cache_rank (const struct peer_cache *c, ranking_function rank
 	return res;
 }
 
+struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int *size) {
+	int n,pos;
+	struct peer_cache *new_cache;
+	uint8_t *meta;
+
+	if (c1->metadata_size != c2->metadata_size) {
+		return NULL;
+	}
+
+	*size = c1->current_size + c2->current_size;
+	new_cache = cache_init(*size, c1->metadata_size);
+	if (new_cache == NULL) {
+		return NULL;
+	}
+
+	meta = new_cache->metadata;
+
+	for (n = 0; n < c1->current_size; n++) {
+		if (new_cache->metadata_size) {
+			memcpy(meta, c1->metadata + n * c1->metadata_size, c1->metadata_size);
+			meta += new_cache->metadata_size;
+		}
+		new_cache->entries[new_cache->current_size++] = c1->entries[n];
+		c1->entries[n].id = NULL;
+	}
+  
+	for (n = 0; n < c2->current_size; n++) {
+		pos = in_cache(new_cache, &c2->entries[n]);
+		if (pos >= 0) {
+			if (new_cache->entries[pos].timestamp > c2->entries[n].timestamp) {
+				cache_del(new_cache,new_cache->entries[pos].id);
+				meta -= new_cache->metadata_size;
+				pos = -1;
+			}
+		}
+		if (pos < 0) {
+			if (new_cache->metadata_size) {
+				memcpy(meta, c2->metadata + n * c2->metadata_size, c2->metadata_size);
+				meta += new_cache->metadata_size;
+			}
+			new_cache->entries[new_cache->current_size++] = c2->entries[n];
+			c2->entries[n].id = NULL;
+		}
+	}
+
+	return new_cache;
+}
+
+int cache_resize (struct peer_cache *c, int size) {
+
+	int dif = size - c->cache_size;
+	if (!dif) {
+		return c->current_size;
+	}
+
+	c->entries = realloc(c->entries, sizeof(struct cache_entry) * size);
+	if (dif > 0) {
+		memset(c->entries + sizeof(struct cache_entry) * c->cache_size, 0, sizeof(struct cache_entry) * dif);
+	}
+	else if (c->current_size > size) {
+		c->current_size = size;
+	}
+
+	if (c->metadata_size) {
+		c->metadata = realloc(c->metadata, c->metadata_size * size);
+		if (dif > 0) {
+			memset(c->metadata + c->metadata_size * c->cache_size, 0, c->metadata_size * dif);
+		}
+	}
+
+	c->cache_size = size;
+
+	return c->current_size;
+
+}
+  
+
+
 struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, void *mymetadata)
 {
   int n1, n2;
