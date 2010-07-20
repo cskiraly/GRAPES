@@ -161,7 +161,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
         int msize,s;
         const uint8_t *mdata;
 	struct peer_cache *new = NULL, *temp;
-	int source;
+	int source = 4; // init with value > 1, needed in bootstrap/restart phase...
 
 	if (len) {
 		const struct topo_header *h = (const struct topo_header *)buff;
