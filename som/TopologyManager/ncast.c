@@ -67,9 +67,9 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
   return 1;
 }
 
-int topChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
+int topChangeMetadata(void *metadata, int metadata_size)
 {
-  if (topo_proto_metadata_update(peer, metadata, metadata_size) <= 0) {
+  if (topo_proto_metadata_update(metadata, metadata_size) <= 0) {
     return -1;
   }
 

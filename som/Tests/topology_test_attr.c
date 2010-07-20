@@ -123,7 +123,7 @@ static void status_update(void)
   }
   printf("goin' %s\n", status_print(my_attr.state));
   myself = create_node(my_addr, port);
-  topChangeMetadata(myself, &my_attr, sizeof(struct peer_attributes));
+  topChangeMetadata(&my_attr, sizeof(struct peer_attributes));
   nodeid_free(myself);
 }
 

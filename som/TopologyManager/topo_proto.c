@@ -105,9 +105,9 @@ int ncast_query(struct peer_cache *local_cache)
   return topo_query_peer(local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY);
 }
 
-int topo_proto_metadata_update(struct nodeID *peer, void *meta, int meta_size)
+int topo_proto_metadata_update(void *meta, int meta_size)
 {
-  if (cache_metadata_update(myEntry, peer, meta, meta_size) > 0) {
+  if (cache_metadata_update(myEntry, nodeid(myEntry, 0), meta, meta_size) > 0) {
     return 1;
   }
 

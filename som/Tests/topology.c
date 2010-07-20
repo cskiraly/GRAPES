@@ -25,8 +25,8 @@ int topoChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
 {
 	// this because if my own metadata are to be changed, it shouldn't be done twice!
  	if (counter <= TMAN_MAX_IDLE)
- 		return topChangeMetadata(peer,metadata,metadata_size);
-    return tmanChangeMetadata(peer,metadata,metadata_size);
+ 		return topChangeMetadata(metadata,metadata_size);
+    return tmanChangeMetadata(metadata,metadata_size);
 }
 
 int topoAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size, tmanRankingFunction rfun)

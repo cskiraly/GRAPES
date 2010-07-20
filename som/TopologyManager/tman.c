@@ -159,9 +159,9 @@ const void *tmanGetMetadata(int *metadata_size)
 }
 
 
-int tmanChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
+int tmanChangeMetadata(void *metadata, int metadata_size)
 {
-  if (topo_proto_metadata_update(peer, metadata, metadata_size) <= 0) {
+  if (topo_proto_metadata_update(metadata, metadata_size) <= 0) {
     return -1;
   }
   mymeta = metadata;
