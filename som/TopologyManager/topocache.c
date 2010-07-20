@@ -231,11 +231,11 @@ static int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
 
   for (i = 0; i < c->current_size; i++) {
     if (nodeid_equal(c->entries[i].id, elem->id)) {
-      return 1;
+      return i;
     }
   }
 
-  return 0;
+  return -1;
 }
 
 struct nodeID *rand_peer(struct peer_cache *c, void **meta)
@@ -365,7 +365,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
       return new_cache;
     }
     if (n1 == c1->current_size) {
-      if (!in_cache(new_cache, &c2->entries[n2])) {
+      if (in_cache(new_cache, &c2->entries[n2]) < 0) {
         if (new_cache->metadata_size) {
           memcpy(meta, c2->metadata + n2 * c2->metadata_size, c2->metadata_size);
           meta += new_cache->metadata_size;
@@ -376,7 +376,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
       }
       n2++;
     } else if (n2 == c2->current_size) {
-      if (!in_cache(new_cache, &c1->entries[n1])) {
+      if (in_cache(new_cache, &c1->entries[n1]) < 0) {
         if (new_cache->metadata_size) {
           memcpy(meta, c1->metadata + n1 * c1->metadata_size, c1->metadata_size);
           meta += new_cache->metadata_size;
@@ -398,7 +398,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
         nowFirst = c2->entries[n2].timestamp > c1->entries[n1].timestamp ? 1 : 2;
       }
       if (nowFirst == 1) {
-        if (!in_cache(new_cache, &c1->entries[n1])) {
+        if (in_cache(new_cache, &c1->entries[n1]) < 0) {
           if (new_cache->metadata_size) {
             memcpy(meta, c1->metadata + n1 * c1->metadata_size, c1->metadata_size);
             meta += new_cache->metadata_size;
@@ -409,7 +409,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
         }
         n1++;
       } else {
-        if (!in_cache(new_cache, &c2->entries[n2])) {
+        if (in_cache(new_cache, &c2->entries[n2]) < 0) {
           if (new_cache->metadata_size) {
             memcpy(meta, c2->metadata + n2 * c2->metadata_size, c2->metadata_size);
             meta += new_cache->metadata_size;
