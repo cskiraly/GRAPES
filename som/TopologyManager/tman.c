@@ -215,24 +215,21 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		}
 
 		if (restart_peer && nodeid_equal(restart_peer, nodeid(remote_cache,0))) { // restart phase : receiving new cache from chosen alive peer...
-				cache_size = TMAN_INIT_PEERS;
-				temp = cache_init(cache_size,s);
-				if (temp) { // flush away old entries and store the newcomers
-				cache_add_ranked(temp, nodeid(remote_cache,0), mdata, msize, rankFunct, mymeta);
-				cache_del(remote_cache,nodeid(remote_cache,0));
-				new = merge_caches_ranked(temp, remote_cache, cache_size, &source, rankFunct, mymeta);
-				if (new) {
-					countdown = idle_time*2;
-				}
+			cache_size = TMAN_INIT_PEERS;
+			new = rank_cache(remote_cache,NULL,mymeta);
+			if (new) {
+				countdown = idle_time*2;
 			}
 			nodeid_free(restart_peer);
 			restart_peer = NULL;
 		}
 		else {	// normal phase
-		cache_add_ranked(local_cache, nodeid(remote_cache,0), mdata, msize, rankFunct, mymeta);
-		cache_del(remote_cache,nodeid(remote_cache,0));
 		cache_size = ((current_size/2)*3) > cache_size ? current_size*2 : cache_size;
-		new = merge_caches_ranked(local_cache, remote_cache, cache_size, &source, rankFunct, mymeta);
+			temp = rank_cache(remote_cache,NULL,mymeta);
+			if (temp) {
+				new = merge_caches_ranked(local_cache, temp, cache_size, &source, rankFunct, mymeta);
+				cache_free(temp);
+			}
 		}
 
 		cache_free(remote_cache);
