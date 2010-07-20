@@ -138,6 +138,10 @@ static int time_to_send(void)
 
 int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 {
+	if (!metadata_size) {
+		tman_query_peer(local_cache, neighbour);
+		return -1;
+	}
   if (cache_add_ranked(local_cache, neighbour, metadata, metadata_size, rankFunct, mymeta) < 0) {
     return -1;
   }
