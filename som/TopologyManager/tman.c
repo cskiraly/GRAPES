@@ -32,6 +32,7 @@ static  int idle_time = TMAN_IDLE_TIME;
 
 static uint64_t currtime;
 static int cache_size = TMAN_INIT_PEERS;
+static int current_size;
 static struct peer_cache *local_cache;
 static int period = TMAN_INIT_PERIOD;
 static int active, countdown = TMAN_IDLE_TIME*2;
@@ -146,6 +147,7 @@ int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size
     return -1;
   }
 
+  current_size++;
   return 1;
 }
 
@@ -228,6 +230,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		if (new!=NULL) {
 		  cache_free(local_cache);
 		  local_cache = new;
+		  current_size = tmanGetNeighbourhoodSize();
 		  if (source > 1) { // cache is different than before
 			  period = TMAN_INIT_PERIOD;
 			  if(!restart_peer) active = idle_time;
@@ -267,6 +270,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		}
 		if (active < 0) { // bootstrap
 			local_cache = ncache;
+			current_size = size;
 			cache_size = nsize;
 			active = 0;
 		} else { // restart
