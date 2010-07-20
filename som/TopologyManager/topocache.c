@@ -85,16 +85,19 @@ int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void 
   if (meta_size && meta_size != c->metadata_size) {
     return -3;
   }
-  if (c->current_size == c->cache_size) {
-    return -2;
-  }
   for (i = 0; i < c->current_size; i++) {
     if (nodeid_equal(c->entries[i].id, neighbour)) {
-      return -1;
+      if (f != NULL) {
+        cache_del(c,c->entries[i].id);
+        if (i == c->current_size) break;
+      } else return -1;
     }
     if ((f != NULL) && f(tmeta, meta, c->metadata+(c->metadata_size * i)) == 2) {
       pos++;
     }
+  }
+  if (c->current_size == c->cache_size) {
+    return -2;
   }
   if (c->metadata_size) {
     memmove(c->metadata + (pos + 1) * c->metadata_size, c->metadata + pos * c->metadata_size, (c->current_size - pos) * c->metadata_size);
