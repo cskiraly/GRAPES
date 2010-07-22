@@ -356,8 +356,7 @@ struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int
 		return NULL;
 	}
 
-	*size = c1->current_size + c2->current_size;
-	new_cache = cache_init(*size, c1->metadata_size);
+	new_cache = cache_init(c1->current_size + c2->current_size, c1->metadata_size);
 	if (new_cache == NULL) {
 		return NULL;
 	}
@@ -391,6 +390,7 @@ struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int
 			c2->entries[n].id = NULL;
 		}
 	}
+	*size = new_cache->current_size;
 
 	return new_cache;
 }
