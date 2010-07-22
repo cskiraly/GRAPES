@@ -155,13 +155,15 @@ int tmanChangeMetadata(void *metadata, int metadata_size)
   }
   mymeta = metadata;
 
+  if (active >= 0) {
   new = cache_rank(local_cache, tmanRankFunct, NULL, mymeta);
   if (new) {
 	cache_free(local_cache);
 	local_cache = new;
   }
+  }
 
-  active = 0;
+  if (active > 0) active = 0;
   countdown = idle_time*2;
 
   return 1;
