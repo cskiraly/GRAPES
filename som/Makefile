@@ -4,6 +4,8 @@ COMMON_OBJS = config.o
 
 .PHONY: subdirs $(SUBDIRS)
 
+all: libgrapes.a
+
 subdirs: $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) -C $@ libcommon
