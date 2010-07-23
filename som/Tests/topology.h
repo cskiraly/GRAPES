@@ -8,11 +8,11 @@
 #include "topmanager.h"
 #include "tman.h"
 
-int topoChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size);
+int topoChangeMetadata(void *metadata, int metadata_size);
 
-int topoAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size, tmanRankingFunction rfun);
+int topoAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size);
 
-int topoParseData(const uint8_t *buff, int len, tmanRankingFunction f);
+int topoParseData(const uint8_t *buff, int len);
 
 const struct nodeID **topoGetNeighbourhood(int *n);
 
