@@ -404,7 +404,7 @@ int cache_resize (struct peer_cache *c, int size) {
 
 	c->entries = realloc(c->entries, sizeof(struct cache_entry) * size);
 	if (dif > 0) {
-		memset(c->entries + sizeof(struct cache_entry) * c->cache_size, 0, sizeof(struct cache_entry) * dif);
+		memset(c->entries + c->cache_size, 0, sizeof(struct cache_entry) * dif);
 	}
 	else if (c->current_size > size) {
 		c->current_size = size;
