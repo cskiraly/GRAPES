@@ -423,9 +423,7 @@ int cache_resize (struct peer_cache *c, int size) {
 
 }
   
-
-
-struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source, ranking_function rank, void *mymetadata)
+struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source)
 {
   int n1, n2;
   struct peer_cache *new_cache;
@@ -465,17 +463,7 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
       }
       n1++;
     } else {
-      int nowFirst;
-
-      nowFirst = 0;
-      if (rank) {
-        nowFirst = rank(mymetadata, c1->metadata + n1 * c1->metadata_size,
-                        c2->metadata + n2 * c2->metadata_size);
-      }
-      if (nowFirst == 0) {
-        nowFirst = c2->entries[n2].timestamp > c1->entries[n1].timestamp ? 1 : 2;
-      }
-      if (nowFirst == 1) {
+      if (c2->entries[n2].timestamp > c1->entries[n1].timestamp) {
         if (in_cache(new_cache, &c1->entries[n1]) < 0) {
           if (new_cache->metadata_size) {
             memcpy(meta, c1->metadata + n1 * c1->metadata_size, c1->metadata_size);
@@ -502,9 +490,4 @@ struct peer_cache *merge_caches_ranked(struct peer_cache *c1, struct peer_cache 
   }
 
   return new_cache;
-}
-
-struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source)
-{
-  return merge_caches_ranked(c1, c2, newsize, source, NULL, NULL);
 }

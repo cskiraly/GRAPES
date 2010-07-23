@@ -177,7 +177,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 	struct peer_cache *new = NULL, *temp;
 	int source = 4; // init with value > 1, needed in bootstrap/restart phase...
 
-	if (len) {
+	if (len && active >= 0) {
 		const struct topo_header *h = (const struct topo_header *)buff;
 		struct peer_cache *remote_cache;
 
@@ -196,7 +196,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 			return 1;
 		}
 
-		if (h->type == TMAN_QUERY && active >= 0) {
+		if (h->type == TMAN_QUERY) {
 			new = cache_rank(local_cache, tmanRankFunct, nodeid(remote_cache, 0), get_metadata(remote_cache, &msize));
 			if (new) {
 				tman_reply(remote_cache, new);
@@ -207,19 +207,22 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		}
 
 		if (restart_peer && nodeid_equal(restart_peer, nodeid(remote_cache,0))) { // restart phase : receiving new cache from chosen alive peer...
-			cache_size = TMAN_INIT_PEERS;
 			new = cache_rank(remote_cache,tmanRankFunct,NULL,mymeta);
 			if (new) {
+				cache_size = TMAN_INIT_PEERS;
+				cache_resize(new,cache_size);
 				countdown = idle_time*2;
+				fprintf(stderr,"RESTARTING TMAN!!!\n");
 			}
 			nodeid_free(restart_peer);
 			restart_peer = NULL;
 		}
 		else {	// normal phase
-		cache_size = ((current_size/2)*3) > cache_size ? current_size*2 : cache_size;
-			temp = cache_rank(remote_cache,tmanRankFunct,NULL,mymeta);
+			temp = cache_union(local_cache,remote_cache,&s);
 			if (temp) {
-				new = merge_caches_ranked(local_cache, temp, cache_size, &source, tmanRankFunct, mymeta);
+				new = cache_rank(temp,tmanRankFunct,NULL,mymeta);
+				cache_size = ((s/2)*2.5) > cache_size ? ((s/2)*2.5) : cache_size;
+				cache_resize(new,cache_size);
 				cache_free(temp);
 			}
 		}
@@ -266,6 +269,8 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 				cache_free(new);
 			}
 		if (active < 0) { // bootstrap
+			fprintf(stderr,"BOOTSTRAPPING TMAN!!!\n");
+			cache_free(local_cache);
 			local_cache = ncache;
 			current_size = size;
 			cache_size = nsize;
