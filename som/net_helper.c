@@ -21,22 +21,36 @@ struct nodeID {
   int fd;
 };
 
-int wait4data(const struct nodeID *s, struct timeval *tout, fd_set *user_fds)
+int wait4data(const struct nodeID *s, struct timeval *tout, int *user_fds)
 {
   fd_set fds;
-  int res;
+  int i, res, max_fd;
 
   FD_ZERO(&fds);
-  if (user_fds == NULL) {
-    user_fds = &fds;
+  max_fd = s->fd;
+  if (user_fds) {
+    for (i = 0; user_fds[i] != -1; i++) {
+      FD_SET(user_fds[i], &fds);
+      if (user_fds[i] > max_fd) {
+        max_fd = user_fds[i];
+      }
+    }
   }
-  FD_SET(s->fd, user_fds);
-  res = select(FD_SETSIZE, user_fds, NULL, NULL, tout); //FIXME FD_SETSIZE uses more resources
+  FD_SET(s->fd, &fds);
+  res = select(max_fd + 1, &fds, NULL, NULL, tout);
   if (res <= 0) {
     return res;
   }
-  if (FD_ISSET(s->fd, user_fds)) {
+  if (FD_ISSET(s->fd, &fds)) {
     return 1;
+  }
+
+  /* If execution arrives here, user_fds cannot be 0
+     (an FD is ready, and it's not s->fd) */
+  for (i = 0; user_fds[i] != -1; i++) {
+    if (!FD_ISSET(user_fds[i], &fds)) {
+      user_fds[i] = -2;
+    }
   }
 
   return 2;
