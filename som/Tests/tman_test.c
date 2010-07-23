@@ -83,6 +83,7 @@ static void cmdline_parse(int argc, char *argv[])
   fprintf(stderr,"\tMy metadata = %d\n",my_metadata);
 }
 
+#if 0
 static void change_metadata (struct nodeID *id) {
 
 	my_metadata = 1 + ((double)rand() / (double)RAND_MAX)*1000;
@@ -90,7 +91,7 @@ static void change_metadata (struct nodeID *id) {
 
 	tmanChangeMetadata(&my_metadata, sizeof(my_metadata));
 }
-
+#endif
 
 static struct nodeID *init()
 {
@@ -110,7 +111,7 @@ static struct nodeID *init()
 
 static void loop(struct nodeID *s)
 {
-  int done = 0; int more,less,now = -1;
+  int done = 0, now = -1;
 #define BUFFSIZE 1524
   static uint8_t buff[BUFFSIZE];
   int cnt = 0;
