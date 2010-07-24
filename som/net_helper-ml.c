@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <assert.h>
 
@@ -36,6 +37,8 @@ struct event_base *base;
 #define NH_LOOKUP_SIZE 1000
 #define NH_PACKET_TIMEOUT {0, 500*1000}
 #define NH_ML_INIT_TIMEOUT {1, 0}
+
+#define FDSSIZE 16
 
 static int sIdx = 0;
 static int rIdxML = 0;	//reveive from ML to this buffer position
@@ -68,6 +71,7 @@ static int lookup_curr = 0;
 
 static nodeID *me; //TODO: is it possible to get rid of this (notwithstanding ml callback)??
 static int timeoutFired = 0;
+static bool fdTriggered = false;
 
 // pointers to the msgs to be send
 static uint8_t *sendingBuffer[NH_BUFFER_SIZE];
@@ -228,6 +232,16 @@ static void t_out_cb (int socket, short flag, void* arg) {
 	timeoutFired = 1;
 //	fprintf(stderr,"TIMEOUT!!!\n");
 //	event_base_loopbreak(base);
+}
+
+/**
+ * File descriptor readable callback to be set in the eventlib loop as needed
+ */
+static void fd_cb (int fd, short flag, void* arg)
+{
+  //fprintf(stderr, "\twait4data: fd %d triggered\n", fd);
+  fdTriggered = true;
+  *((bool*)arg) = true;
 }
 
 /**
@@ -502,23 +516,60 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 }
 
 
-int wait4data(const struct nodeID *n, struct timeval *tout, fd_set *dummy) {
+int wait4data(const struct nodeID *n, struct timeval *tout, int *fds) {
+
+	struct event *timeout_ev;
+	struct event *fd_ev[FDSSIZE];
+	bool fd_triggered[FDSSIZE] = { false };
+	int i;
 
 //	fprintf(stderr,"Net-helper : Waiting for data to come...\n");
 	if (tout) {	//if tout==NULL, loop wait infinitely
-		event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, tout);
+	  timeout_ev = event_new(base, -1, EV_TIMEOUT, &t_out_cb, NULL);
+	  event_add(timeout_ev, tout);
 	}
-	while(receivedBuffer[rIdxUp].data==NULL && timeoutFired==0) {
+	for (i = 0; fds && fds[i] != -1; i ++) {
+	  if (i >= FDSSIZE) {
+	    fprintf(stderr, "Can't listen on more than %d file descriptors!\n", FDSSIZE);
+	    break;
+	  }
+	  fd_ev[i] = event_new(base, fds[i], EV_READ, &fd_cb, &fd_triggered[i]);
+	  event_add(fd_ev[i], NULL);
+	}
+
+	while(receivedBuffer[rIdxUp].data==NULL && timeoutFired==0 && fdTriggered==0) {
 	//	event_base_dispatch(base);
 		event_base_loop(base,EVLOOP_ONCE);
 	}
-	timeoutFired = 0;
-//	fprintf(stderr,"Back from eventlib loop.\n");
 
-	if (receivedBuffer[rIdxUp].data!=NULL)
-		return 1;
-	else
-		return 0;
+	//delete one-time events
+	event_del(timeout_ev);
+	event_free(timeout_ev);
+	for (i = 0; fds && fds[i] != -1; i ++) {
+	  if (! fd_triggered[i]) {
+	    fds[i] = -2;
+	    event_del(fd_ev[i]);
+	  //} else {
+	    //fprintf(stderr, "\twait4data: fd %d triggered\n", fds[i]);
+	  }
+	  event_free(fd_ev[i]);
+	}
+
+	if (fdTriggered) {
+	  fdTriggered = false;
+	  //fprintf(stderr, "\twait4data: fd event\n");
+	  return 2;
+	} else if (timeoutFired) {
+	  timeoutFired = 0;
+	  //fprintf(stderr, "\twait4data: timed out\n");
+	  return 0;
+	} else if (receivedBuffer[rIdxUp].data!=NULL) {
+	  //fprintf(stderr, "\twait4data: ML receive\n");
+	  return 1;
+	} else {
+	  fprintf(stderr, "BUG in wait4data\n");
+	  exit(EXIT_FAILURE);
+	}
 }
 
 socketID_handle getRemoteSocketID(const char *ip, int port) {
