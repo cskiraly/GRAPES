@@ -128,7 +128,7 @@ static int time_to_send(void)
 int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 {
 	if (!metadata_size) {
-		tman_query_peer(local_cache, neighbour);
+		tman_query_peer(local_cache, neighbour, max_gossiping_peers);
 		return -1;
 	}
   if (cache_add_ranked(local_cache, neighbour, metadata, metadata_size, tmanRankFunct, mymeta) < 0) {
@@ -199,7 +199,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		if (h->type == TMAN_QUERY) {
 			new = cache_rank(local_cache, tmanRankFunct, nodeid(remote_cache, 0), get_metadata(remote_cache, &msize));
 			if (new) {
-				tman_reply(remote_cache, new);
+				tman_reply(remote_cache, new, max_gossiping_peers);
 				cache_free(new);
 				new = NULL;
 				// TODO: put sender in tabu list (check list size, etc.), if any...
@@ -264,7 +264,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 			mdata = get_metadata(ncache, &msize);
 			new = cache_rank(active < 0 ? ncache : local_cache, tmanRankFunct, restart_peer, mdata);
 			if (new) {
-				tman_query_peer(new, restart_peer);
+				tman_query_peer(new, restart_peer, max_gossiping_peers);
 				cache_free(new);
 			}
 		if (active < 0) { // bootstrap
@@ -290,7 +290,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		fprintf(stderr, "TMAN: No cache could be sent to remote peer!\n");
 		return 1;
 	}
-	tman_query_peer(new, chosen);
+	tman_query_peer(new, chosen, max_gossiping_peers);
 	cache_free(new);
 	}
   }
