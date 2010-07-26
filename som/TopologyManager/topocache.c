@@ -376,7 +376,7 @@ struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int
 		pos = in_cache(new_cache, &c2->entries[n]);
 		if (pos >= 0) {
 			if (new_cache->entries[pos].timestamp > c2->entries[n].timestamp) {
-				cache_del(new_cache,new_cache->entries[pos].id);
+				cache_del(new_cache,c2->entries[n].id);
 				meta -= new_cache->metadata_size;
 				pos = -1;
 			}
