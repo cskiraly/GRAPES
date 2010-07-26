@@ -77,7 +77,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
   @param metadata_size Number of bytes of the metadata.
   @return 1 if successful, -1 otherwise.
  */
-int tmanChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size);
+int tmanChangeMetadata(void *metadata, int metadata_size);
 
 /**
   @brief Get the metadata of the neighbors.

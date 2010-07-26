@@ -21,32 +21,32 @@
 static int counter = 0;
 
 
-int topoChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
+int topoChangeMetadata(void *metadata, int metadata_size)
 {
 	// this because if my own metadata are to be changed, it shouldn't be done twice!
- 	if (counter <= TMAN_MAX_IDLE)
- 		return topChangeMetadata(peer,metadata,metadata_size);
-    return tmanChangeMetadata(peer,metadata,metadata_size);
+ 	if (counter < TMAN_MAX_IDLE)
+ 		return topChangeMetadata(metadata,metadata_size);
+    return tmanChangeMetadata(metadata,metadata_size);
 }
 
-int topoAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size, tmanRankingFunction rfun)
+int topoAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 {
-//	int ncs;
-//	topGetNeighbourhood(&ncs);
 	// TODO: check this!! Just to use this function to bootstrap ncast...
 	if (counter < TMAN_MAX_IDLE)
 		return topAddNeighbour(neighbour,metadata,metadata_size);
 	else return tmanAddNeighbour(neighbour,metadata,metadata_size);
 }
 
-int topoParseData(const uint8_t *buff, int len, tmanRankingFunction f)
+int topoParseData(const uint8_t *buff, int len)
 {
 	int res,ncs,msize;
 	const struct nodeID **n; const void *m;
-	res = topParseData(buff,len);
-	if (res==0 && counter <= TMAN_MAX_IDLE)
-		counter++;
-	if (res !=0 || counter >= TMAN_MAX_IDLE)
+	if (!buff || buff[0] == MSG_TYPE_TOPOLOGY) {
+		res = topParseData(buff,len);
+		if (counter <= TMAN_MAX_IDLE)
+			counter++;
+	}
+	if (counter >= TMAN_MAX_IDLE && (!buff || buff[0] == MSG_TYPE_TMAN))
 	{
 		n = topGetNeighbourhood(&ncs);
 		m = topGetMetadata(&msize);
@@ -57,9 +57,9 @@ int topoParseData(const uint8_t *buff, int len, tmanRankingFunction f)
 
 const struct nodeID **topoGetNeighbourhood(int *n)
 {
-	if (counter > TMAN_MAX_IDLE) {
-		struct nodeID ** neighbors; void *mdata; int msize;
-		*n = tmanGetNeighbourhoodSize();
+	struct nodeID ** neighbors; void *mdata; int msize;
+	*n = tmanGetNeighbourhoodSize();
+	if (*n) {
 		neighbors = calloc(*n,sizeof(struct nodeID *));
 		tmanGetMetadata(&msize);
 		mdata = calloc(*n,msize);
@@ -73,7 +73,8 @@ const struct nodeID **topoGetNeighbourhood(int *n)
 
 const void *topoGetMetadata(int *metadata_size)
 {
-	if (counter > TMAN_MAX_IDLE)
+	int n = tmanGetNeighbourhoodSize();
+	if (n)
 		return tmanGetMetadata(metadata_size);
 	else
 		return topGetMetadata(metadata_size);

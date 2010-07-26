@@ -20,6 +20,7 @@
 #include "msg_types.h"
 
 #define MAX_PEERS 10
+#define BOOTSTRAP_CYCLES 5
 
 static uint64_t currtime;
 static int cache_size = MAX_PEERS;
@@ -27,6 +28,7 @@ static struct peer_cache *local_cache;
 static bool bootstrap = true;
 static int bootstrap_period = 2000000;
 static int period = 10000000;
+static int counter;
 
 static uint64_t gettime(void)
 {
@@ -65,9 +67,9 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
   return 1;
 }
 
-int topChangeMetadata(struct nodeID *peer, void *metadata, int metadata_size)
+int topChangeMetadata(void *metadata, int metadata_size)
 {
-  if (topo_proto_metadata_update(peer, metadata, metadata_size) <= 0) {
+  if (topo_proto_metadata_update(metadata, metadata_size) <= 0) {
     return -1;
   }
 
@@ -96,7 +98,8 @@ int topParseData(const uint8_t *buff, int len)
       return -1;
     }
 
-    bootstrap = false;
+    counter++;
+    if (counter == BOOTSTRAP_CYCLES) bootstrap = false;
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == NCAST_QUERY) {
