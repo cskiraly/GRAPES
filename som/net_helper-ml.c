@@ -518,7 +518,7 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 
 int wait4data(const struct nodeID *n, struct timeval *tout, int *fds) {
 
-	struct event *timeout_ev;
+	struct event *timeout_ev = NULL;
 	struct event *fd_ev[FDSSIZE];
 	bool fd_triggered[FDSSIZE] = { false };
 	int i;
@@ -543,8 +543,10 @@ int wait4data(const struct nodeID *n, struct timeval *tout, int *fds) {
 	}
 
 	//delete one-time events
-	event_del(timeout_ev);
-	event_free(timeout_ev);
+	if (timeout_ev) {
+	  if (!timeoutFired) event_del(timeout_ev);
+	  event_free(timeout_ev);
+	}
 	for (i = 0; fds && fds[i] != -1; i ++) {
 	  if (! fd_triggered[i]) {
 	    fds[i] = -2;
