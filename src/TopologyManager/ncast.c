@@ -17,7 +17,7 @@
 #include "topocache.h"
 #include "topo_proto.h"
 #include "proto.h"
-#include "msg_types.h"
+#include "grapes_msg_types.h"
 
 #define MAX_PEERS 10
 #define BOOTSTRAP_CYCLES 5

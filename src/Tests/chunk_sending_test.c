@@ -16,7 +16,7 @@
 #include "trade_msg_la.h"
 #include "trade_msg_ha.h"
 #include "net_helpers.h"
-#include "msg_types.h"
+#include "grapes_msg_types.h"
 
 static const char *my_addr = "127.0.0.1";
 static int port = 6666;

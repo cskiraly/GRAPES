@@ -14,7 +14,7 @@
 #include "net_helpers.h"
 #include "chunk.h"
 #include "chunkidset.h"
-#include "msg_types.h"
+#include "grapes_msg_types.h"
 #include "trade_sig_ha.h"
 #include "chunkid_set_h.h"
 
