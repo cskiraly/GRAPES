@@ -82,7 +82,7 @@ struct receivedB {
 	uint8_t *data;
 };
 static struct receivedB receivedBuffer[NH_BUFFER_SIZE];
-/**/ static int recv_counter =0; static int snd_counter =0;
+/**/ static int recv_counter =0;
 
 
 static void connReady_cb (int connectionID, void *arg);
@@ -266,7 +266,7 @@ void free_sending_buffer(int i)
  * @param arg
  */
 static void connReady_cb (int connectionID, void *arg) {
-	char mt;
+
 	msgData_cb *p;
 	p = (msgData_cb *)arg;
 	if (p == NULL) return;
@@ -275,11 +275,6 @@ static void connReady_cb (int connectionID, void *arg) {
 	    return;
 	}
 	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,NULL);
-/**/	mt = ((char*)sendingBuffer[p->bIdx])[0]; ++snd_counter;
-	if (mt!=MSG_TYPE_TOPOLOGY &&
-		mt!=MSG_TYPE_CHUNK && mt!=MSG_TYPE_SIGNALLING) {
-			fprintf(stderr,"Net-helper ERROR! Sent message # %d of type %c and size %d\n",
-				snd_counter,mt+'0', p->mSize);}
 	free_sending_buffer(p->bIdx);
 //	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
 	//	event_base_loopbreak(base);
