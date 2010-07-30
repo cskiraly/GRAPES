@@ -79,7 +79,6 @@ int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void 
       pos++;
     }
   }
-
   if (c->current_size == c->cache_size) {
     return -2;
   }

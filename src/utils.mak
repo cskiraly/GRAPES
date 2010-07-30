@@ -26,7 +26,7 @@ CFLAGS += -pg
 LDFLAGS += -pg
 endif
 
-CPPFLAGS = -I$(BASE)/include -I$(BASE)/som
+CPPFLAGS = -I$(BASE)/include -I$(BASE)/src
 
 LIBCOMMON = libgrapes.a
 
@@ -34,7 +34,7 @@ LIBCOMMON = libgrapes.a
 	ar rcs $@ $^
 
 libcommon: $(OBJS)
-	ar rcs $(BASE)/som/$(LIBCOMMON) $^
+	ar rcs $(BASE)/src/$(LIBCOMMON) $^
 clean::
 	rm -f *.a
 	rm -f *.o

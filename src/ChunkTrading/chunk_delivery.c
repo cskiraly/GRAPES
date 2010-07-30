@@ -11,7 +11,7 @@
 #include "net_helper.h"
 #include "trade_msg_la.h"
 #include "trade_msg_ha.h"
-#include "msg_types.h"
+#include "grapes_msg_types.h"
 
 static struct nodeID *localID;
 

@@ -16,7 +16,7 @@
 #include "topocache.h"
 #include "topo_proto.h"
 #include "proto.h"
-#include "msg_types.h"
+#include "grapes_msg_types.h"
 #include "tman.h"
 
 #define TMAN_INIT_PEERS 10 // max # of neighbors in local cache (should be >= than the next)

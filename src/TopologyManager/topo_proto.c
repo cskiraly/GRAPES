@@ -12,7 +12,7 @@
 #include "topocache.h"
 #include "proto.h"
 #include "topo_proto.h"
-#include "msg_types.h"
+#include "grapes_msg_types.h"
 
 #define MAX_MSG_SIZE 1500
 

@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 
 #include "chunk.h"
-#include "msg_types.h"
+#include "grapes_msg_types.h"
 #include "chunkidset.h"
 #include "trade_sig_la.h"
 #include "trade_sig_ha.h"

@@ -12,7 +12,7 @@ $(SUBDIRS):
 
 libgrapes.a: subdirs
 libgrapes.a: $(COMMON_OBJS)
-	ar rcs $(BASE)/som/$(LIBCOMMON) $(COMMON_OBJS)
+	ar rcs $(BASE)/src/$(LIBCOMMON) $(COMMON_OBJS)
 
 tests: libgrapes.a
 	$(MAKE) -C Tests

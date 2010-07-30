@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "msg_types.h"
+#include "grapes_msg_types.h"
 #include "net_helper.h"
 #include "topmanager.h"
 #include "tman.h"
