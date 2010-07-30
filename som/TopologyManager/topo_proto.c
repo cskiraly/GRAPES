@@ -18,14 +18,15 @@
 
 static struct peer_cache *myEntry;
 
-static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, struct nodeID *snot)
+static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, struct nodeID *snot, int max_peers)
 {
   int i;
   uint8_t *p = payload;
 
+  if (!max_peers) max_peers = MAX_MSG_SIZE; // just to be sure to dump the whole cache...
   p += cache_header_dump(p, c);
   p += entry_dump(p, myEntry, 0, size - (p - payload));
-  for (i = 0; nodeid(c, i); i++) {
+  for (i = 0; nodeid(c, i) && max_peers; i++) {
     if (!nodeid_equal(nodeid(c, i), snot)) {
       int res;
       res = entry_dump(p, c, i, size - (p - payload));
@@ -34,13 +35,14 @@ static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, 
         return -1;
       }
       p += res;
+      --max_peers;
     }
   }
 
   return p - payload;
 }
 
-static int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache, int protocol, int type)
+static int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache, int protocol, int type, int max_peers)
 {
   uint8_t pkt[MAX_MSG_SIZE];
   struct topo_header *h = (struct topo_header *)pkt;
@@ -57,14 +59,14 @@ static int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache
   dst = nodeid(c, 0);
   h->protocol = protocol;
   h->type = type;
-  len = ncast_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst);
+  len = ncast_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst, max_peers);
 
   res = len > 0 ? send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
 
   return res;
 }
 
-static int topo_query_peer(struct peer_cache *local_cache, struct nodeID *dst, int protocol, int type)
+static int topo_query_peer(struct peer_cache *local_cache, struct nodeID *dst, int protocol, int type, int max_peers)
 {
   uint8_t pkt[MAX_MSG_SIZE];
   struct topo_header *h = (struct topo_header *)pkt;
@@ -72,28 +74,28 @@ static int topo_query_peer(struct peer_cache *local_cache, struct nodeID *dst, i
 
   h->protocol = protocol;
   h->type = type;
-  len = ncast_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst);
+  len = ncast_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst, max_peers);
   return len > 0  ? send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
 }
 
 int ncast_reply(const struct peer_cache *c, struct peer_cache *local_cache)
 {
-  return topo_reply(c, local_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY);
+  return topo_reply(c, local_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY, 0);
 }
 
-int tman_reply(const struct peer_cache *c, struct peer_cache *local_cache)
+int tman_reply(const struct peer_cache *c, struct peer_cache *local_cache, int max_peers)
 {
-  return topo_reply(c, local_cache, MSG_TYPE_TMAN, TMAN_REPLY);
+  return topo_reply(c, local_cache, MSG_TYPE_TMAN, TMAN_REPLY, max_peers);
 }
 
 int ncast_query_peer(struct peer_cache *local_cache, struct nodeID *dst)
 {
-  return topo_query_peer(local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY);
+  return topo_query_peer(local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY, 0);
 }
 
-int tman_query_peer(struct peer_cache *local_cache, struct nodeID *dst)
+int tman_query_peer(struct peer_cache *local_cache, struct nodeID *dst, int max_peers)
 {
-  return topo_query_peer(local_cache, dst, MSG_TYPE_TMAN, TMAN_QUERY);
+  return topo_query_peer(local_cache, dst, MSG_TYPE_TMAN, TMAN_QUERY, max_peers);
 }
 
 int ncast_query(struct peer_cache *local_cache)
@@ -104,12 +106,12 @@ int ncast_query(struct peer_cache *local_cache)
   if (dst == NULL) {
     return 0;
   }
-  return topo_query_peer(local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY);
+  return topo_query_peer(local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY, 0);
 }
 
-int topo_proto_metadata_update(struct nodeID *peer, void *meta, int meta_size)
+int topo_proto_metadata_update(void *meta, int meta_size)
 {
-  if (cache_metadata_update(myEntry, peer, meta, meta_size) > 0) {
+  if (cache_metadata_update(myEntry, nodeid(myEntry, 0), meta, meta_size) > 0) {
     return 1;
   }
 
