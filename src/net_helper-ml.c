@@ -356,8 +356,13 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 
 	struct timeval tout = NH_ML_INIT_TIMEOUT;
 	int s, i;
+	struct tag *cfg_tags;
+	const char *res;
+
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
+
+	cfg_tags = config_parse(config);
 
 	me = malloc(sizeof(nodeID));
 	if (me == NULL) {
@@ -395,6 +400,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	monInit(base, repoclient);
 }
 #endif
+	free(cfg_tags);
 
 	while (me->connID<-1) {
 	//	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, &tout);
