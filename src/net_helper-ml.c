@@ -360,6 +360,8 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	const char *res;
 	const char *stun_server = "stun.ekiga.net";
 	int stun_port = 3478;
+	const char *repo_address = "79.120.193.115:9832";
+	int publish_interval = 60;
 
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
@@ -371,6 +373,13 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 		stun_server = res;
 	}
 	config_value_int(cfg_tags, "stun_port", &stun_port);
+
+	res = config_value_str(cfg_tags, "repo_address");
+	if (res) {
+		repo_address = res;
+	}
+	
+	config_value_int(cfg_tags, "publish_interval", &publish_interval);
 
 	me = malloc(sizeof(nodeID));
 	if (me == NULL) {
@@ -403,7 +412,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	grapesInitLog(DCLOG_WARNING, NULL, NULL);
 
 	repInit("");
-	repoclient = repOpen("79.120.193.115:9832",60);	//repository.napa-wine.eu
+	repoclient = repOpen(repo_address, publish_interval);	//repository.napa-wine.eu
 	if (repoclient == NULL) fatal("Unable to initialize repoclient");
 	monInit(base, repoclient);
 }
