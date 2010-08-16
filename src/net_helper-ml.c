@@ -358,11 +358,19 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int s, i;
 	struct tag *cfg_tags;
 	const char *res;
+	const char *stun_server = "stun.ekiga.net";
+	int stun_port = 3478;
 
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
 
 	cfg_tags = config_parse(config);
+
+	res = config_value_str(cfg_tags, "stun_server");
+	if (res) {
+		stun_server = res;
+	}
+	config_value_int(cfg_tags, "stun_port", &stun_port);
 
 	me = malloc(sizeof(nodeID));
 	if (me == NULL) {
@@ -379,7 +387,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 
 	mlRegisterErrorConnectionCb(&connError_cb);
 	mlRegisterRecvConnectionCb(&receive_conn_cb);
-	s = mlInit(1,tout,port,IPaddr,3478,"stun.ekiga.net",&init_myNodeID_cb,base);
+	s = mlInit(1, tout, port, IPaddr, stun_port, stun_server, &init_myNodeID_cb, base);
 	if (s < 0) {
 		fprintf(stderr, "Net-helper : error initializing ML!\n");
 		free(me);
