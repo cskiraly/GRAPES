@@ -4,15 +4,15 @@ COMMON_OBJS = config.o
 
 .PHONY: subdirs $(SUBDIRS)
 
+#COMMON_O = $(addsuffix /$(COMMON), $(SUBDIRS))
+COMMON_O = ChunkIDSet/common.o ChunkTrading/common.o TopologyManager/common.o ChunkBuffer/common.o PeerSet/common.o Scheduler/common.o
+
 all: libgrapes.a
 
-subdirs: $(SUBDIRS)
-$(SUBDIRS):
-	$(MAKE) -C $@ libcommon
+$(COMMON_O):
+	$(MAKE) -C $(dir $@) $(COMMON)
 
-libgrapes.a: subdirs
-libgrapes.a: $(COMMON_OBJS)
-	ar rcs $(BASE)/src/$(LIBCOMMON) $(COMMON_OBJS)
+libgrapes.a: $(COMMON_O) $(COMMON_OBJS)
 
 tests: libgrapes.a
 	$(MAKE) -C Tests

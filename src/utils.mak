@@ -29,12 +29,16 @@ endif
 CPPFLAGS = -I$(BASE)/include -I$(BASE)/src
 
 LIBCOMMON = libgrapes.a
+COMMON = common.o
 
 %.a: $(OBJS)
 	ar rcs $@ $^
 
 libcommon: $(OBJS)
 	ar rcs $(BASE)/src/$(LIBCOMMON) $^
+
+$(COMMON): $(OBJS)
+	ld -r -o $(COMMON) $^
 clean::
 	rm -f *.a
 	rm -f *.o
