@@ -4,7 +4,6 @@ COMMON_OBJS = config.o
 
 .PHONY: subdirs $(SUBDIRS)
 
-#OBJ_LSTS = ChunkIDSet/objs.lst ChunkTrading/objs.lst TopologyManager/objs.lst ChunkBuffer/objs.lst PeerSet/objs.lst Scheduler/objs.lst
 OBJ_LSTS = $(addsuffix /objs.lst, $(SUBDIRS))
 
 all: libgrapes.a
