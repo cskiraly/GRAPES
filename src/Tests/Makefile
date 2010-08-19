@@ -39,7 +39,6 @@ topology_test: topology_test.o net_helpers.o
 topology_test: ../net_helper.o
 
 chunk_encoding_test: chunk_encoding_test.o
-chunk_encoding_test: ../net_helper.o
 
 cb_test: cb_test.o
 

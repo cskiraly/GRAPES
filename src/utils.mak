@@ -37,8 +37,12 @@ COMMON = common.o
 libcommon: $(OBJS)
 	ar rcs $(BASE)/src/$(LIBCOMMON) $^
 
-$(COMMON): $(OBJS)
-	ld -r -o $(COMMON) $^
+objs.lst: $(OBJS)
+	echo $(addprefix `pwd`/, $(OBJS)) > objs.lst
+
+$(COMMON): objs.lst
+	ld -r -o $(COMMON) `cat objs.lst`
 clean::
 	rm -f *.a
 	rm -f *.o
+	rm -f *.lst
