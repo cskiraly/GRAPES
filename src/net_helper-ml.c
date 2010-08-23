@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
-
+#include <signal.h>
 
 #include "net_helper.h"
 #include "ml.h"
@@ -350,6 +350,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
 	struct timeval tout = NH_ML_INIT_TIMEOUT;
 	int s, i;
+	signal(SIGPIPE, SIG_IGN); // workaround for a known issue in libevent2 with SIGPIPE on TPC connections
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
 
