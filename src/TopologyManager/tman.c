@@ -71,7 +71,7 @@ int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, ranking_fun
   mymeta_size = metadata_size;
   zero = calloc(mymeta_size,1);
   
-  local_cache = cache_init(cache_size, metadata_size);
+  local_cache = cache_init(cache_size, metadata_size, 0);
   if (local_cache == NULL) {
     return -1;
   }
@@ -255,7 +255,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		int j,nsize;
 
 		nsize = TMAN_INIT_PEERS > size ? TMAN_INIT_PEERS : size + 1;
-		if (size) ncache = cache_init(nsize,metadata_size);
+		if (size) ncache = cache_init(nsize, metadata_size, 0);
 		else {return 1;}
 		for (j=0;j<size;j++)
 			cache_add_ranked(ncache, peers[j],(const uint8_t *)metadata + j * metadata_size, metadata_size, tmanRankFunct, mymeta);

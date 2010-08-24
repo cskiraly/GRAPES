@@ -15,7 +15,6 @@
 #include "topocache.h"
 #include "int_coding.h"
 
-#define MAX_TIMESTAMP 5
 struct cache_entry {
   struct nodeID *id;
   uint32_t timestamp;
@@ -26,7 +25,8 @@ struct peer_cache {
   int cache_size;
   int current_size;
   int metadata_size;
-  uint8_t *metadata; 
+  uint8_t *metadata;
+  int max_timestamp;
 };
 
 struct nodeID *nodeid(const struct peer_cache *c, int i)
@@ -134,7 +134,7 @@ void cache_update_tout(struct peer_cache *c)
   int i;
   
   for (i = 0; i < c->current_size; i++) {
-    if (c->entries[i].timestamp == MAX_TIMESTAMP) {
+    if (c->max_timestamp && (c->entries[i].timestamp == c->max_timestamp)) {
       int j = i;
 
       while(j < c->current_size && c->entries[j].id) {
@@ -160,7 +160,7 @@ void cache_update(struct peer_cache *c)
   }
 }
 
-struct peer_cache *cache_init(int n, int metadata_size)
+struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp)
 {
   struct peer_cache *res;
 
@@ -168,6 +168,7 @@ struct peer_cache *cache_init(int n, int metadata_size)
   if (res == NULL) {
     return NULL;
   }
+  res->max_timestamp = max_timestamp;
   res->cache_size = n;
   res->current_size = 0;
   res->entries = malloc(sizeof(struct cache_entry) * n);
@@ -248,7 +249,7 @@ struct peer_cache *entries_undump(const uint8_t *buff, int size)
   cache_size = int_rcpy(buff);
   metadata_size = int_rcpy(buff + 4);
   p = buff + 8;
-  res = cache_init(cache_size, metadata_size);
+  res = cache_init(cache_size, metadata_size, 0);
   meta = res->metadata;
   while (p - buff < size) {
     int len;
@@ -310,7 +311,7 @@ struct peer_cache *cache_rank (const struct peer_cache *c, ranking_function rank
 	struct peer_cache *res;
 	int i,j,pos;
 
-	res = cache_init(c->cache_size,c->metadata_size);
+	res = cache_init(c->cache_size, c->metadata_size, c->max_timestamp);
 	if (res == NULL) {
 		return res;
 	}
@@ -349,7 +350,7 @@ struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int
 		return NULL;
 	}
 
-	new_cache = cache_init(c1->current_size + c2->current_size, c1->metadata_size);
+	new_cache = cache_init(c1->current_size + c2->current_size, c1->metadata_size, c1->max_timestamp);
 	if (new_cache == NULL) {
 		return NULL;
 	}
@@ -422,7 +423,7 @@ struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, in
   struct peer_cache *new_cache;
   uint8_t *meta;
 
-  new_cache = cache_init(newsize, c1->metadata_size);
+  new_cache = cache_init(newsize, c1->metadata_size, c1->max_timestamp);
   if (new_cache == NULL) {
     return NULL;
   }
