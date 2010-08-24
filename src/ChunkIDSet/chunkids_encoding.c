@@ -84,7 +84,6 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
     uint32_t size;
     uint32_t type;
     struct chunkID_set *h;
-    char cfg[32];
     const uint8_t *meta_p;
 
     size = int_rcpy(buff);
@@ -92,6 +91,9 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
     *meta_len = int_rcpy(buff + 8);
 
     if (type != -1) {
+        char cfg[32];
+
+        memset(cfg, 0, sizeof(cfg));
         sprintf(cfg, "size=%d", size);
         h = chunkID_set_init(cfg);
         if (h == NULL) {
