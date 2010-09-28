@@ -17,6 +17,9 @@
  * list.
  */
 
+#define E_CB_OLD -1
+#define E_CB_DUPLICATE -2
+
 /**
  * Structure describing a chunk buffer. This is an opaque type.
  */
