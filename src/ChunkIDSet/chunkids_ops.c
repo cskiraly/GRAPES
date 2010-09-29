@@ -129,3 +129,11 @@ void chunkID_set_free(struct chunkID_set *h)
   free(h->elements);
   free(h);
 }
+
+void chunkID_set_trim(struct chunkID_set *h, int size)
+{
+  if (h->n_elements > size) {
+    memmove(h->elements, h->elements + h->n_elements - size, sizeof(h->elements[0]) * size);
+    h->n_elements = size;
+  }
+}
