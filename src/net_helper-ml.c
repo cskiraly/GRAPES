@@ -435,7 +435,8 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 
 	repInit("");
 	repoclient = repOpen(repo_address, publish_interval);	//repository.napa-wine.eu
-	if (repoclient == NULL) fatal("Unable to initialize repoclient");
+	// NULL is inow valid for disabled repo 
+	// if (repoclient == NULL) fatal("Unable to initialize repoclient");
 	monInit(base, repoclient);
 }
 #endif
