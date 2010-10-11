@@ -367,6 +367,9 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
 
 	cfg_tags = config_parse(config);
+	if (!cfg_tags) {
+		return NULL;
+	}
 
 	res = config_value_str(cfg_tags, "stun_server");
 	if (res) {
