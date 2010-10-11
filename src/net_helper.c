@@ -232,3 +232,13 @@ void nodeid_free(struct nodeID *s)
   free(s);
 }
 
+const char *node_ip(const struct nodeID *s)
+{
+	static char ip[64];
+
+	sprintf(ip, "%s", inet_ntoa(s->addr.sin_addr));
+
+	return ip;
+}
+
+

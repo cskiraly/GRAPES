@@ -126,4 +126,12 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len);
 */
 int nodeid_dump(uint8_t *b, const struct nodeID *s, size_t max_write_size);
 
+/**
+* @brief Give a string representation of the public IP belonging to the nodeID.
+* Serialize the public IP address of a given node and return it.
+* @param[in] s A pointer to the nodeID.
+* @return the publicly accessible IP address of the node.
+*/
+const char *node_ip(const struct nodeID *s);
+
 #endif /* NET_HELPER_H */
