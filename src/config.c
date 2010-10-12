@@ -6,10 +6,11 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "config.h"
 
 #define NAME_SIZE 32
-#define VAL_SIZE 16
+#define VAL_SIZE 64
 
 struct tag {
   char name[NAME_SIZE];
@@ -37,14 +38,23 @@ struct tag *config_parse(const char *cfg)
       if (i % MAX_TAGS == 0) {
         res = realloc(res, sizeof(struct tag) * (i + MAX_TAGS));
       }
+      if (p1 - p > NAME_SIZE - 1) {
+        fprintf(stderr, "Error, config name too long:%s\n", p);
+        free(res);
+        return NULL;
+      }
       memcpy(res[i].name, p, p1 - p);
       p = strchr(p1, ',');
       if (p == NULL) {
-        strcpy(res[i++].value, p1 + 1);
-      } else {
-        memcpy(res[i++].value, p1 + 1, p - p1 - 1);
-        p++;
+        p = p1 + strlen(p1);
       }
+      if (p - p1 > VAL_SIZE - 1) {
+        fprintf(stderr, "Error, config value too long:%s\n", p1);
+        free(res);
+        return NULL;
+      }
+      memcpy(res[i++].value, p1 + 1, p - p1 - 1);
+      p++;
     } else {
       p = NULL;
     }

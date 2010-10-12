@@ -33,7 +33,7 @@ static struct nodeID *init(void)
 {
   struct nodeID *myID;
 
-  myID = net_helper_init(my_addr, port);
+  myID = net_helper_init(my_addr, port, "");
   if (myID == NULL) {
     fprintf(stderr, "Error creating my socket (%s:%d)!\n", my_addr, port);
 
@@ -172,7 +172,7 @@ int client_side(struct nodeID *my_sock)
             }
             fillChunkID_set(cset, random_bmap);
             fprintf(stdout, "\"SEND BMAP\" ");
-            ret = sendBufferMap(dst, dst, cset, 88);
+            ret = sendBufferMap(dst, dst, cset, 0, 88);
             break;
         case reqbmap:
             fprintf(stdout, "\"REQUEST BMAP\" ");
@@ -236,7 +236,7 @@ int server_side(struct nodeID *my_sock)
             fillChunkID_set(rcset, random_bmap);
             fprintf(stdout, "2) Message SEND_BMAP: I send my buffer of %d chunks\n", chunkID_set_size(rcset));
             printChunkID_set(rcset);
-            sendBufferMap(remote, my_sock, rcset, trans_id++);
+            sendBufferMap(remote, my_sock, rcset, 0, trans_id++);
             break;
         case sig_request_buffermap:
             fprintf(stdout, "1) Message REQUEST_BMAP: Someone requeste my buffer map [%d]\n", (cset == NULL));
@@ -247,7 +247,7 @@ int server_side(struct nodeID *my_sock)
                 return -1;
             }
             fillChunkID_set(rcset, random_bmap);
-            sendBufferMap(remote, my_sock, rcset, trans_id++);
+            sendBufferMap(remote, my_sock, rcset, 0, trans_id++);
             break;
     }
     nodeid_free(remote);

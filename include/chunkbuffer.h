@@ -17,6 +17,9 @@
  * list.
  */
 
+#define E_CB_OLD -1
+#define E_CB_DUPLICATE -2
+
 /**
  * Structure describing a chunk buffer. This is an opaque type.
  */
@@ -58,6 +61,7 @@ int cb_add_chunk(struct chunk_buffer *cb, const struct chunk *c);
  * the specified chunk buffer. Such list is stored in a C arrary (so,
  * after calling chunks_array = cb_get_chunks(cb), chunks_array[i]
  * contains the i^th chunk).
+ * Chunks are ordered by increasing chunk ID.
  *
  * @param cb a pointer to the chunks buffer
  * @param n a pointer to an integer variable where number of chunks

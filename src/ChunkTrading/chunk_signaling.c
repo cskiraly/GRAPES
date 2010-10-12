@@ -38,6 +38,9 @@
 //Request the BufferMap
 #define MSG_SIG_BMREQ 12
 
+#define SIG_META_LEN 1024
+#define SIG_BUF_LEN 2048
+
 struct sig_nal {
     uint8_t type;//type of signal.
     uint8_t max_deliver;//Max number of chunks to deliver.
@@ -108,11 +111,11 @@ static int sendSignaling(int type, struct nodeID *to_id,
                          const struct chunkID_set *cset, int max_deliver,
                          int trans_id)
 {
-    int buff_len, meta_len, msg_len;
+    int meta_len, msg_len;
     uint8_t *buff;
     struct sig_nal *sigmex;
 
-    sigmex = malloc(1024);
+    sigmex = malloc(SIG_META_LEN);
     if (!sigmex) {
         fprintf(stderr, "Error allocating meta-buffer\n");
 
@@ -124,10 +127,9 @@ static int sendSignaling(int type, struct nodeID *to_id,
     sigmex->third_peer = 0;
     meta_len = sizeof(*sigmex) - 1;
     if (owner_id) {
-        meta_len += nodeid_dump(&sigmex->third_peer, owner_id, 1024 - meta_len);
+        meta_len += nodeid_dump(&sigmex->third_peer, owner_id, SIG_META_LEN - meta_len);
     }
-    buff_len = 1 + (cset ? chunkID_set_size(cset):0) * 4 + 12 + meta_len; // this should be enough
-    buff = malloc(buff_len);
+    buff = malloc(SIG_BUF_LEN);
     if (!buff) {
         fprintf(stderr, "Error allocating buffer\n");
         free(sigmex);
@@ -136,7 +138,7 @@ static int sendSignaling(int type, struct nodeID *to_id,
     }
 
     buff[0] = MSG_TYPE_SIGNALLING;
-    msg_len = 1 + encodeChunkSignaling(cset, sigmex, meta_len, buff+1, buff_len-1);
+    msg_len = 1 + encodeChunkSignaling(cset, sigmex, meta_len, buff+1, SIG_BUF_LEN-1);
     free(sigmex);
     if (msg_len <= 0) {
       fprintf(stderr, "Error in encoding chunk set for sending a buffermap\n");
@@ -174,10 +176,10 @@ int acceptChunks(struct nodeID *to, struct chunkID_set *cset, int trans_id)
 }
 
 int sendBufferMap(struct nodeID *to, const struct nodeID *owner,
-                  struct chunkID_set *bmap, int trans_id)
+                  struct chunkID_set *bmap, int cb_size, int trans_id)
 {
     return sendSignaling(MSG_SIG_BMOFF, to, (!owner ? localID : owner), bmap,
-                         0, trans_id);
+                         cb_size, trans_id);
 }
 
 int requestBufferMap(struct nodeID *to, const struct nodeID *owner,

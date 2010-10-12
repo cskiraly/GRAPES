@@ -16,56 +16,51 @@
   */
 typedef double (*evaluateFunction)(void*);
 
+struct iw {
+  int index;
+  double weight;
+};
 
-/**
-  * qsort like sorting function to select the index of the N best, based on a given evaluator function
-  * @TODO: randomize if tie
-  */
-void selectBestIndexes(double *weights,size_t weights_len,int *bests,size_t *bests_len){
-  int e;
-  int s=0;
-  int s_max=*bests_len;
-
-  for (e=0; e<weights_len; e++){
-    //find insert position
-    int i;
-    int p_min = 0;
-    int p;
-    for (i=0; i < s; i++) {
-      if (weights[e] < weights[bests[i]]) p_min = i+1;
-      if (weights[e] > weights[bests[i]]) break;
-    }
-
-    //randomize position between equals
-    p = p_min + (i-p_min) ? (rand() % (i-p_min)) : 0 ;
-
-    if (p<s_max) {
-      memmove(&bests[p+1], &bests[p], sizeof(int)*(s_max-p-1)); //shift later ones
-      s = MIN(s+1,s_max);
-      //put new one in the list
-      bests[p]=e;
-    }
-  }
-
-  *bests_len = s;
+static int cmp_iw_reverse(const void *a, const void *b)
+{
+  const struct iw *a1 = (const struct iw *) a;
+  const struct iw *b1 = (const struct iw *) b;
+  return a1->weight==b1->weight ? 0 : (a1->weight<b1->weight ? 1 : -1);
 }
 
 /**
   * Select best N of K based using a given evaluator function
   */
 void selectBests(size_t size,unsigned char *base, size_t nmemb, double(*evaluate)(void *),unsigned char *bests,size_t *bests_len){
-  double weights[nmemb];
-  int selected_index[*bests_len];
+  struct iw iws[nmemb];
   int i;
+
   // calculate weights
   for (i=0; i<nmemb; i++){
-     weights[i] = evaluate(base + size*i);
+     iws[i].index = i;
+     iws[i].weight = evaluate(base + size*i);
   }
-  selectBestIndexes(weights,nmemb,selected_index,bests_len);
-  
+
+  // sort in descending order
+  qsort(iws, nmemb, sizeof(struct iw), cmp_iw_reverse);
+
+  // ensure uniform random tie
+  for (i=0; i<nmemb; i++){
+    int j, k;
+    for (j=i; j<nmemb && iws[i].weight == iws[j].weight; j++);
+    for (k=i; k<j; k++){
+      struct iw iwt = iws[k];
+      int r = i + (rand() % (j-i));
+      iws[k] = iws[r];
+      iws[r] = iwt;
+    }
+  }
+
+  *bests_len = MIN(*bests_len, nmemb);
+
   // copy bests in their place
   for (i=0; i<*bests_len; i++){
-     memcpy(bests + size*i, base + size*selected_index[i], size);
+     memcpy(bests + size*i, base + size*iws[i].index, size);
   }
   
 }

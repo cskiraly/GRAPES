@@ -12,10 +12,11 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
-
+#include <signal.h>
 
 #include "net_helper.h"
 #include "ml.h"
+#include "config.h"
 
 #include "grapes_msg_types.h"
 
@@ -82,7 +83,7 @@ struct receivedB {
 	uint8_t *data;
 };
 static struct receivedB receivedBuffer[NH_BUFFER_SIZE];
-/**/ static int recv_counter =0; static int snd_counter =0;
+/**/ static int recv_counter =0;
 
 
 static void connReady_cb (int connectionID, void *arg);
@@ -266,7 +267,7 @@ void free_sending_buffer(int i)
  * @param arg
  */
 static void connReady_cb (int connectionID, void *arg) {
-	char mt;
+
 	msgData_cb *p;
 	p = (msgData_cb *)arg;
 	if (p == NULL) return;
@@ -275,11 +276,6 @@ static void connReady_cb (int connectionID, void *arg) {
 	    return;
 	}
 	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,NULL);
-/**/	mt = ((char*)sendingBuffer[p->bIdx])[0]; ++snd_counter;
-	if (mt!=MSG_TYPE_TOPOLOGY &&
-		mt!=MSG_TYPE_CHUNK && mt!=MSG_TYPE_SIGNALLING) {
-			fprintf(stderr,"Net-helper ERROR! Sent message # %d of type %c and size %d\n",
-				snd_counter,mt+'0', p->mSize);}
 	free_sending_buffer(p->bIdx);
 //	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
 	//	event_base_loopbreak(base);
@@ -351,12 +347,38 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 }
 
 
-struct nodeID *net_helper_init(const char *IPaddr, int port) {
+struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config) {
 
 	struct timeval tout = NH_ML_INIT_TIMEOUT;
 	int s, i;
+	struct tag *cfg_tags;
+	const char *res;
+	const char *stun_server = "stun.ekiga.net";
+	int stun_port = 3478;
+	const char *repo_address = "79.120.193.115:9832";
+	int publish_interval = 60;
+
+	signal(SIGPIPE, SIG_IGN); // workaround for a known issue in libevent2 with SIGPIPE on TPC connections
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
+
+	cfg_tags = config_parse(config);
+	if (!cfg_tags) {
+		return NULL;
+	}
+
+	res = config_value_str(cfg_tags, "stun_server");
+	if (res) {
+		stun_server = res;
+	}
+	config_value_int(cfg_tags, "stun_port", &stun_port);
+
+	res = config_value_str(cfg_tags, "repo_address");
+	if (res) {
+		repo_address = res;
+	}
+	
+	config_value_int(cfg_tags, "publish_interval", &publish_interval);
 
 	me = malloc(sizeof(nodeID));
 	if (me == NULL) {
@@ -373,7 +395,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
 	mlRegisterErrorConnectionCb(&connError_cb);
 	mlRegisterRecvConnectionCb(&receive_conn_cb);
-	s = mlInit(1,tout,port,IPaddr,3478,"stun.ekiga.net",&init_myNodeID_cb,base);
+	s = mlInit(1, tout, port, IPaddr, stun_port, stun_server, &init_myNodeID_cb, base);
 	if (s < 0) {
 		fprintf(stderr, "Net-helper : error initializing ML!\n");
 		free(me);
@@ -389,11 +411,12 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 	grapesInitLog(DCLOG_WARNING, NULL, NULL);
 
 	repInit("");
-	repoclient = repOpen("79.120.193.115:9832",60);	//repository.napa-wine.eu
+	repoclient = repOpen(repo_address, publish_interval);	//repository.napa-wine.eu
 	if (repoclient == NULL) fatal("Unable to initialize repoclient");
 	monInit(base, repoclient);
 }
 #endif
+	free(cfg_tags);
 
 	while (me->connID<-1) {
 	//	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, &tout);

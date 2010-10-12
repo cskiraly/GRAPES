@@ -54,9 +54,10 @@ void nodeid_free(struct nodeID *s);
 * Initialize the parameters for the networking facilities and create a nodeID representing the caller.
 * @param[in] IPaddr The IP in string form to be associated to the caller.
 * @param[in] port The port to be associated to the caller.
+* @param[in] config Additional configuration options.
 * @return A pointer to a nodeID representing the caller, initialized with all the necessary data.
 */
-struct nodeID *net_helper_init(const char *IPaddr, int port);
+struct nodeID *net_helper_init(const char *IPaddr, int port,const char *config);
 
 /**
 * @brief Map net_helper's ML callback to the given message type.

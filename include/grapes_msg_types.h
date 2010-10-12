@@ -7,6 +7,8 @@
  * @brief Basic message type mappings.
  *
  * Here the definitions of the various SOM message types are collected.
+ * WARNING: when the ML is used, message types are shared among all users
+ * of the ML. Make sure there are no overlaps!
  *
  */
 #define MSG_TYPE_TOPOLOGY   0x10
