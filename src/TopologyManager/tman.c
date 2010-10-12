@@ -289,7 +289,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		}
 	}
 	else { // normal phase
-	chosen = rand_peer(local_cache, (void **)&meta);		//MAX_PREFERRED_PEERS
+	chosen = rand_peer(local_cache, (void **)&meta, max_preferred_peers);
 	new = cache_rank(local_cache, tmanRankFunct, chosen, meta);
 	if (new==NULL) {
 		fprintf(stderr, "TMAN: No cache could be sent to remote peer!\n");

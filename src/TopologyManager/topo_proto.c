@@ -102,7 +102,7 @@ int ncast_query(struct peer_cache *local_cache)
 {
   struct nodeID *dst;
 
-  dst = rand_peer(local_cache, NULL);
+  dst = rand_peer(local_cache, NULL, 0);
   if (dst == NULL) {
     return 0;
   }
