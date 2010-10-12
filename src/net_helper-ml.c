@@ -16,6 +16,7 @@
 
 #include "net_helper.h"
 #include "ml.h"
+#include "config.h"
 
 #include "grapes_msg_types.h"
 
@@ -351,12 +352,37 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 }
 
 
-struct nodeID *net_helper_init(const char *IPaddr, int port) {
+struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config) {
 
 	struct timeval tout = NH_ML_INIT_TIMEOUT;
 	int s, i;
+	struct tag *cfg_tags;
+	const char *res;
+	const char *stun_server = "stun.ekiga.net";
+	int stun_port = 3478;
+	const char *repo_address = "79.120.193.115:9832";
+	int publish_interval = 60;
+
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
+
+	cfg_tags = config_parse(config);
+	if (!cfg_tags) {
+		return NULL;
+	}
+
+	res = config_value_str(cfg_tags, "stun_server");
+	if (res) {
+		stun_server = res;
+	}
+	config_value_int(cfg_tags, "stun_port", &stun_port);
+
+	res = config_value_str(cfg_tags, "repo_address");
+	if (res) {
+		repo_address = res;
+	}
+	
+	config_value_int(cfg_tags, "publish_interval", &publish_interval);
 
 	me = malloc(sizeof(nodeID));
 	if (me == NULL) {
@@ -373,7 +399,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 
 	mlRegisterErrorConnectionCb(&connError_cb);
 	mlRegisterRecvConnectionCb(&receive_conn_cb);
-	s = mlInit(1,tout,port,IPaddr,3478,"stun.ekiga.net",&init_myNodeID_cb,base);
+	s = mlInit(1, tout, port, IPaddr, stun_port, stun_server, &init_myNodeID_cb, base);
 	if (s < 0) {
 		fprintf(stderr, "Net-helper : error initializing ML!\n");
 		free(me);
@@ -389,11 +415,12 @@ struct nodeID *net_helper_init(const char *IPaddr, int port) {
 	grapesInitLog(DCLOG_WARNING, NULL, NULL);
 
 	repInit("");
-	repoclient = repOpen("79.120.193.115:9832",60);	//repository.napa-wine.eu
+	repoclient = repOpen(repo_address, publish_interval);	//repository.napa-wine.eu
 	if (repoclient == NULL) fatal("Unable to initialize repoclient");
 	monInit(base, repoclient);
 }
 #endif
+	free(cfg_tags);
 
 	while (me->connID<-1) {
 	//	event_base_once(base,-1, EV_TIMEOUT, &t_out_cb, NULL, &tout);

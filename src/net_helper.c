@@ -77,7 +77,7 @@ struct nodeID *create_node(const char *IPaddr, int port)
   return s;
 }
 
-struct nodeID *net_helper_init(const char *my_addr, int port)
+struct nodeID *net_helper_init(const char *my_addr, int port, const char *config)
 {
   int res;
   struct nodeID *myself;

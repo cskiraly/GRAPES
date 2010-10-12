@@ -9,7 +9,7 @@
 #include "config.h"
 
 #define NAME_SIZE 32
-#define VAL_SIZE 16
+#define VAL_SIZE 64
 
 struct tag {
   char name[NAME_SIZE];
