@@ -16,6 +16,7 @@
 
 #include "net_helper.h"
 #include "ml.h"
+#include "config.h"
 
 #include "grapes_msg_types.h"
 
@@ -351,7 +352,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 }
 
 
-struct nodeID *net_helper_init(const char *IPaddr, int port) {
+struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config) {
 
 	struct timeval tout = NH_ML_INIT_TIMEOUT;
 	int s, i;

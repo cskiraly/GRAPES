@@ -79,7 +79,7 @@ static struct nodeID *init(void)
 {
   struct nodeID *myID;
 
-  myID = net_helper_init(my_addr, port);
+  myID = net_helper_init(my_addr, port, "");
   if (myID == NULL) {
     fprintf(stderr, "Error creating my socket (%s:%d)!\n", my_addr, port);
 
