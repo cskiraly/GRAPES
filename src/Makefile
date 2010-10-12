@@ -4,15 +4,16 @@ COMMON_OBJS = config.o
 
 .PHONY: subdirs $(SUBDIRS)
 
+OBJ_LSTS = $(addsuffix /objs.lst, $(SUBDIRS))
+
 all: libgrapes.a
 
-subdirs: $(SUBDIRS)
-$(SUBDIRS):
-	$(MAKE) -C $@ libcommon
+$(OBJ_LSTS):
+	$(MAKE) -C $(dir $@) objs.lst
 
-libgrapes.a: subdirs
-libgrapes.a: $(COMMON_OBJS)
-	ar rcs $(BASE)/src/$(LIBCOMMON) $(COMMON_OBJS)
+libgrapes.a: $(OBJ_LSTS) $(COMMON_OBJS)
+	ar rcs libgrapes.a `cat $(OBJ_LSTS)` $(COMMON_OBJS)
+	rm */*.lst
 
 tests: libgrapes.a
 	$(MAKE) -C Tests
