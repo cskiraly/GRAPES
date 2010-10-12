@@ -7,7 +7,7 @@ ld-option = $(shell if echo "int main(){return 0;}" | \
 
 
 
-CFLAGS = -g -Wall
+CFLAGS += -g -Wall
 CFLAGS += $(call cc-option, -Wdeclaration-after-statement)
 CFLAGS += $(call cc-option, -Wno-switch)
 CFLAGS += $(call cc-option, -Wdisabled-optimization)

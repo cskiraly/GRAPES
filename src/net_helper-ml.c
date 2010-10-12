@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
-
+#include <signal.h>
 
 #include "net_helper.h"
 #include "ml.h"
@@ -83,7 +83,7 @@ struct receivedB {
 	uint8_t *data;
 };
 static struct receivedB receivedBuffer[NH_BUFFER_SIZE];
-/**/ static int recv_counter =0; static int snd_counter =0;
+/**/ static int recv_counter =0;
 
 
 static void connReady_cb (int connectionID, void *arg);
@@ -267,7 +267,7 @@ void free_sending_buffer(int i)
  * @param arg
  */
 static void connReady_cb (int connectionID, void *arg) {
-	char mt;
+
 	msgData_cb *p;
 	p = (msgData_cb *)arg;
 	if (p == NULL) return;
@@ -276,11 +276,6 @@ static void connReady_cb (int connectionID, void *arg) {
 	    return;
 	}
 	mlSendData(connectionID,(char *)(sendingBuffer[p->bIdx]),p->mSize,p->msgType,NULL);
-/**/	mt = ((char*)sendingBuffer[p->bIdx])[0]; ++snd_counter;
-	if (mt!=MSG_TYPE_TOPOLOGY &&
-		mt!=MSG_TYPE_CHUNK && mt!=MSG_TYPE_SIGNALLING) {
-			fprintf(stderr,"Net-helper ERROR! Sent message # %d of type %c and size %d\n",
-				snd_counter,mt+'0', p->mSize);}
 	free_sending_buffer(p->bIdx);
 //	fprintf(stderr,"Net-helper: Message # %d for connection %d sent!\n ", p->bIdx,connectionID);
 	//	event_base_loopbreak(base);
@@ -363,6 +358,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	const char *repo_address = "79.120.193.115:9832";
 	int publish_interval = 60;
 
+	signal(SIGPIPE, SIG_IGN); // workaround for a known issue in libevent2 with SIGPIPE on TPC connections
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
 
