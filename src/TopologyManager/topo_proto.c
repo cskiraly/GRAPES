@@ -121,7 +121,7 @@ int topo_proto_metadata_update(void *meta, int meta_size)
 int topo_proto_init(struct nodeID *s, void *meta, int meta_size)
 {
   if (!myEntry) {
-	myEntry = cache_init(1, meta_size);
+	myEntry = cache_init(1, meta_size, 0);
 	cache_add(myEntry, s, meta, meta_size);
   }
   return 0;
