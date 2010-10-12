@@ -357,7 +357,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	const char *res;
 	const char *stun_server = "stun.ekiga.net";
 	int stun_port = 3478;
-	const char *repo_address = "79.120.193.115:9832";
+	const char *repo_address = NULL;
 	int publish_interval = 60;
 	int verbosity = DCLOG_ERROR;
 
