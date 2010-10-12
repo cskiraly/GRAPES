@@ -174,10 +174,10 @@ int acceptChunks(struct nodeID *to, struct chunkID_set *cset, int trans_id)
 }
 
 int sendBufferMap(struct nodeID *to, const struct nodeID *owner,
-                  struct chunkID_set *bmap, int trans_id)
+                  struct chunkID_set *bmap, int cb_size, int trans_id)
 {
     return sendSignaling(MSG_SIG_BMOFF, to, (!owner ? localID : owner), bmap,
-                         0, trans_id);
+                         cb_size, trans_id);
 }
 
 int requestBufferMap(struct nodeID *to, const struct nodeID *owner,
