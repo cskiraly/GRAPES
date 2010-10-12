@@ -71,7 +71,7 @@ int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void 
   for (i = 0; i < c->current_size; i++) {
     if (nodeid_equal(c->entries[i].id, neighbour)) {
       if (f != NULL) {
-        cache_del(c,c->entries[i].id);
+        cache_del(c,neighbour);
         if (i == c->current_size) break;
       } else {
           cache_metadata_update(c,neighbour,meta,meta_size);
