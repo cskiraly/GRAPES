@@ -107,7 +107,7 @@ int acceptChunks(struct nodeID *to, struct chunkID_set *cset, int trans_id);
  * @param[in] to PeerID.
  * @param[in] owner Owner of the BufferMap to send.
  * @param[in] bmap the BufferMap to send.
- * @param[in] the size of the chunk buffer (not the size of the buffer map sent, but that of the chunk buffer).
+ * @param[in] cb_size the size of the chunk buffer (not the size of the buffer map sent, but that of the chunk buffer).
  * @param[in] trans_id transaction number associated with this send.
  * @return 1 Success, <0 on error.
  */
