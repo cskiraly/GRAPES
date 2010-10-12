@@ -73,7 +73,10 @@ int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void 
       if (f != NULL) {
         cache_del(c,c->entries[i].id);
         if (i == c->current_size) break;
-      } else return -1;
+      } else {
+          cache_metadata_update(c,neighbour,meta,meta_size);
+          return -1;
+      }
     }
     if ((f != NULL) && f(tmeta, meta, c->metadata+(c->metadata_size * i)) == 2) {
       pos++;
@@ -368,12 +371,9 @@ struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int
   
 	for (n = 0; n < c2->current_size; n++) {
 		pos = in_cache(new_cache, &c2->entries[n]);
-		if (pos >= 0) {
-			if (new_cache->entries[pos].timestamp > c2->entries[n].timestamp) {
-				cache_del(new_cache,c2->entries[n].id);
-				meta -= new_cache->metadata_size;
-				pos = -1;
-			}
+		if (pos >= 0 && new_cache->entries[pos].timestamp > c2->entries[n].timestamp) {
+			cache_metadata_update(new_cache, c2->entries[n].id, c2->metadata + n * c2->metadata_size, c2->metadata_size);
+			new_cache->entries[pos].timestamp = c2->entries[n].timestamp;
 		}
 		if (pos < 0) {
 			if (new_cache->metadata_size) {
