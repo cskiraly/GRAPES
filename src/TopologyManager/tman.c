@@ -55,33 +55,33 @@ static int tmanRankFunct (const void *target, const void *p1, const void *p2) {
 
 static uint64_t gettime(void)
 {
-  struct timeval tv;
+	struct timeval tv;
 
-  gettimeofday(&tv, NULL);
+	gettimeofday(&tv, NULL);
 
-  return tv.tv_usec + tv.tv_sec * 1000000ull;
+	return tv.tv_usec + tv.tv_sec * 1000000ull;
 }
 
 int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, ranking_function rfun, int gossip_peers)
 {
-  userRankFunct = rfun;
-  blist_proto_init(myID, metadata, metadata_size);
-  mymeta = metadata;
-  mymeta_size = metadata_size;
-  zero = calloc(mymeta_size,1);
-  
-  local_cache = blist_cache_init(cache_size, metadata_size, 0);
-  if (local_cache == NULL) {
-    return -1;
-  }
-  if (gossip_peers) {
-    max_gossiping_peers = gossip_peers;
-  }
-  max_preferred_peers = TMAN_MAX_PREFERRED_PEERS;
-  active = -1;
-  currtime = gettime();
+	userRankFunct = rfun;
+	blist_proto_init(myID, metadata, metadata_size);
+	mymeta = metadata;
+	mymeta_size = metadata_size;
+	zero = calloc(mymeta_size,1);
 
-  return 0;
+	local_cache = blist_cache_init(cache_size, metadata_size, 0);
+	if (local_cache == NULL) {
+		return -1;
+	}
+	if (gossip_peers) {
+		max_gossiping_peers = gossip_peers;
+	}
+	max_preferred_peers = TMAN_MAX_PREFERRED_PEERS;
+	active = -1;
+	currtime = gettime();
+
+	return 0;
 }
 
 int tmanGivePeers (int n, struct nodeID **peers, void *metadata)
@@ -90,11 +90,11 @@ int tmanGivePeers (int n, struct nodeID **peers, void *metadata)
 	const uint8_t *mdata;
 	int i;
 
-        mdata = blist_get_metadata(local_cache, &metadata_size);
+	mdata = blist_get_metadata(local_cache, &metadata_size);
 	for (i=0; blist_nodeid(local_cache, i) && (i < n); i++) {
-			peers[i] = blist_nodeid(local_cache,i);
-			if (metadata_size)
-				memcpy((uint8_t *)metadata + i * metadata_size, mdata + i * metadata_size, metadata_size);
+		peers[i] = blist_nodeid(local_cache,i);
+		if (metadata_size)
+			memcpy((uint8_t *)metadata + i * metadata_size, mdata + i * metadata_size, metadata_size);
 	}
 
 	return i;
@@ -102,11 +102,11 @@ int tmanGivePeers (int n, struct nodeID **peers, void *metadata)
 
 int tmanGetNeighbourhoodSize(void)
 {
-  int i;
+	int i;
 
-  for (i = 0; blist_nodeid(local_cache, i); i++);
+	for (i = 0; blist_nodeid(local_cache, i); i++);
 
-  return i;
+	return i;
 }
 
 static int time_to_send(void)
@@ -116,7 +116,7 @@ static int time_to_send(void)
 		return 1;
 	}
 
-  return 0;
+	return 0;
 }
 
 int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
@@ -125,46 +125,46 @@ int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size
 		blist_tman_query_peer(local_cache, neighbour, max_gossiping_peers);
 		return -1;
 	}
-  if (blist_cache_add_ranked(local_cache, neighbour, metadata, metadata_size, tmanRankFunct, mymeta) < 0) {
-    return -1;
-  }
+	if (blist_cache_add_ranked(local_cache, neighbour, metadata, metadata_size, tmanRankFunct, mymeta) < 0) {
+		return -1;
+	}
 
-  return 1;
+	return 1;
 }
 
 
 // not self metadata, but neighbors'.
 const void *tmanGetMetadata(int *metadata_size)
 {
-  return blist_get_metadata(local_cache, metadata_size);
+	return blist_get_metadata(local_cache, metadata_size);
 }
 
 
 int tmanChangeMetadata(void *metadata, int metadata_size)
 {
-  struct peer_cache *new = NULL;
+	struct peer_cache *new = NULL;
 
-  if (blist_proto_metadata_update(metadata, metadata_size) <= 0) {
-    return -1;
-  }
-  mymeta = metadata;
+	if (blist_proto_metadata_update(metadata, metadata_size) <= 0) {
+		return -1;
+	}
+	mymeta = metadata;
 
-  if (active >= 0) {
-  new = blist_cache_rank(local_cache, tmanRankFunct, NULL, mymeta);
-  if (new) {
-	  blist_cache_free(local_cache);
-	local_cache = new;
-  }
-  }
+	if (active >= 0) {
+		new = blist_cache_rank(local_cache, tmanRankFunct, NULL, mymeta);
+		if (new) {
+			blist_cache_free(local_cache);
+			local_cache = new;
+		}
+	}
 
-  return 1;
+	return 1;
 }
 
 
 int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size, const void *metadata, int metadata_size)
 {
-        int msize,s;
-        const uint8_t *mdata;
+	int msize,s;
+	const uint8_t *mdata;
 	struct peer_cache *new = NULL, *temp;
 
 	if (len && active >= 0) {
@@ -293,7 +293,6 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 
   return 0;
 }
-
 
 
 // limit : at most it doubles the current cache size...
