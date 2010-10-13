@@ -21,19 +21,19 @@
 #define TMAN_INIT_PEERS 10 // max # of neighbors in local cache (should be >= than the next)
 #define TMAN_MAX_PREFERRED_PEERS 10 // # of peers to choose a receiver among (should be <= than the previous)
 #define TMAN_MAX_GOSSIPING_PEERS 20 // # size of the view to be sent to receiver peer (should be <= than the previous)
-#define TMAN_IDLE_TIME 20 // # of iterations to wait before switching to inactive state
 #define TMAN_STD_PERIOD 1000000
 #define TMAN_INIT_PERIOD 1000000
+#define TMAN_RESTART_COUNT 20;
 
 static  int max_preferred_peers = TMAN_MAX_PREFERRED_PEERS;
 static  int max_gossiping_peers = TMAN_MAX_GOSSIPING_PEERS;
-static  int idle_time = TMAN_IDLE_TIME;
+static	int restart_countdown = TMAN_RESTART_COUNT;
 
 static uint64_t currtime;
 static int cache_size = TMAN_INIT_PEERS;
 static struct peer_cache *local_cache;
 static int period = TMAN_INIT_PERIOD;
-static int active, countdown = TMAN_IDLE_TIME*2;
+static int active;
 static int do_resize;
 static void *mymeta;
 static int mymeta_size;
@@ -74,7 +74,6 @@ int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, ranking_fun
   if (local_cache == NULL) {
     return -1;
   }
-  idle_time = TMAN_IDLE_TIME;
   if (gossip_peers) {
     max_gossiping_peers = gossip_peers;
   }
@@ -113,10 +112,6 @@ int tmanGetNeighbourhoodSize(void)
 static int time_to_send(void)
 {
 	if (gettime() - currtime > period) {
-		if (--countdown == 0) {
-			countdown = idle_time*2;
-			if (active > 0) active = 0;
-		}
 		currtime += period;
 		return 1;
 	}
@@ -162,9 +157,6 @@ int tmanChangeMetadata(void *metadata, int metadata_size)
   }
   }
 
-  if (active > 0) active = 0;
-  countdown = idle_time*2;
-
   return 1;
 }
 
@@ -174,7 +166,6 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
         int msize,s;
         const uint8_t *mdata;
 	struct peer_cache *new = NULL, *temp;
-	int source = 4; // init with value > 1, needed in bootstrap/restart phase...
 
 	if (len && active >= 0) {
 		const struct topo_header *h = (const struct topo_header *)buff;
@@ -210,11 +201,12 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 			if (new) {
 				cache_size = TMAN_INIT_PEERS;
 				blist_cache_resize(new,cache_size);
-				countdown = idle_time*2;
+				period = TMAN_STD_PERIOD;
 				fprintf(stderr,"RESTARTING TMAN!!!\n");
 			}
 			nodeid_free(restart_peer);
 			restart_peer = NULL;
+			active = 1;
 		}
 		else {	// normal phase
 			temp = blist_cache_union(local_cache,remote_cache,&s);
@@ -224,21 +216,19 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 				blist_cache_resize(new,cache_size);
 				blist_cache_free(temp);
 			}
+			if (restart_peer) {
+				restart_countdown--;
+				if (restart_countdown <= 0) {
+					nodeid_free(restart_peer);
+					restart_peer = NULL;
+				}
+			}
 		}
 
 		blist_cache_free(remote_cache);
 		if (new!=NULL) {
 		  blist_cache_free(local_cache);
 		  local_cache = new;
-		  if (source > 1) { // cache is different than before
-			  period = TMAN_INIT_PERIOD;
-			  if(!restart_peer) active = idle_time;
-                  }
-                  else {
-                  	period = TMAN_STD_PERIOD;
-                  	if (active>0) active--;
-                  }
-
                   do_resize = 0;
 		}
 	}
@@ -249,9 +239,10 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 
 	blist_cache_update(local_cache);
 
-	if (active > 0 && !blist_nodeid(local_cache, 0)) {
-		fprintf(stderr, "TMAN: No peer available! Triggering a restart...\n");
+	if (active > 0 && tmanGetNeighbourhoodSize() < size && !restart_countdown) {
+		fprintf(stderr, "TMAN: Too few peers in cache! Triggering a restart...\n");
 		active = 0;
+		period = TMAN_INIT_PERIOD;
 	}
 
 	if (active <= 0) {	// active < 0 -> bootstrap phase ; active = 0 -> restart phase
@@ -265,6 +256,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 			blist_cache_add_ranked(ncache, peers[j],(const uint8_t *)metadata + j * metadata_size, metadata_size, tmanRankFunct, mymeta);
 		if (blist_nodeid(ncache, 0)) {
 			restart_peer = nodeid_dup(blist_nodeid(ncache, 0));
+			restart_countdown = TMAN_RESTART_COUNT;
 			mdata = blist_get_metadata(ncache, &msize);
 			new = blist_cache_rank(active < 0 ? ncache : local_cache, tmanRankFunct, restart_peer, mdata);
 			if (new) {
