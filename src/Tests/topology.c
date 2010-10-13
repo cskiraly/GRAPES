@@ -23,10 +23,10 @@ static int counter = 0;
 
 int topoChangeMetadata(void *metadata, int metadata_size)
 {
-	// this because if my own metadata are to be changed, it shouldn't be done twice!
- 	if (counter < TMAN_MAX_IDLE)
- 		return topChangeMetadata(metadata,metadata_size);
-    return tmanChangeMetadata(metadata,metadata_size);
+	int res = topChangeMetadata(metadata,metadata_size);
+	if (counter >= TMAN_MAX_IDLE)
+		return tmanChangeMetadata(metadata,metadata_size);
+	else return res;
 }
 
 int topoAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
