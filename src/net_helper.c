@@ -200,6 +200,7 @@ struct nodeID *nodeid_dup(struct nodeID *s)
 
   return res;
 }
+
 int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 {
   return (memcmp(&s1->addr, &s2->addr, sizeof(struct sockaddr_in)) == 0);
@@ -234,11 +235,9 @@ void nodeid_free(struct nodeID *s)
 
 const char *node_ip(const struct nodeID *s)
 {
-	static char ip[64];
+  static char ip[64];
 
-	sprintf(ip, "%s", inet_ntoa(s->addr.sin_addr));
+  sprintf(ip, "%s", inet_ntoa(s->addr.sin_addr));
 
-	return ip;
+  return ip;
 }
-
-
