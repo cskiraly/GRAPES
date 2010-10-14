@@ -1,6 +1,6 @@
 BASE = ../..
 
-OBJS = ncast.o topo_proto.o topocache.o tman.o
+OBJS = peersampler.o ncast.o topo_proto.o topocache.o tman.o
 
 all: libtopman.a
 

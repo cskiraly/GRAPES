@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include "net_helper.h"
-#include "topmanager.h"
+#include "peersampler_iface.h"
 #include "topocache.h"
 #include "topo_proto.h"
 #include "proto.h"
@@ -54,9 +54,9 @@ static int time_to_send(void)
 }
 
 /*
- * Public Functions!
+ * Exported Functions!
  */
-int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+static int ncast_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
   struct tag *cfg_tags;
   int res, max_timestamp;
@@ -83,7 +83,7 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
   return 1;
 }
 
-int topChangeMetadata(void *metadata, int metadata_size)
+static int ncast_change_metadata(void *metadata, int metadata_size)
 {
   if (topo_proto_metadata_update(metadata, metadata_size) <= 0) {
     return -1;
@@ -92,7 +92,7 @@ int topChangeMetadata(void *metadata, int metadata_size)
   return 1;
 }
 
-int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
+static int ncast_add_neighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 {
   if (cache_add(local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
@@ -100,7 +100,7 @@ int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
   return ncast_query_peer(local_cache, neighbour);
 }
 
-int topParseData(const uint8_t *buff, int len)
+static int ncast_parse_data(const uint8_t *buff, int len)
 {
   int dummy;
 
@@ -137,7 +137,7 @@ int topParseData(const uint8_t *buff, int len)
   return 0;
 }
 
-const struct nodeID **topGetNeighbourhood(int *n)
+static const struct nodeID **ncast_get_neighbourhood(int *n)
 {
   static struct nodeID **r;
 
@@ -154,19 +154,19 @@ const struct nodeID **topGetNeighbourhood(int *n)
   return (const struct nodeID **)r;
 }
 
-const void *topGetMetadata(int *metadata_size)
+static const void *ncast_get_metadata(int *metadata_size)
 {
   return get_metadata(local_cache, metadata_size);
 }
 
-int topGrowNeighbourhood(int n)
+static int ncast_grow_neighbourhood(int n)
 {
   cache_size += n;
 
   return cache_size;
 }
 
-int topShrinkNeighbourhood(int n)
+static int ncast_shrink_neighbourhood(int n)
 {
   if (cache_size < n) {
     return -1;
@@ -176,8 +176,19 @@ int topShrinkNeighbourhood(int n)
   return cache_size;
 }
 
-int topRemoveNeighbour(struct nodeID *neighbour)
+static int ncast_remove_neighbour(struct nodeID *neighbour)
 {
   return cache_del(local_cache, neighbour);
 }
 
+struct peersampler_iface ncast = {
+  .init = ncast_init,
+  .change_metadata = ncast_change_metadata,
+  .add_neighbour = ncast_add_neighbour,
+  .parse_data = ncast_parse_data,
+  .get_neighbourhood = ncast_get_neighbourhood,
+  .get_metadata = ncast_get_metadata,
+  .grow_neighbourhood = ncast_grow_neighbourhood,
+  .shrink_neighbourhood = ncast_shrink_neighbourhood,
+  .remove_neighbour = ncast_remove_neighbour,
+};
