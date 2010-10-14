@@ -82,12 +82,18 @@ const void *topoGetMetadata(int *metadata_size)
 
 int topoGrowNeighbourhood(int n)
 {
-	return tmanGrowNeighbourhood(n);
+	if (counter < TMAN_MAX_IDLE)
+		return topGrowNeighbourhood(n);
+	else
+		return tmanGrowNeighbourhood(n);
 }
 
 int topoShrinkNeighbourhood(int n)
 {
-  return tmanShrinkNeighbourhood(n);
+	if (counter < TMAN_MAX_IDLE)
+		return topShrinkNeighbourhood(n);
+	else
+		return tmanShrinkNeighbourhood(n);
 }
 
 int topoRemoveNeighbour(struct nodeID *neighbour)

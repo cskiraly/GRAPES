@@ -250,6 +250,11 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 
 	cache_update(local_cache);
 
+	if (active > 0 && !nodeid(local_cache, 0)) {
+		fprintf(stderr, "TMAN: No peer available! Triggering a restart...\n");
+		active = 0;
+	}
+
 	if (active <= 0) {	// active < 0 -> bootstrap phase ; active = 0 -> restart phase
 		struct peer_cache *ncache;
 		int j,nsize;
@@ -284,7 +289,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 		}
 	}
 	else { // normal phase
-	chosen = rand_peer(local_cache, (void **)&meta);		//MAX_PREFERRED_PEERS
+	chosen = rand_peer(local_cache, (void **)&meta, max_preferred_peers);
 	new = cache_rank(local_cache, tmanRankFunct, chosen, meta);
 	if (new==NULL) {
 		fprintf(stderr, "TMAN: No cache could be sent to remote peer!\n");

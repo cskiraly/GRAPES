@@ -619,6 +619,21 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 	return remote;
 }
 
+const char *node_ip(const struct nodeID *s) {
+	static char ip[64];
+	int len;
+	char *start, *end;
+	const char *tmp = node_addr(s);
+	start = strstr(tmp, "-") + 1;
+	end = strstr(start, ":");
+	len = end - start;
+	memcpy(ip, start, len);
+	ip[len] = 0;
+
+	return (const char *)ip;
+}
+
+
 // TODO: check why closing the connection is annoying for the ML
 void nodeid_free(struct nodeID *n) {
 	if (n && (--(n->refcnt) == 1)) {

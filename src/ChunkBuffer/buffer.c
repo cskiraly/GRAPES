@@ -35,8 +35,6 @@ static void insert_sort(struct chunk *b, int size)
   }
 }
 
-
-
 static void chunk_free(struct chunk *c)
 {
     free(c->data);

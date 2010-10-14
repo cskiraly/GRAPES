@@ -29,26 +29,27 @@ static struct nodeID *localID;
 //XXX Send data is in char while our buffer is in uint8
 int sendChunk(struct nodeID *to, const struct chunk *c)
 {
-    int buff_len;
-    uint8_t *buff;
-    int res;
+  int buff_len;
+  uint8_t *buff;
+  int res;
 
-    buff_len  = 20 + c->size + c->attributes_size;
-    buff = malloc(buff_len + 1);
-    if (buff == NULL) {
-        return -1;
-    }
-    res = encodeChunk(c, buff + 1, buff_len);
-    buff[0] = MSG_TYPE_CHUNK;
-    send_to_peer(localID, to, buff, buff_len + 1);
-    free(buff);
+  buff_len  = 20 + c->size + c->attributes_size;
+  buff = malloc(buff_len + 1);
+  if (buff == NULL) {
+      return -1;
+  }
+  res = encodeChunk(c, buff + 1, buff_len);
+  buff[0] = MSG_TYPE_CHUNK;
+  send_to_peer(localID, to, buff, buff_len + 1);
+  free(buff);
 
-    return (EXIT_SUCCESS);
+  return EXIT_SUCCESS;
 }
 
 int chunkDeliveryInit(struct nodeID *myID)
 {
   localID = myID;
+
   return 1;
 }
 
