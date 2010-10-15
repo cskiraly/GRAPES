@@ -1,10 +1,12 @@
 #include <sys/time.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "net_helper.h"
 #include "topmanager.h"
 #include "peersampler_iface.h"
+#include "config.h"
 
 extern struct peersampler_iface ncast;
 extern struct peersampler_iface cyclon;
@@ -13,7 +15,21 @@ static struct peersampler_iface *ps;
 
 int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
+  struct tag *cfg_tags;
+  const char *proto;
+
   ps = &ncast;
+  cfg_tags = config_parse(config);
+  proto = config_value_str(cfg_tags, "protocol");
+  if (proto) {
+    if (strcmp(proto, "cyclon") == 0) {
+      ps = &cyclon;
+    }
+    if (strcmp(proto, "dummy") == 0) {
+      ps = &dummy;
+    }
+  }
+
   return ps->init(myID, metadata, metadata_size, config);
 }
 
