@@ -124,14 +124,13 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
       local_cache = new;
     }
     if (sent_cache) {
-#if 0
-      caches_add(local_cache, sent_cache);		/* CACHE UNION??? */
-#else
       int dummy;
 
       new = cache_union(local_cache, sent_cache, &dummy);
-      local_cache = new;
-#endif
+      if (new != NULL) {
+        cache_free(local_cache);
+        local_cache = new;
+      }
       cache_free(sent_cache);
     } else {
       if (flying_cache) {
@@ -143,14 +142,14 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
 
   if (time_to_send()) {
     if (flying_cache) {
-#if 0
-      caches_add(local_cache, flying_cache);		/* CACHE UNION??? */
-#else
       struct peer_cache *new;
       int dummy;
+
       new = cache_union(local_cache, flying_cache, &dummy);
-      local_cache = new;
-#endif
+      if (new != NULL) {
+        cache_free(local_cache);
+        local_cache = new;
+      }
       cache_free(flying_cache);
       flying_cache = NULL;
     }
