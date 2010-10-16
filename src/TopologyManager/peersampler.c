@@ -7,6 +7,7 @@
 #include "peersampler_iface.h"
 
 extern struct peersampler_iface ncast;
+extern struct peersampler_iface cyclon;
 extern struct peersampler_iface dummy;
 static struct peersampler_iface *ps;
 
