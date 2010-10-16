@@ -16,6 +16,7 @@
 #include "peersampler_iface.h"
 #include "topocache.h"
 #include "topo_proto.h"
+#include "ncast_proto.h"
 #include "proto.h"
 #include "config.h"
 #include "grapes_msg_types.h"

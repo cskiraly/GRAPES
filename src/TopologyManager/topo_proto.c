@@ -12,7 +12,6 @@
 #include "topocache.h"
 #include "proto.h"
 #include "topo_proto.h"
-#include "grapes_msg_types.h"
 
 #define MAX_MSG_SIZE 1500
 
@@ -42,7 +41,7 @@ static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, 
   return p - payload;
 }
 
-static int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache, int protocol, int type, int max_peers)
+int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache, int protocol, int type, int max_peers)
 {
   uint8_t pkt[MAX_MSG_SIZE];
   struct topo_header *h = (struct topo_header *)pkt;
@@ -66,7 +65,7 @@ static int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache
   return res;
 }
 
-static int topo_query_peer(struct peer_cache *local_cache, struct nodeID *dst, int protocol, int type, int max_peers)
+int topo_query_peer(struct peer_cache *local_cache, struct nodeID *dst, int protocol, int type, int max_peers)
 {
   uint8_t pkt[MAX_MSG_SIZE];
   struct topo_header *h = (struct topo_header *)pkt;
@@ -76,37 +75,6 @@ static int topo_query_peer(struct peer_cache *local_cache, struct nodeID *dst, i
   h->type = type;
   len = ncast_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst, max_peers);
   return len > 0  ? send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
-}
-
-int ncast_reply(const struct peer_cache *c, struct peer_cache *local_cache)
-{
-  return topo_reply(c, local_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY, 0);
-}
-
-int tman_reply(const struct peer_cache *c, struct peer_cache *local_cache, int max_peers)
-{
-  return topo_reply(c, local_cache, MSG_TYPE_TMAN, TMAN_REPLY, max_peers);
-}
-
-int ncast_query_peer(struct peer_cache *local_cache, struct nodeID *dst)
-{
-  return topo_query_peer(local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY, 0);
-}
-
-int tman_query_peer(struct peer_cache *local_cache, struct nodeID *dst, int max_peers)
-{
-  return topo_query_peer(local_cache, dst, MSG_TYPE_TMAN, TMAN_QUERY, max_peers);
-}
-
-int ncast_query(struct peer_cache *local_cache)
-{
-  struct nodeID *dst;
-
-  dst = rand_peer(local_cache, NULL, 0);
-  if (dst == NULL) {
-    return 0;
-  }
-  return topo_query_peer(local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY, 0);
 }
 
 int topo_proto_metadata_update(void *meta, int meta_size)
