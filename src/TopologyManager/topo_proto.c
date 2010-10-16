@@ -17,14 +17,17 @@
 
 static struct peer_cache *myEntry;
 
-static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, struct nodeID *snot, int max_peers)
+static int topo_payload_fill(uint8_t *payload, int size, struct peer_cache *c, struct nodeID *snot, int max_peers, int include_me)
 {
   int i;
   uint8_t *p = payload;
 
   if (!max_peers) max_peers = MAX_MSG_SIZE; // just to be sure to dump the whole cache...
-  p += cache_header_dump(p, c);
-  p += entry_dump(p, myEntry, 0, size - (p - payload));
+  p += cache_header_dump(p, c, include_me);
+  if (include_me) {
+    p += entry_dump(p, myEntry, 0, size - (p - payload));
+    max_peers--;
+  }
   for (i = 0; nodeid(c, i) && max_peers; i++) {
     if (!nodeid_equal(nodeid(c, i), snot)) {
       int res;
@@ -41,7 +44,7 @@ static int ncast_payload_fill(uint8_t *payload, int size, struct peer_cache *c, 
   return p - payload;
 }
 
-int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache, int protocol, int type, int max_peers)
+int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache, int protocol, int type, int max_peers, int include_me)
 {
   uint8_t pkt[MAX_MSG_SIZE];
   struct topo_header *h = (struct topo_header *)pkt;
@@ -58,7 +61,7 @@ int topo_reply(const struct peer_cache *c, struct peer_cache *local_cache, int p
   dst = nodeid(c, 0);
   h->protocol = protocol;
   h->type = type;
-  len = ncast_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst, max_peers);
+  len = topo_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst, max_peers, include_me);
 
   res = len > 0 ? send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
 
@@ -73,7 +76,7 @@ int topo_query_peer(struct peer_cache *local_cache, struct nodeID *dst, int prot
 
   h->protocol = protocol;
   h->type = type;
-  len = ncast_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst, max_peers);
+  len = topo_payload_fill(pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst, max_peers, 1);
   return len > 0  ? send_to_peer(nodeid(myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
 }
 

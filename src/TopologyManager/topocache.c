@@ -339,9 +339,9 @@ if (p - buff != size) { fprintf(stderr, "Waz!! %d != %d\n", (int)(p - buff), siz
   return res;
 }
 
-int cache_header_dump(uint8_t *b, const struct peer_cache *c)
+int cache_header_dump(uint8_t *b, const struct peer_cache *c, int include_me)
 {
-  int_cpy(b, c->cache_size);
+  int_cpy(b, c->cache_size + (include_me ? 1 : 0));
   int_cpy(b + 4, c->metadata_size);
 
   return 8;

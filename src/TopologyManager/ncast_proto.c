@@ -16,7 +16,7 @@
 
 int ncast_reply(const struct peer_cache *c, struct peer_cache *local_cache)
 {
-  return topo_reply(c, local_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY, 0);
+  return topo_reply(c, local_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY, 0, 1);
 }
 
 int ncast_query_peer(struct peer_cache *local_cache, struct nodeID *dst)

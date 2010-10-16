@@ -18,7 +18,7 @@
 
 int cyclon_reply(const struct peer_cache *c, struct peer_cache *local_cache)
 {
-  return topo_reply(c, local_cache, MSG_TYPE_TOPOLOGY, CYCLON_REPLY, 0);
+  return topo_reply(c, local_cache, MSG_TYPE_TOPOLOGY, CYCLON_REPLY, 0, 0);
 }
 
 int cyclon_query(struct peer_cache *sent_cache, struct nodeID *dst)
