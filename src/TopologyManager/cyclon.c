@@ -179,7 +179,6 @@ static const struct nodeID **cyclon_get_neighbourhood(int *n)
   }
 
   for (*n = 0; nodeid(local_cache, *n) && (*n < MAX_PEERS); (*n)++) {
-fprintf(stderr, "Std cache : %d\n", *n);
     r[*n] = nodeid(local_cache, *n);
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
@@ -187,7 +186,6 @@ fprintf(stderr, "Std cache : %d\n", *n);
     int i;
 
     for (i = 0; nodeid(flying_cache, i) && (*n < MAX_PEERS); (*n)++, i++) {
-fprintf(stderr, "Flying cache : %d\n", *n);
       r[*n] = nodeid(flying_cache, i);
     }
   }
