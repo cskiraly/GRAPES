@@ -21,11 +21,11 @@
 #include "config.h"
 #include "grapes_msg_types.h"
 
-#define MAX_PEERS 20
+#define DEFAULT_CACHE_SIZE 10
 
 static uint64_t currtime;
-static int cache_size = MAX_PEERS;
-static int sent_entries = MAX_PEERS / 4;
+static int cache_size;
+static int sent_entries;
 static struct peer_cache *local_cache;
 static bool bootstrap = true;
 static int bootstrap_period = 2000000;
@@ -60,6 +60,19 @@ static int time_to_send(void)
  */
 static int cyclon_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
+  struct tag *cfg_tags;
+  int res;
+
+  cfg_tags = config_parse(config);
+  res = config_value_int(cfg_tags, "cache_size", &cache_size);
+  if (!res) {
+    cache_size = DEFAULT_CACHE_SIZE;
+  }
+  res = config_value_int(cfg_tags, "sent_entries", &sent_entries);
+  if (!res) {
+    sent_entries = cache_size / 4;
+  }
+
   local_cache = cache_init(cache_size, metadata_size, 0);
   if (local_cache == NULL) {
     return -1;
@@ -176,18 +189,18 @@ static const struct nodeID **cyclon_get_neighbourhood(int *n)
     return NULL;
   }
 
-  for (*n = 0; nodeid(local_cache, *n) && (*n < MAX_PEERS); (*n)++) {
+  for (*n = 0; nodeid(local_cache, *n) && (*n < cache_size); (*n)++) {
     r[*n] = nodeid(local_cache, *n);
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
   if (flying_cache) {
     int i;
 
-    for (i = 0; nodeid(flying_cache, i) && (*n < MAX_PEERS); (*n)++, i++) {
+    for (i = 0; nodeid(flying_cache, i) && (*n < cache_size); (*n)++, i++) {
       r[*n] = nodeid(flying_cache, i);
     }
   }
-  if (dst && (*n < MAX_PEERS)) {
+  if (dst && (*n < cache_size)) {
     r[*n] = dst;
     (*n)++;
   }
