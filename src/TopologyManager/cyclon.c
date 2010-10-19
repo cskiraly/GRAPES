@@ -70,7 +70,7 @@ static int cyclon_init(struct nodeID *myID, void *metadata, int metadata_size, c
   }
   res = config_value_int(cfg_tags, "sent_entries", &sent_entries);
   if (!res) {
-    sent_entries = cache_size / 4;
+    sent_entries = cache_size / 2;
   }
 
   local_cache = cache_init(cache_size, metadata_size, 0);
