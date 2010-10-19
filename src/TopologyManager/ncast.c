@@ -131,7 +131,7 @@ static int ncast_parse_data(const uint8_t *buff, int len)
   }
 
   if (time_to_send()) {
-    cache_update_tout(local_cache);
+    cache_update(local_cache);
     ncast_query(local_cache);
   }
 
