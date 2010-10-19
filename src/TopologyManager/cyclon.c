@@ -138,7 +138,7 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
     if (sent_cache) {
       int dummy;
 
-      new = cache_union(local_cache, sent_cache, &dummy);
+      new = merge_caches(local_cache, sent_cache, cache_size, &dummy);
       if (new != NULL) {
         cache_free(local_cache);
         local_cache = new;
@@ -157,7 +157,7 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
       struct peer_cache *new;
       int dummy;
 
-      new = cache_union(local_cache, flying_cache, &dummy);
+      new = merge_caches(local_cache, flying_cache, cache_size, &dummy);
       if (new != NULL) {
         cache_free(local_cache);
         local_cache = new;
