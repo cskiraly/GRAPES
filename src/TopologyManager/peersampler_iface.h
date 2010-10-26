@@ -1,3 +1,6 @@
+#ifndef PEERSAMPLER_IFACE
+#define PEERSAMPLER_IFACE
+
 struct peersampler_iface {
   int (*init)(struct nodeID *myID, void *metadata, int metadata_size, const char *config);
   int (*change_metadata)(void *metadata, int metadata_size);
@@ -22,3 +25,5 @@ int ncast_grow_neighbourhood(int n);
 int ncast_shrink_neighbourhood(int n);
 int ncast_remove_neighbour(struct nodeID *neighbour);
 #endif
+
+#endif	/* PEERSAMPLER_IFACE */

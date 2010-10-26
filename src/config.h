@@ -1,5 +1,5 @@
 #ifndef CONFIG_H
-
+#define CONFIG_H
 struct tag;
 
 struct tag *config_parse(const char *cfg);

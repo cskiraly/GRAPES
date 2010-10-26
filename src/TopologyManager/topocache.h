@@ -1,3 +1,6 @@
+#ifndef TOPOCACHE
+#define TOPOCACHE
+
 struct peer_cache;
 struct cache_entry;
 typedef int (*ranking_function)(const void *target, const void *p1, const void *p2);	// FIXME!
@@ -26,3 +29,5 @@ struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int
 int cache_resize (struct peer_cache *c, int size);
 
 void cache_check(const struct peer_cache *c);
+
+#endif	/* TOPOCACHE */
