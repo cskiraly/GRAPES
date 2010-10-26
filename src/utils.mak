@@ -46,6 +46,7 @@ clean::
 	rm -f *.a
 	rm -f *.o
 	rm -f *.lst
+	rm -f *.d
 
 ### Automatic generation of headers dependencies ###
 %.d: %.c

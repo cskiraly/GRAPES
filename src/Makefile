@@ -25,7 +25,7 @@ clean::
 
 allclean: clean
 	rm -f *.o *.a
-	rm -f *.d */*.d
+	rm -f *.d
 	$(MAKE) -C Tests clean
 
 include utils.mak
