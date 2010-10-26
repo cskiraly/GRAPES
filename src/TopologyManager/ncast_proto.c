@@ -12,6 +12,7 @@
 #include "topocache.h"
 #include "proto.h"
 #include "topo_proto.h"
+#include "ncast_proto.h"
 #include "grapes_msg_types.h"
 
 int ncast_reply(const struct peer_cache *c, struct peer_cache *local_cache)

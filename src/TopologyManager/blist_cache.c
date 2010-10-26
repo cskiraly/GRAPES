@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 #include "net_helper.h"
-#include "topocache.h"
+#include "blist_cache.h"
 #include "int_coding.h"
 
 #define NOREPLY_FLAG_UNSET 254

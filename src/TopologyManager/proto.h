@@ -1,3 +1,6 @@
+#ifndef PROTO
+#define PROTO
+
 struct topo_header {
   uint8_t protocol;
   uint8_t type;
@@ -9,3 +12,5 @@ struct topo_header {
 #define TMAN_REPLY 0x04
 #define CYCLON_QUERY 0x05
 #define CYCLON_REPLY 0x06
+
+#endif	/* PROTO */
