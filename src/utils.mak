@@ -46,3 +46,11 @@ clean::
 	rm -f *.a
 	rm -f *.o
 	rm -f *.lst
+
+### Automatic generation of headers dependencies ###
+%.d: %.c
+	$(CC) $(CPPFLAGS) -MM -MF $@ $<
+
+%.o: %.d
+
+-include $(OBJS:.o=.d)
