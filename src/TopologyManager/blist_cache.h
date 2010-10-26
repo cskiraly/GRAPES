@@ -1,3 +1,6 @@
+#ifndef BLIST_CACHE
+#define BLIST_CACHE
+
 struct peer_cache;
 struct cache_entry;
 typedef int (*ranking_function)(const void *target, const void *p1, const void *p2);	// FIXME!
@@ -24,3 +27,5 @@ struct peer_cache *blist_merge_caches(struct peer_cache *c1, struct peer_cache *
 struct peer_cache *blist_cache_rank (const struct peer_cache *c, ranking_function rank, const struct nodeID *target, const void *target_meta);
 struct peer_cache *blist_cache_union(struct peer_cache *c1, struct peer_cache *c2, int *size);
 int blist_cache_resize (struct peer_cache *c, int size);
+
+#endif	/* BLIST_CACHE */
