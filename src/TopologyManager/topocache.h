@@ -5,8 +5,6 @@ typedef int (*ranking_function)(const void *target, const void *p1, const void *
 struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp);
 void cache_free(struct peer_cache *c);
 void cache_update(struct peer_cache *c);
-void cache_update_tout(struct peer_cache *c);
-
 struct nodeID *nodeid(const struct peer_cache *c, int i);
 const void *get_metadata(const struct peer_cache *c, int *size);
 int cache_metadata_update(struct peer_cache *c, struct nodeID *p, const void *meta, int meta_size);
@@ -15,12 +13,16 @@ int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, 
 int cache_del(struct peer_cache *c, struct nodeID *neighbour);
 
 struct nodeID *rand_peer(struct peer_cache *c, void **meta, int max);
+struct nodeID *last_peer(struct peer_cache *c);
+struct peer_cache *rand_cache(struct peer_cache *c, int n);
 
 struct peer_cache *entries_undump(const uint8_t *buff, int size);
-int cache_header_dump(uint8_t *b, const struct peer_cache *c);
+int cache_header_dump(uint8_t *b, const struct peer_cache *c, int include_me);
 int entry_dump(uint8_t *b, struct peer_cache *e, int i, size_t max_write_size);
 
 struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source);
 struct peer_cache *cache_rank (const struct peer_cache *c, ranking_function rank, const struct nodeID *target, const void *target_meta);
 struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int *size);
 int cache_resize (struct peer_cache *c, int size);
+
+void cache_check(const struct peer_cache *c);

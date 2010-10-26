@@ -31,12 +31,13 @@ static const char *my_addr = "127.0.0.1";
 static int port = 6666;
 static int srv_port;
 static const char *srv_ip;
+static char *fprefix;
 
 static void cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "p:i:P:I:")) != -1) {
+  while ((o = getopt(argc, argv, "s:p:i:P:I:")) != -1) {
     switch(o) {
       case 'p':
         srv_port = atoi(optarg);
@@ -49,6 +50,9 @@ static void cmdline_parse(int argc, char *argv[])
         break;
       case 'I':
         my_addr = iface_addr(optarg);
+        break;
+      case 's':
+        fprefix = strdup(optarg);
         break;
       default:
         fprintf(stderr, "Error: unknown option %c\n", o);
@@ -68,6 +72,7 @@ static struct nodeID *init(void)
 
     return NULL;
   }
+//  topInit(myID, NULL, 0, "protocol=cyclon");
   topInit(myID, NULL, 0, "");
 
   return myID;
@@ -97,16 +102,30 @@ static void loop(struct nodeID *s)
       nodeid_free(remote);
     } else {
       topParseData(NULL, 0);
-      if (cnt++ % 10 == 0) {
+      if (cnt % 10 == 0) {
         const struct nodeID **neighbourhoods;
         int n, i;
 
         neighbourhoods = topGetNeighbourhood(&n);
-        printf("I have %d neighbourhoods:\n", n);
+        printf("I have %d neighbours:\n", n);
         for (i = 0; i < n; i++) {
           printf("\t%d: %s\n", i, node_addr(neighbourhoods[i]));
         }
+        fflush(stdout);
+        if (fprefix) {
+          FILE *f;
+          char fname[64];
+
+          sprintf(fname, "%s-%d.txt", fprefix, port);
+          f = fopen(fname, "w");
+          if (f) fprintf(f, "#Cache size: %d\n", n);
+          for (i = 0; i < n; i++) {
+            if (f) fprintf(f, "%d\t\t%d\t%s\n", port, i, node_addr(neighbourhoods[i]));
+          }
+          fclose(f);
+        }
       }
+      cnt++;
     }
   }
 }
