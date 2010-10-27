@@ -83,7 +83,6 @@ static void cmdline_parse(int argc, char *argv[])
   fprintf(stderr,"\tMy metadata = %d\n",my_metadata);
 }
 
-#if 0
 static void change_metadata (struct nodeID *id) {
 
 	my_metadata = 1 + ((double)rand() / (double)RAND_MAX)*1000;
@@ -91,7 +90,6 @@ static void change_metadata (struct nodeID *id) {
 
 	tmanChangeMetadata(&my_metadata, sizeof(my_metadata));
 }
-#endif
 
 static struct nodeID *init()
 {
@@ -145,9 +143,9 @@ static void loop(struct nodeID *s)
     		fprintf(stderr, "\t%d: %s -- %d\n", i, node_addr(neighbours[i]), *d);
     	}
     }
-//    if (cnt % 20 == 0) {
-//    	change_metadata(s);
-//    }
+    if (cnt % 20 == 0) {
+    	change_metadata(s);
+    }
 //    if (cnt % 13 == 0) {
 //    	more = ((double)rand() / (double)RAND_MAX)*10;
 //    	now = topoGrowNeighbourhood(more);
