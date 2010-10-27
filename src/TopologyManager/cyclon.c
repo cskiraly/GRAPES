@@ -55,6 +55,18 @@ static int time_to_send(void)
   return 0;
 }
 
+static void cache_add_cache(struct peer_cache *dst, const struct peer_cache *add)
+{
+  int i, meta_size;
+  const uint8_t *meta;
+
+  meta = get_metadata(add, &meta_size);
+  for (i = 0; nodeid(add, i); i++) {
+    cache_add(dst,  nodeid(add, i), meta + (meta_size * i), meta_size);
+  }
+}
+
+
 /*
  * Public Functions!
  */
@@ -110,9 +122,8 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
   cache_check(local_cache);
   if (len) {
     const struct topo_header *h = (const struct topo_header *)buff;
-    struct peer_cache *new, *remote_cache;
+    struct peer_cache *remote_cache;
     struct peer_cache *sent_cache = NULL;
-    int dummy;
 
     if (h->protocol != MSG_TYPE_TOPOLOGY) {
       fprintf(stderr, "Peer Sampler: Wrong protocol!\n");
@@ -129,13 +140,19 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
       dst = NULL;
     }
     cache_check(local_cache);
+#if 0
     new = merge_caches(local_cache, remote_cache, cache_size, &dummy);
     cache_free(remote_cache);
     if (new != NULL) {
       cache_free(local_cache);
       local_cache = new;
     }
+#else
+    cache_add_cache(local_cache, remote_cache);
+    cache_free(remote_cache);
+#endif
     if (sent_cache) {
+#if 0
       int dummy;
 
       new = merge_caches(local_cache, sent_cache, cache_size, &dummy);
@@ -143,9 +160,13 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
         cache_free(local_cache);
         local_cache = new;
       }
+#else
+      cache_add_cache(local_cache, sent_cache);
+#endif
       cache_free(sent_cache);
     } else {
       if (flying_cache) {
+        cache_add_cache(local_cache, flying_cache);
         cache_free(flying_cache);
         flying_cache = NULL;
       }
@@ -154,6 +175,7 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
 
   if (time_to_send()) {
     if (flying_cache) {
+#if 0
       struct peer_cache *new;
       int dummy;
 
@@ -162,6 +184,9 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
         cache_free(local_cache);
         local_cache = new;
       }
+#else
+      cache_add_cache(local_cache, flying_cache);
+#endif
       cache_free(flying_cache);
       flying_cache = NULL;
     }
