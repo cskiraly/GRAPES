@@ -16,7 +16,7 @@
 #include "blist_proto.h"
 #include "proto.h"
 #include "grapes_msg_types.h"
-#include "tman.h"
+#include "topman_iface.h"
 
 #define TMAN_INIT_PEERS 10 // max # of neighbors in local cache (should be >= than the next)
 #define TMAN_MAX_PREFERRED_PEERS 10 // # of peers to choose a receiver among (should be <= than the previous)
@@ -40,7 +40,7 @@ static int mymeta_size;
 static struct nodeID *restart_peer;
 static uint8_t *zero;
 
-static tmanRankingFunction userRankFunct;
+static rankingFunction userRankFunct;
 
 static int tmanRankFunct (const void *target, const void *p1, const void *p2) {
 
@@ -62,7 +62,7 @@ static uint64_t gettime(void)
 	return tv.tv_usec + tv.tv_sec * 1000000ull;
 }
 
-int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, ranking_function rfun, int gossip_peers)
+static int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, rankingFunction rfun, const char *config)
 {
 	userRankFunct = rfun;
 	blist_proto_init(myID, metadata, metadata_size);
@@ -74,17 +74,13 @@ int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, ranking_fun
 	if (local_cache == NULL) {
 		return -1;
 	}
-	if (gossip_peers) {
-		max_gossiping_peers = gossip_peers;
-	}
-	max_preferred_peers = TMAN_MAX_PREFERRED_PEERS;
 	active = -1;
 	currtime = gettime();
 
 	return 0;
 }
 
-int tmanGivePeers (int n, struct nodeID **peers, void *metadata)
+static int tmanGivePeers (int n, struct nodeID **peers, void *metadata)
 {
 	int metadata_size;
 	const uint8_t *mdata;
@@ -100,7 +96,7 @@ int tmanGivePeers (int n, struct nodeID **peers, void *metadata)
 	return i;
 }
 
-int tmanGetNeighbourhoodSize(void)
+static int tmanGetNeighbourhoodSize(void)
 {
 	int i;
 
@@ -119,7 +115,7 @@ static int time_to_send(void)
 	return 0;
 }
 
-int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
+static int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
 {
 	if (!metadata_size) {
 		blist_tman_query_peer(local_cache, neighbour, max_gossiping_peers);
@@ -134,13 +130,13 @@ int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size
 
 
 // not self metadata, but neighbors'.
-const void *tmanGetMetadata(int *metadata_size)
+static const void *tmanGetMetadata(int *metadata_size)
 {
 	return blist_get_metadata(local_cache, metadata_size);
 }
 
 
-int tmanChangeMetadata(void *metadata, int metadata_size)
+static int tmanChangeMetadata(void *metadata, int metadata_size)
 {
 	struct peer_cache *new = NULL;
 
@@ -161,7 +157,7 @@ int tmanChangeMetadata(void *metadata, int metadata_size)
 }
 
 
-int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size, const void *metadata, int metadata_size)
+static int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size, const void *metadata, int metadata_size)
 {
 	int msize,s;
 	const uint8_t *mdata;
@@ -296,7 +292,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 
 
 // limit : at most it doubles the current cache size...
-int tmanGrowNeighbourhood(int n)
+static int tmanGrowNeighbourhood(int n)
 {
 	if (n<=0 || do_resize)
 		return -1;
@@ -307,7 +303,7 @@ int tmanGrowNeighbourhood(int n)
 }
 
 
-int tmanShrinkNeighbourhood(int n)
+static int tmanShrinkNeighbourhood(int n)
 {
 	if (n<=0 || n>=cache_size || do_resize)
 		return -1;
@@ -316,3 +312,22 @@ int tmanShrinkNeighbourhood(int n)
 	return cache_size;
 }
 
+
+static int tmanRemoveNeighbour(struct nodeID *neighbour)
+{
+	return 0;
+}
+
+
+struct topman_iface tman = {
+	.init = tmanInit,
+	.changeMetadata = tmanChangeMetadata,
+	.addNeighbour = tmanAddNeighbour,
+	.parseData = tmanParseData,
+	.givePeers = tmanGivePeers,
+	.getMetadata = tmanGetMetadata,
+	.growNeighbourhood = tmanGrowNeighbourhood,
+	.shrinkNeighbourhood = tmanShrinkNeighbourhood,
+	.removeNeighbour = tmanRemoveNeighbour,
+	.getNeighbourhoodSize = tmanGetNeighbourhoodSize,
+};
