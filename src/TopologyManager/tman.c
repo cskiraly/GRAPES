@@ -16,22 +16,25 @@
 #include "blist_proto.h"
 #include "proto.h"
 #include "grapes_msg_types.h"
+#include "config.h"
 #include "topman_iface.h"
 
 #define TMAN_INIT_PEERS 10 // max # of neighbors in local cache (should be >= than the next)
 #define TMAN_MAX_PREFERRED_PEERS 10 // # of peers to choose a receiver among (should be <= than the previous)
 #define TMAN_MAX_GOSSIPING_PEERS 20 // # size of the view to be sent to receiver peer (should be <= than the previous)
-#define TMAN_STD_PERIOD 1000000
+#define TMAN_STD_PERIOD 5
 #define TMAN_INIT_PERIOD 1000000
 #define TMAN_RESTART_COUNT 20;
 
-static  int max_preferred_peers = TMAN_MAX_PREFERRED_PEERS;
-static  int max_gossiping_peers = TMAN_MAX_GOSSIPING_PEERS;
+static  int max_preferred_peers;
+static  int max_gossiping_peers;
 static	int restart_countdown = TMAN_RESTART_COUNT;
 
 static uint64_t currtime;
-static int cache_size = TMAN_INIT_PEERS;
+static int cache_size;
 static struct peer_cache *local_cache;
+static int default_period;
+static int init_cache_size;
 static int period = TMAN_INIT_PERIOD;
 static int active;
 static int do_resize;
@@ -64,6 +67,29 @@ static uint64_t gettime(void)
 
 static int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, rankingFunction rfun, const char *config)
 {
+	struct tag *cfg_tags;
+	int res;
+
+	cfg_tags = config_parse(config);
+	res = config_value_int(cfg_tags, "cache_size", &init_cache_size);
+	if (!res) {
+		init_cache_size = TMAN_INIT_PEERS;
+	}
+	cache_size = init_cache_size;
+	res = config_value_int(cfg_tags, "max_preferred_peers", &max_preferred_peers);
+	if (!res) {
+		max_preferred_peers = TMAN_MAX_PREFERRED_PEERS;
+	}
+	res = config_value_int(cfg_tags, "max_gossiping_peers", &max_gossiping_peers);
+	if (!res) {
+		max_gossiping_peers = TMAN_MAX_GOSSIPING_PEERS;
+	}
+	res = config_value_int(cfg_tags, "period", &default_period);
+	if (!res) {
+		default_period = TMAN_STD_PERIOD;
+	}
+	default_period *= 1000000;
+
 	userRankFunct = rfun;
 	blist_proto_init(myID, metadata, metadata_size);
 	mymeta = metadata;
@@ -195,9 +221,9 @@ static int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, in
 		if (restart_peer && nodeid_equal(restart_peer, blist_nodeid(remote_cache,0))) { // restart phase : receiving new cache from chosen alive peer...
 			new = blist_cache_rank(remote_cache,tmanRankFunct,NULL,mymeta);
 			if (new) {
-				cache_size = TMAN_INIT_PEERS;
+				cache_size = init_cache_size;
 				blist_cache_resize(new,cache_size);
-				period = TMAN_STD_PERIOD;
+				period = default_period;
 				fprintf(stderr,"RESTARTING TMAN!!!\n");
 			}
 			nodeid_free(restart_peer);
