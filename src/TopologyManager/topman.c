@@ -7,12 +7,14 @@
 #include "topman_iface.h"
 
 extern struct topman_iface tman;
+extern struct topman_iface dumb;
+
 static struct topman_iface *tm;
 
 
 int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, tmanRankingFunction rfun, const char *config)
 {
-	tm = &tman;
+	tm = &dumb;
 	return tm->init(myID, metadata, metadata_size, rfun, config);
 }
 
