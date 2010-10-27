@@ -140,29 +140,10 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
       dst = NULL;
     }
     cache_check(local_cache);
-#if 0
-    new = merge_caches(local_cache, remote_cache, cache_size, &dummy);
-    cache_free(remote_cache);
-    if (new != NULL) {
-      cache_free(local_cache);
-      local_cache = new;
-    }
-#else
     cache_add_cache(local_cache, remote_cache);
     cache_free(remote_cache);
-#endif
     if (sent_cache) {
-#if 0
-      int dummy;
-
-      new = merge_caches(local_cache, sent_cache, cache_size, &dummy);
-      if (new != NULL) {
-        cache_free(local_cache);
-        local_cache = new;
-      }
-#else
       cache_add_cache(local_cache, sent_cache);
-#endif
       cache_free(sent_cache);
     } else {
       if (flying_cache) {
@@ -175,18 +156,7 @@ static int cyclon_parse_data(const uint8_t *buff, int len)
 
   if (time_to_send()) {
     if (flying_cache) {
-#if 0
-      struct peer_cache *new;
-      int dummy;
-
-      new = merge_caches(local_cache, flying_cache, cache_size, &dummy);
-      if (new != NULL) {
-        cache_free(local_cache);
-        local_cache = new;
-      }
-#else
       cache_add_cache(local_cache, flying_cache);
-#endif
       cache_free(flying_cache);
       flying_cache = NULL;
     }
