@@ -15,6 +15,7 @@ CFLAGS += $(call cc-option, -funit-at-a-time)
 BASE = ../..
 TESTS = topology_test \
         topology_test_attr \
+        topology_test_th \
         chunk_encoding_test \
         chunk_sending_test \
         chunk_signaling_test \
@@ -37,6 +38,11 @@ topology_test_attr: ../net_helper.o
 
 topology_test: topology_test.o net_helpers.o
 topology_test: ../net_helper.o
+
+topology_test_th: topology_test_th.o net_helpers.o
+topology_test_th: ../net_helper.o
+topology_test_th: CFLAGS += -pthread
+topology_test_th: LDFLAGS += -pthread
 
 chunk_encoding_test: chunk_encoding_test.o
 
