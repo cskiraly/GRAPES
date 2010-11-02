@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "net_helper.h"
-#include "topmanager.h"
+#include "peersampler.h"
 #include "peersampler_iface.h"
 #include "config.h"
 
@@ -13,7 +13,7 @@ extern struct peersampler_iface cyclon;
 extern struct peersampler_iface dummy;
 static struct peersampler_iface *ps;
 
-int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+int psample_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
   struct tag *cfg_tags;
   const char *proto;
@@ -33,42 +33,42 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
   return ps->init(myID, metadata, metadata_size, config);
 }
 
-int topChangeMetadata(void *metadata, int metadata_size)
+int psample_change_metadata(void *metadata, int metadata_size)
 {
   return ps->change_metadata(metadata, metadata_size);
 }
 
-int topAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
+int psample_add_peer(struct nodeID *neighbour, void *metadata, int metadata_size)
 {
   return ps->add_neighbour(neighbour, metadata, metadata_size);
 }
 
-int topParseData(const uint8_t *buff, int len)
+int psample_parse_data(const uint8_t *buff, int len)
 {
   return ps->parse_data(buff, len);
 }
 
-const struct nodeID **topGetNeighbourhood(int *n)
+const struct nodeID **psample_get_cache(int *n)
 {
   return ps->get_neighbourhood(n);
 }
 
-const void *topGetMetadata(int *metadata_size)
+const void *psample_get_metadata(int *metadata_size)
 {
   return ps->get_metadata(metadata_size);
 }
 
-int topGrowNeighbourhood(int n)
+int psample_grow_cache(int n)
 {
   return ps->grow_neighbourhood(n);
 }
 
-int topShrinkNeighbourhood(int n)
+int psample_shrink_cache(int n)
 {
   return ps->shrink_neighbourhood(n);
 }
 
-int topRemoveNeighbour(struct nodeID *neighbour)
+int psample_remove_peer(struct nodeID *neighbour)
 {
   return ps->remove_neighbour(neighbour);
 }
