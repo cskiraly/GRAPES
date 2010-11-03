@@ -98,7 +98,10 @@ int topoShrinkNeighbourhood(int n)
 
 int topoRemoveNeighbour(struct nodeID *neighbour)
 {
-  return topRemoveNeighbour(neighbour);
+	if (counter < TMAN_MAX_IDLE)
+		return topRemoveNeighbour(neighbour);
+	else
+		return tmanRemoveNeighbour(neighbour);
 }
 
 
