@@ -1,6 +1,8 @@
 #ifndef INT_CODING
 #define INT_CODING
 
+#include <arpa/inet.h>
+
 static inline void int_cpy(uint8_t *p, int v)
 {
   uint32_t tmp;
