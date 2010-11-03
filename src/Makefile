@@ -12,7 +12,7 @@ $(OBJ_LSTS):
 	$(MAKE) -C $(dir $@) objs.lst
 
 libgrapes.a: $(OBJ_LSTS) $(COMMON_OBJS)
-	ar rcs libgrapes.a `cat $(OBJ_LSTS)` $(COMMON_OBJS)
+	$(AR) rcs libgrapes.a `cat $(OBJ_LSTS)` $(COMMON_OBJS)
 	rm */*.lst
 
 tests: libgrapes.a
