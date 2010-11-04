@@ -5,7 +5,11 @@ ld-option = $(shell if echo "int main(){return 0;}" | \
 		$(CC) $(CFLAGS) $(1) -o /dev/null -xc - \
 		> /dev/null 2>&1; then echo "$(1)"; fi ;)
 
-
+ifdef CROSS_COMPILE
+CC = $(CROSS_COMPILE)cc
+AR = $(CROSS_COMPILE)ar
+LD = $(CROSS_COMPILE)ld
+endif
 
 CFLAGS += -g -Wall
 CFLAGS += $(call cc-option, -Wdeclaration-after-statement)
