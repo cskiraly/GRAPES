@@ -12,6 +12,7 @@ AR = $(CROSS_COMPILE)ar
 LD = $(CROSS_COMPILE)ld
 endif
 
+ifndef STATIC_CFLAGS
 CFLAGS += -g -Wall
 CFLAGS += $(call cc-option, -Wdeclaration-after-statement)
 CFLAGS += $(call cc-option, -Wno-switch)
@@ -25,6 +26,9 @@ CFLAGS += $(call cc-option, -Wtype-limits)
 CFLAGS += $(call cc-option, -Wundef)
 
 CFLAGS += $(call cc-option, -funit-at-a-time)
+else
+CFLAGS += $(STATIC_CFLAGS)
+endif
 
 ifdef GPROF
 CFLAGS += -pg
