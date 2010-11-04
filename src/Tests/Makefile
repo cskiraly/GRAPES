@@ -29,6 +29,9 @@ CPPFLAGS = -I$(BASE)/include
 LDFLAGS += -L..
 LDLIBS += -lgrapes
 #LDFLAGS += -static
+ifeq ($(ARCH),win32)
+LDLIBS += -lws2_32
+endif
 
 all: $(TESTS)
 
