@@ -5,7 +5,7 @@ ld-option = $(shell if echo "int main(){return 0;}" | \
 		$(CC) $(CFLAGS) $(1) -o /dev/null -xc - \
 		> /dev/null 2>&1; then echo "$(1)"; fi ;)
 
--include $(BASE)/src/config.mk
+-include $(CFGDIR)/config.mk
 ifdef CROSS_COMPILE
 CC = $(CROSS_COMPILE)cc
 AR = $(CROSS_COMPILE)ar

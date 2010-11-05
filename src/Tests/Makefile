@@ -1,4 +1,8 @@
+ifndef BASE
 BASE = ../..
+endif
+CFGDIR ?= ..
+
 TESTS = topology_test \
         topology_test_attr \
         chunk_encoding_test \

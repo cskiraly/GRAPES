@@ -1,4 +1,7 @@
+ifndef BASE
 BASE = ../..
+endif
+CFGDIR ?= ..
 
 OBJS = buffer.o buffer-ha.o
 

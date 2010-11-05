@@ -1,4 +1,7 @@
+ifndef BASE
 BASE = ../..
+endif
+CFGDIR ?= ..
 
 OBJS = chunkids_ops.o chunkids_ha.o chunkids_encoding.o
 

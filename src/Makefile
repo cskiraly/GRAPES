@@ -1,4 +1,8 @@
+ifndef BASE
 BASE = ..
+endif
+CFGDIR ?= .
+
 SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler
 COMMON_OBJS = config.o
 
