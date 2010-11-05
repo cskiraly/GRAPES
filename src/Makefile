@@ -32,4 +32,4 @@ allclean: clean
 	rm -f *.d
 	$(MAKE) -C Tests clean
 
-include utils.mak
+include $(BASE)/src/utils.mak

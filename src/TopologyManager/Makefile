@@ -7,4 +7,4 @@ OBJS = peersampler.o topman.o ncast.o ncast_proto.o dummy.o cyclon.o cyclon_prot
 
 all: libtopman.a
 
-include ../utils.mak
+include $(BASE)/src/utils.mak

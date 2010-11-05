@@ -7,4 +7,4 @@ OBJS = sched.o
 
 all: libsched.a
 
-include ../utils.mak
+include $(BASE)/src/utils.mak

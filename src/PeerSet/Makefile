@@ -7,4 +7,4 @@ OBJS = peerset_ops.o
 
 all: libpeerset.a
 
-include ../utils.mak
+include $(BASE)/src/utils.mak

@@ -51,4 +51,4 @@ tman_test: ../net_helper.o
 clean::
 	rm -f $(TESTS)
 
-include ../utils.mak
+include $(BASE)/src/utils.mak
