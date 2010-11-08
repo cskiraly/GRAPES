@@ -7,7 +7,6 @@ CFGDIR ?= ..
 
 TESTS = topology_test \
         topology_test_attr \
-        topology_test_th \
         chunk_encoding_test \
         chunk_sending_test \
         chunk_signaling_test \
@@ -15,18 +14,22 @@ TESTS = topology_test \
         chunkidset_test_bug \
         cb_test \
         config_test \
-        tman_test
+        tman_test \
+        topology_test_th
 
 CPPFLAGS = -I$(BASE)/include
 
 LDFLAGS += -L..
 LDLIBS += -lgrapes
 #LDFLAGS += -static
+
+all: $(TESTS)
+
+include $(BASE)/src/utils.mak
+
 ifeq ($(ARCH),win32)
 LDLIBS += -lws2_32
 endif
-
-all: $(TESTS)
 
 topology_test_attr: topology_test_attr.o net_helpers.o
 topology_test_attr: ../net_helper$(NH_INCARNATION).o
@@ -58,5 +61,3 @@ tman_test: ../net_helper$(NH_INCARNATION).o
 
 clean::
 	rm -f $(TESTS)
-
-include $(BASE)/src/utils.mak
