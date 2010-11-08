@@ -3,7 +3,6 @@
  *
  *  This is free software; see gpl-3.0.txt
  */
-#include <sys/select.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>

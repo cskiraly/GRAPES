@@ -32,16 +32,16 @@ LIBCOMMON = libgrapes.a
 COMMON = common.o
 
 %.a: $(OBJS)
-	ar rcs $@ $^
+	$(AR) rcs $@ $^
 
 libcommon: $(OBJS)
-	ar rcs $(BASE)/src/$(LIBCOMMON) $^
+	$(AR) rcs $(BASE)/src/$(LIBCOMMON) $^
 
 objs.lst: $(OBJS)
 	echo $(addprefix `pwd`/, $(OBJS)) > objs.lst
 
 $(COMMON): objs.lst
-	ld -r -o $(COMMON) `cat objs.lst`
+	$(LD) -r -o $(COMMON) `cat objs.lst`
 clean::
 	rm -f *.a
 	rm -f *.o
