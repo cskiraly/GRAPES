@@ -5,6 +5,12 @@
  *  This is free software; see lgpl-2.1.txt
  */
 
+#ifdef _WIN32
+const char *iface_addr(const char *iface)
+{
+  return iface;
+}
+#else
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -46,6 +52,4 @@ const char *iface_addr(const char *iface)
 
     return strdup(buff);
 }
-
-
-
+#endif
