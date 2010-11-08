@@ -24,7 +24,7 @@
 #include <getopt.h>
 
 #include "net_helper.h"
-#include "topmanager.h"
+#include "peersampler.h"
 #include "net_helpers.h"
 
 static const char *my_addr = "127.0.0.1";
@@ -87,7 +87,7 @@ static struct nodeID *init(void)
   }
 
   strcpy(my_attr.name, node_addr(myID));
-  topInit(myID, &my_attr, sizeof(struct peer_attributes), "");
+  psample_init(myID, &my_attr, sizeof(struct peer_attributes), "");
 
   return myID;
 }
@@ -123,7 +123,7 @@ static void status_update(void)
   }
   printf("goin' %s\n", status_print(my_attr.state));
   myself = create_node(my_addr, port);
-  topChangeMetadata(&my_attr, sizeof(struct peer_attributes));
+  psample_change_metadata(&my_attr, sizeof(struct peer_attributes));
   nodeid_free(myself);
 }
 
@@ -134,7 +134,7 @@ static void loop(struct nodeID *s)
   static uint8_t buff[BUFFSIZE];
   int cnt = 0;
   
-  topParseData(NULL, 0);
+  psample_parse_data(NULL, 0);
   while (!done) {
     int len;
     int news;
@@ -145,20 +145,20 @@ static void loop(struct nodeID *s)
       struct nodeID *remote;
 
       len = recv_from_peer(s, &remote, buff, BUFFSIZE);
-      topParseData(buff, len);
+      psample_parse_data(buff, len);
       nodeid_free(remote);
     } else {
       if (cnt % 30 == 0) {
         status_update();
       }
-      topParseData(NULL, 0);
+      psample_parse_data(NULL, 0);
       if (cnt++ % 10 == 0) {
         const struct nodeID **neighbourhoods;
         int n, i, size;
         const struct peer_attributes *meta;
 
-        neighbourhoods = topGetNeighbourhood(&n);
-        meta = topGetMetadata(&size);
+        neighbourhoods = psample_get_cache(&n);
+        meta = psample_get_metadata(&size);
         if (meta == NULL) {
           printf("No MetaData!\n");
         } else {
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 
       return -1;
     }
-    topAddNeighbour(knownHost, NULL, 0);
+    psample_add_peer(knownHost, NULL, 0);
   }
 
   loop(my_sock);

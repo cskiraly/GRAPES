@@ -27,7 +27,7 @@
 #include "peer.h"
 #include "net_helper.h"
 #include "tman.h"
-#include "topmanager.h"
+#include "peersampler.h"
 #include "net_helpers.h"
 
 #include "topology.h"
@@ -101,7 +101,7 @@ static struct nodeID *init()
 
     return NULL;
   }
-  topInit(myID,&my_metadata, sizeof(my_metadata),NULL);
+  psample_init(myID,&my_metadata, sizeof(my_metadata),NULL);
   tmanInit(myID,&my_metadata, sizeof(my_metadata),funct,NULL);
 
   return myID;
