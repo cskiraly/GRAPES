@@ -23,7 +23,7 @@
 
 #define DEFAULT_CACHE_SIZE 10
 
-typedef struct cyclon_context{
+struct cyclon_context{
   uint64_t currtime;
   int cache_size;
   int sent_entries;
@@ -34,10 +34,11 @@ typedef struct cyclon_context{
   
   struct peer_cache *flying_cache;
   struct nodeID *dst;
-} cyclon_context_t;
+};
 
-static cyclon_context_t* cyclon_context_init(){
-  cyclon_context_t* con = (cyclon_context_t*) calloc(1,sizeof(cyclon_context_t));
+static struct cyclon_context* cyclon_context_init(){
+  struct cyclon_context* con;
+  con = (struct cyclon_context*) calloc(1,sizeof(struct cyclon_context));
 
   //Initialize context with default values
   con->bootstrap = true;
@@ -47,8 +48,8 @@ static cyclon_context_t* cyclon_context_init(){
   return con;
 }
 
-static cyclon_context_t* get_cyclon_context(void *context){
-  return (cyclon_context_t*) context;
+static struct cyclon_context* get_cyclon_context(void *context){
+  return (struct cyclon_context*) context;
 }
 
 static uint64_t gettime(void)
@@ -60,7 +61,7 @@ static uint64_t gettime(void)
   return tv.tv_usec + tv.tv_sec * 1000000ull;
 }
 
-static int time_to_send(cyclon_context_t* con)
+static int time_to_send(struct cyclon_context* con)
 {
   int p = con->bootstrap ? con->bootstrap_period : con->period;
   if (gettime() - con->currtime > p) {
@@ -90,7 +91,7 @@ static void cache_add_cache(struct peer_cache *dst, const struct peer_cache *add
 static int cyclon_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config, void **cyclon_context)
 {
   struct tag *cfg_tags;
-  cyclon_context_t *con;
+  struct cyclon_context *con;
   int res;
 
   con = cyclon_context_init();
@@ -129,7 +130,7 @@ static int cyclon_change_metadata(void *context, void *metadata, int metadata_si
 
 static int cyclon_add_neighbour(void *context, struct nodeID *neighbour, void *metadata, int metadata_size)
 {
-  cyclon_context_t *con = get_cyclon_context(context);
+  struct cyclon_context *con = get_cyclon_context(context);
   if (!con->flying_cache) {
     con->flying_cache = rand_cache(con->local_cache, con->sent_entries - 1);
   }
@@ -142,7 +143,7 @@ static int cyclon_add_neighbour(void *context, struct nodeID *neighbour, void *m
 
 static int cyclon_parse_data(void *context, const uint8_t *buff, int len)
 {
-  cyclon_context_t *con = get_cyclon_context(context);
+  struct cyclon_context *con = get_cyclon_context(context);
   cache_check(con->local_cache);
   if (len) {
     const struct topo_header *h = (const struct topo_header *)buff;
@@ -202,7 +203,7 @@ static int cyclon_parse_data(void *context, const uint8_t *buff, int len)
 static const struct nodeID **cyclon_get_neighbourhood(void* context, int *n)
 {
   static struct nodeID **r;
-  cyclon_context_t *con = get_cyclon_context(context);
+  struct cyclon_context *con = get_cyclon_context(context);
 
   r = realloc(r, con->cache_size * sizeof(struct nodeID *));
   if (r == NULL) {
@@ -230,13 +231,13 @@ static const struct nodeID **cyclon_get_neighbourhood(void* context, int *n)
 
 static const void *cyclon_get_metadata(void *context, int *metadata_size)
 {
-  cyclon_context_t *con = get_cyclon_context(context);
+  struct cyclon_context *con = get_cyclon_context(context);
   return get_metadata(con->local_cache, metadata_size);
 }
 
 static int cyclon_grow_neighbourhood(void *context, int n)
 {
-  cyclon_context_t *con = get_cyclon_context(context);
+  struct cyclon_context *con = get_cyclon_context(context);
   con->cache_size += n;
 
   return con->cache_size;
@@ -244,7 +245,7 @@ static int cyclon_grow_neighbourhood(void *context, int n)
 
 static int cyclon_shrink_neighbourhood(void *context, int n)
 {
-  cyclon_context_t *con = get_cyclon_context(context);
+  struct cyclon_context *con = get_cyclon_context(context);
   if (con->cache_size < n) {
     return -1;
   }
@@ -255,7 +256,7 @@ static int cyclon_shrink_neighbourhood(void *context, int n)
 
 static int cyclon_remove_neighbour(void *context, struct nodeID *neighbour)
 {
-  cyclon_context_t *con = get_cyclon_context(context);
+  struct cyclon_context *con = get_cyclon_context(context);
   return cache_del(con->local_cache, neighbour);
 }
 
