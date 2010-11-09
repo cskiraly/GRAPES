@@ -27,6 +27,8 @@
 #include "topmanager.h"
 #include "net_helpers.h"
 
+
+static struct topContext *context;
 static const char *my_addr = "127.0.0.1";
 static int port = 6666;
 static int srv_port;
@@ -73,7 +75,7 @@ static struct nodeID *init(void)
     return NULL;
   }
 //  topInit(myID, NULL, 0, "protocol=cyclon");
-  topInit(myID, NULL, 0, "");
+  topInit(myID, NULL, 0, "", &context);
 
   return myID;
 }
@@ -85,7 +87,7 @@ static void loop(struct nodeID *s)
   static uint8_t buff[BUFFSIZE];
   int cnt = 0;
   
-  topParseData(NULL, 0);
+  topParseData(context, NULL, 0);
   while (!done) {
     int len;
     int news;
@@ -98,15 +100,15 @@ static void loop(struct nodeID *s)
       struct nodeID *remote;
 
       len = recv_from_peer(s, &remote, buff, BUFFSIZE);
-      topParseData(buff, len);
+      topParseData(context, buff, len);
       nodeid_free(remote);
     } else {
-      topParseData(NULL, 0);
+      topParseData(context, NULL, 0);
       if (cnt % 10 == 0) {
         const struct nodeID **neighbourhoods;
         int n, i;
 
-        neighbourhoods = topGetNeighbourhood(&n);
+        neighbourhoods = topGetNeighbourhood(context, &n);
         printf("I have %d neighbours:\n", n);
         for (i = 0; i < n; i++) {
           printf("\t%d: %s\n", i, node_addr(neighbourhoods[i]));
@@ -150,7 +152,7 @@ int main(int argc, char *argv[])
 
       return -1;
     }
-    topAddNeighbour(knownHost, NULL, 0);
+    topAddNeighbour(context, knownHost, NULL, 0);
   }
 
   loop(my_sock);
