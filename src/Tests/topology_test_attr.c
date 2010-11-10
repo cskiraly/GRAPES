@@ -88,7 +88,7 @@ static struct nodeID *init(void)
   }
 
   strcpy(my_attr.name, node_addr(myID));
-  topInit(myID, &my_attr, sizeof(struct peer_attributes), "", &context);
+  context = topInit(myID, &my_attr, sizeof(struct peer_attributes), "");
 
   return myID;
 }

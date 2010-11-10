@@ -17,7 +17,7 @@ struct top_context{
   void *ps_context;
 };
 
-int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config, struct top_context **context)
+ struct top_context* topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
   struct top_context *tc;
   struct tag *cfg_tags;
@@ -25,8 +25,7 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
 
 
   tc = (struct top_context*) malloc(sizeof(struct top_context));
-  if (!tc) return -1;
-  *context = tc;
+  if (!tc) return NULL;
 
   tc->ps = &ncast;
   cfg_tags = config_parse(config);
@@ -39,8 +38,14 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
       tc->ps = &dummy;
     }
   }
-
-  return tc->ps->init(myID, metadata, metadata_size, config, &tc->ps_context);
+  
+  tc->ps_context = tc->ps->init(myID, metadata, metadata_size, config);
+  if (!tc->ps_context){
+    free(tc);
+    return NULL;
+  }
+  
+  return tc;
 }
 
 int topChangeMetadata(struct top_context *tc, void *metadata, int metadata_size)

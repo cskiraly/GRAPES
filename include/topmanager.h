@@ -115,11 +115,9 @@ int topChangeMetadata(struct top_context *tc, void *metadata, int metadata_size)
   @param metadata pointer to the metadata associated to this peer (will be
          gossiped).
   @param metadata_size size of the metadata associated to this peer.
-  @param context points to memory location where will be stored the pointer to the
-         current instance topology manager context
-  @return 0 in case of success; -1 in case of error.
+  @return topology manager context in case of success; NULL in case of error.
 */
-int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config, struct top_context **context);
+ struct top_context* topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config);
 
 /**
   @brief Insert a peer in the neighbourhood.

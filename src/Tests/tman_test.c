@@ -104,7 +104,7 @@ static struct nodeID *init()
 
     return NULL;
   }
-  topInit(myID,&my_metadata, sizeof(my_metadata),NULL, &context);
+  context = topInit(myID,&my_metadata, sizeof(my_metadata),NULL);
   tmanInit(myID,&my_metadata, sizeof(my_metadata),funct,0);
 
   return myID;
