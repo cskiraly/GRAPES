@@ -33,6 +33,7 @@
 #include "topology.h"
 #include "peer_util.h"
 
+static struct topContext *context;
 static const char *my_addr = "127.0.0.1";
 static unsigned int port = 6666;
 static int srv_port=0;
@@ -103,7 +104,7 @@ static struct nodeID *init()
 
     return NULL;
   }
-  topInit(myID,&my_metadata, sizeof(my_metadata),NULL);
+  topInit(myID,&my_metadata, sizeof(my_metadata),NULL, &context);
   tmanInit(myID,&my_metadata, sizeof(my_metadata),funct,0);
 
   return myID;

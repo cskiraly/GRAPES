@@ -16,7 +16,9 @@
 #define MAX_PEERS 5000
 static struct nodeID *table[MAX_PEERS];
 
-static int dummy_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+//TODO: context support not implemented
+
+static int dummy_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config, void **context)
 {
   FILE *f;
   int i = 0;
@@ -38,13 +40,13 @@ fprintf(stderr, "Creating table[%d]\n", i);
   return i;
 }
 
-static int dummy_change_metadata(void *metadata, int metadata_size)
+static int dummy_change_metadata(void *context, void *metadata, int metadata_size)
 {
   /* Metadata not supported: fail! */
   return -1;
 }
 
-static int dummy_add_neighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
+static int dummy_add_neighbour(void *context, struct nodeID *neighbour, void *metadata, int metadata_size)
 {
   int i;
 
@@ -55,13 +57,13 @@ static int dummy_add_neighbour(struct nodeID *neighbour, void *metadata, int met
   return i;
 }
 
-static int dummy_parse_data(const uint8_t *buff, int len)
+static int dummy_parse_data(void *context, const uint8_t *buff, int len)
 {
   /* FAKE! */
   return 0;
 }
 
-static const struct nodeID **dummy_get_neighbourhood(int *n)
+static const struct nodeID **dummy_get_neighbourhood(void *context, int *n)
 {
   for (*n = 0; table[*n] != NULL; (*n)++) {
 fprintf(stderr, "Checking table[%d]\n", *n);
@@ -69,7 +71,7 @@ fprintf(stderr, "Checking table[%d]\n", *n);
   return (const struct nodeID **)table;
 }
 
-static const void *dummy_get_metadata(int *metadata_size)
+static const void *dummy_get_metadata(void *context, int *metadata_size)
 {
   /* Metadata not supported: fail! */
   *metadata_size = -1;
@@ -77,17 +79,17 @@ static const void *dummy_get_metadata(int *metadata_size)
   return NULL;
 }
 
-static int dummy_grow_neighbourhood(int n)
+static int dummy_grow_neighbourhood(void *context, int n)
 {
   return -1;
 }
 
-static int dummy_shrink_neighbourhood(int n)
+static int dummy_shrink_neighbourhood(void *context, int n)
 {
   return -1;
 }
 
-static int dummy_remove_neighbour(struct nodeID *neighbour)
+static int dummy_remove_neighbour(void *context, struct nodeID *neighbour)
 {
   return -1;
 }

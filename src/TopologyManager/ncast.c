@@ -33,6 +33,8 @@ static int bootstrap_period = 2000000;
 static int period = 10000000;
 static int counter;
 
+//TODO: context support not introduced
+
 static uint64_t gettime(void)
 {
   struct timeval tv;
@@ -57,7 +59,7 @@ static int time_to_send(void)
 /*
  * Exported Functions!
  */
-static int ncast_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+static int ncast_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config, void **context)
 {
   struct tag *cfg_tags;
   int res, max_timestamp;
@@ -84,7 +86,7 @@ static int ncast_init(struct nodeID *myID, void *metadata, int metadata_size, co
   return 1;
 }
 
-static int ncast_change_metadata(void *metadata, int metadata_size)
+static int ncast_change_metadata(void *context, void *metadata, int metadata_size)
 {
   if (topo_proto_metadata_update(metadata, metadata_size) <= 0) {
     return -1;
@@ -93,7 +95,7 @@ static int ncast_change_metadata(void *metadata, int metadata_size)
   return 1;
 }
 
-static int ncast_add_neighbour(struct nodeID *neighbour, void *metadata, int metadata_size)
+static int ncast_add_neighbour(void *context, struct nodeID *neighbour, void *metadata, int metadata_size)
 {
   if (cache_add(local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
@@ -101,7 +103,7 @@ static int ncast_add_neighbour(struct nodeID *neighbour, void *metadata, int met
   return ncast_query_peer(local_cache, neighbour);
 }
 
-static int ncast_parse_data(const uint8_t *buff, int len)
+static int ncast_parse_data(void *context, const uint8_t *buff, int len)
 {
   int dummy;
 
@@ -138,7 +140,7 @@ static int ncast_parse_data(const uint8_t *buff, int len)
   return 0;
 }
 
-static const struct nodeID **ncast_get_neighbourhood(int *n)
+static const struct nodeID **ncast_get_neighbourhood(void *context, int *n)
 {
   static struct nodeID **r;
 
@@ -155,19 +157,19 @@ static const struct nodeID **ncast_get_neighbourhood(int *n)
   return (const struct nodeID **)r;
 }
 
-static const void *ncast_get_metadata(int *metadata_size)
+static const void *ncast_get_metadata(void *context, int *metadata_size)
 {
   return get_metadata(local_cache, metadata_size);
 }
 
-static int ncast_grow_neighbourhood(int n)
+static int ncast_grow_neighbourhood(void *context, int n)
 {
   cache_size += n;
 
   return cache_size;
 }
 
-static int ncast_shrink_neighbourhood(int n)
+static int ncast_shrink_neighbourhood(void *context, int n)
 {
   if (cache_size < n) {
     return -1;
@@ -177,7 +179,7 @@ static int ncast_shrink_neighbourhood(int n)
   return cache_size;
 }
 
-static int ncast_remove_neighbour(struct nodeID *neighbour)
+static int ncast_remove_neighbour(void *context, struct nodeID *neighbour)
 {
   return cache_del(local_cache, neighbour);
 }
