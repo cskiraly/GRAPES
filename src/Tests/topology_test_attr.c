@@ -27,7 +27,7 @@
 #include "topmanager.h"
 #include "net_helpers.h"
 
-static struct topContext *context;
+static struct top_context *context;
 static const char *my_addr = "127.0.0.1";
 static int port = 6666;
 static int srv_port;

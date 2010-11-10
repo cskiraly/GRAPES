@@ -12,14 +12,19 @@ extern struct peersampler_iface ncast;
 extern struct peersampler_iface cyclon;
 extern struct peersampler_iface dummy;
 
-int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config, struct topContext **context)
+struct top_context{
+  struct peersampler_iface *ps;
+  void *ps_context;
+};
+
+int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config, struct top_context **context)
 {
-  struct topContext *tc;
+  struct top_context *tc;
   struct tag *cfg_tags;
   const char *proto;
 
 
-  tc = (struct topContext*) malloc(sizeof(struct topContext));
+  tc = (struct top_context*) malloc(sizeof(struct top_context));
   if (!tc) return -1;
   *context = tc;
 
@@ -35,45 +40,45 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
     }
   }
 
-  return tc->ps->init(myID, metadata, metadata_size, config, &tc->psContext);
+  return tc->ps->init(myID, metadata, metadata_size, config, &tc->ps_context);
 }
 
-int topChangeMetadata(struct topContext *tc, void *metadata, int metadata_size)
+int topChangeMetadata(struct top_context *tc, void *metadata, int metadata_size)
 {
-  return tc->ps->change_metadata(tc->psContext, metadata, metadata_size);
+  return tc->ps->change_metadata(tc->ps_context, metadata, metadata_size);
 }
 
-int topAddNeighbour(struct topContext *tc, struct nodeID *neighbour, void *metadata, int metadata_size)
+int topAddNeighbour(struct top_context *tc, struct nodeID *neighbour, void *metadata, int metadata_size)
 {
-  return tc->ps->add_neighbour(tc->psContext, neighbour, metadata, metadata_size);
+  return tc->ps->add_neighbour(tc->ps_context, neighbour, metadata, metadata_size);
 }
 
-int topParseData(struct topContext *tc, const uint8_t *buff, int len)
+int topParseData(struct top_context *tc, const uint8_t *buff, int len)
 {
-  return tc->ps->parse_data(tc->psContext, buff, len);
+  return tc->ps->parse_data(tc->ps_context, buff, len);
 }
 
-const struct nodeID **topGetNeighbourhood(struct topContext *tc, int *n)
+const struct nodeID **topGetNeighbourhood(struct top_context *tc, int *n)
 {
-  return tc->ps->get_neighbourhood(tc->psContext, n);
+  return tc->ps->get_neighbourhood(tc->ps_context, n);
 }
 
-const void *topGetMetadata(struct topContext *tc, int *metadata_size)
+const void *topGetMetadata(struct top_context *tc, int *metadata_size)
 {
-  return tc->ps->get_metadata(tc->psContext, metadata_size);
+  return tc->ps->get_metadata(tc->ps_context, metadata_size);
 }
 
-int topGrowNeighbourhood(struct topContext *tc, int n)
+int topGrowNeighbourhood(struct top_context *tc, int n)
 {
-  return tc->ps->grow_neighbourhood(tc->psContext, n);
+  return tc->ps->grow_neighbourhood(tc->ps_context, n);
 }
 
-int topShrinkNeighbourhood(struct topContext *tc, int n)
+int topShrinkNeighbourhood(struct top_context *tc, int n)
 {
-  return tc->ps->shrink_neighbourhood(tc->psContext, n);
+  return tc->ps->shrink_neighbourhood(tc->ps_context, n);
 }
 
-int topRemoveNeighbour(struct topContext *tc, struct nodeID *neighbour)
+int topRemoveNeighbour(struct top_context *tc, struct nodeID *neighbour)
 {
-  return tc->ps->remove_neighbour(tc->psContext, neighbour);
+  return tc->ps->remove_neighbour(tc->ps_context, neighbour);
 }

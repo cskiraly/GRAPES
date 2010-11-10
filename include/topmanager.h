@@ -19,10 +19,7 @@
 /**
    @brief Mantains the context of a topology manager instance
  */
-struct topContext{
-  struct peersampler_iface *ps;
-  void *psContext;
-};
+struct top_context;
 
 /**
   @brief Get the peer's neighbourhood.
@@ -38,7 +35,7 @@ struct topContext{
   @return a pointer to an array of nodeID describing the neighbourhood. NULL
           in case of error, or if the neighbourhood is empty.
 */
-const struct nodeID **topGetNeighbourhood(struct topContext *tc, int *n);
+const struct nodeID **topGetNeighbourhood(struct top_context *tc, int *n);
 
 /**
   @brief Get the peer's metadata.
@@ -59,7 +56,7 @@ const struct nodeID **topGetNeighbourhood(struct topContext *tc, int *n);
           by topGetNeighbourhood()).
           NULL in case of error, or if the neighbourhood is empty.
 */
-const void *topGetMetadata(struct topContext *tc, int *metadata_size);
+const void *topGetMetadata(struct top_context *tc, int *metadata_size);
 
 /**
   @brief Increase the neighbourhood size.
@@ -70,7 +67,7 @@ const void *topGetMetadata(struct topContext *tc, int *metadata_size);
   @param n number of peers by which the neighbourhood size must be incremented.
   @return the new neighbourhood size in case of success; -1 in case of error.
 */
-int topGrowNeighbourhood(struct topContext *tc, int n);
+int topGrowNeighbourhood(struct top_context *tc, int n);
 
 /**
   @brief Decrease the neighbourhood size.
@@ -81,7 +78,7 @@ int topGrowNeighbourhood(struct topContext *tc, int n);
   @param n number of peers by which the neighbourhood size must be decreased.
   @return the new neighbourhood size in case of success; -1 in case of error.
 */
-int topShrinkNeighbourhood(struct topContext *tc, int n);
+int topShrinkNeighbourhood(struct top_context *tc, int n);
 
 /**
   @brief Remove a peer from the neighbourhood.
@@ -94,7 +91,7 @@ int topShrinkNeighbourhood(struct topContext *tc, int n);
          neighbourhood.
   @return 0 in case of success; -1 in case of error.
 */
-int topRemoveNeighbour(struct topContext *tc, struct nodeID *neighbour);
+int topRemoveNeighbour(struct top_context *tc, struct nodeID *neighbour);
 
 /**
   @brief Change the metadata.
@@ -109,7 +106,7 @@ int topRemoveNeighbour(struct topContext *tc, struct nodeID *neighbour);
          be the same as for the other peers).
   @return 0 in case of success; -1 in case of error.
 */
-int topChangeMetadata(struct topContext *tc, void *metadata, int metadata_size);
+int topChangeMetadata(struct top_context *tc, void *metadata, int metadata_size);
 
 /**
   @brief Initialise the Topology Manager.
@@ -122,7 +119,7 @@ int topChangeMetadata(struct topContext *tc, void *metadata, int metadata_size);
          current instance topology manager context
   @return 0 in case of success; -1 in case of error.
 */
-int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config, struct topContext **context);
+int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *config, struct top_context **context);
 
 /**
   @brief Insert a peer in the neighbourhood.
@@ -138,7 +135,7 @@ int topInit(struct nodeID *myID, void *metadata, int metadata_size, const char *
          be the same as for the other peers).
   @return 0 in case of success; -1 in case of error.
 */
-int topAddNeighbour(struct topContext *tc, struct nodeID *neighbour, void *metadata, int metadata_size);
+int topAddNeighbour(struct top_context *tc, struct nodeID *neighbour, void *metadata, int metadata_size);
 
 /**
   @brief Pass a received packet to the Topology Manager.
@@ -152,6 +149,6 @@ int topAddNeighbour(struct topContext *tc, struct nodeID *neighbour, void *metad
   @param len the size of such a memory buffer.
   @return 0 in case of success; -1 in case of error.
 */
-int topParseData(struct topContext *tc, const uint8_t *buff, int len);
+int topParseData(struct top_context *tc, const uint8_t *buff, int len);
 
 #endif /* TOPMAN_H */
