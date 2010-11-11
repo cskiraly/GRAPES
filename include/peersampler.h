@@ -18,6 +18,11 @@
 
 
 /**
+   @brief Mantains the context of a topology manager instance
+ */
+struct top_context;
+
+/**
   @brief Get a sample of the active peers.
 
   This function returns the current peer sampler cache (i.e., the set of
@@ -25,12 +30,13 @@
   size can be different from the requested one, because of how the peer 
   sampling protocols work. 
 
+  @param tc the pointer to the current topology manager instance context
   @param n pointer to an integer where the cache size is returned.
            Is set to -1 in case of error, or 0 if the cache is empty.
   @return a pointer to an array of nodeID describing a random view of the system. NULL
           in case of error, or if the cache is empty.
 */
-const struct nodeID **psample_get_cache(int *n);
+const struct nodeID **psample_get_cache(struct top_context *tc, int *n);
 
 /**
   @brief Get the peer's metadata.
@@ -43,6 +49,7 @@ const struct nodeID **psample_get_cache(int *n);
   constant). The number of known peers (cache size) can be known by calling
   psample_get_cache().
 
+  @param tc the pointer to the current topology manager instance context
   @param metadata_size pointer to an integer where the size of the metadata
          associated to each peer is returned.
          Is set to -1 in case of error, or 0 if the cache is empty.
@@ -50,27 +57,29 @@ const struct nodeID **psample_get_cache(int *n);
           by psample_get_cache()).
           NULL in case of error, or if the cache is empty.
 */
-const void *psample_get_metadata(int *metadata_size);
+const void *psample_get_metadata(struct top_context *tc, int *metadata_size);
 
 /**
   @brief Increase the cache size.
 
   This function can be used to increase the number of known peers (that is,
        the degree of the overlay graph) by a specified amount.
+  @param tc the pointer to the current topology manager instance context
   @param n number of peers by which the cache size must be incremented.
   @return the new cache size in case of success; -1 in case of error.
 */
-int psample_grow_cache(int n);
+int psample_grow_cache(struct top_context *tc, int n);
 
 /**
   @brief Decrease the cache size.
 
   This function can be used to reduce the number of known peers (that is,
        the degree of the overlay graph) by a specified amount.
+  @param tc the pointer to the current topology manager instance context
   @param n number of peers by which the cache size must be decreased.
   @return the new cache size in case of success; -1 in case of error.
 */
-int psample_shrink_cache(int n);
+int psample_shrink_cache(struct top_context *tc, int n);
 
 /**
   @brief Remove a peer from the cache.
@@ -78,11 +87,12 @@ int psample_shrink_cache(int n);
   This function can be used to remove a specified peer from the
   cache. Note that the requested cache size is not
   modified, so the peer will be soon replaced by a different one.
+  @param tc the pointer to the current topology manager instance context
   @param neighbour the id of the peer to be removed from the
          cache.
   @return 0 in case of success; -1 in case of error.
 */
-int psample_remove_peer(struct nodeID *neighbour);
+int psample_remove_peer(struct top_context *tc, struct nodeID *neighbour);
 
 /**
   @brief Change the metadata.
@@ -90,13 +100,14 @@ int psample_remove_peer(struct nodeID *neighbour);
   This function can be used to modify/update the metadata for a
   peer. Because of security concerns, only the metadata for the
   local peer can be modified.
+  @param tc the pointer to the current topology manager instance context
   @param metadata pointer to the new metadata associated to the peer (will be
          gossiped).
   @param metadata_size size of the metadata associated to the peer (must
          be the same as for the other peers).
   @return 0 in case of success; -1 in case of error.
 */
-int psample_change_metadata(void *metadata, int metadata_size);
+int psample_change_metadata(struct top_context *tc, void *metadata, int metadata_size);
 
 /**
   @brief Initialise the Peer Sampler.
@@ -105,15 +116,16 @@ int psample_change_metadata(void *metadata, int metadata_size);
   @param metadata pointer to the metadata associated to this peer (will be
          gossiped).
   @param metadata_size size of the metadata associated to this peer.
-  @return 0 in case of success; -1 in case of error.
+  @return the topology manager context in case of success; NULL in case of error.
 */
-int psample_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config);
+struct top_context *psample_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config);
 
 /**
   @brief Insert a known peer in the cache.
 
   This function can be used to add a specified peer to the
   cache. It is useful in the bootstrap phase.
+  @param tc the pointer to the current topology manager instance context
   @param neighbour the id of the peer to be added to the
          cache.
   @param metadata pointer to the metadata associated to the new peer (will be
@@ -122,7 +134,7 @@ int psample_init(struct nodeID *myID, void *metadata, int metadata_size, const c
          be the same as for the other peers).
   @return 0 in case of success; -1 in case of error.
 */
-int psample_add_peer(struct nodeID *neighbour, void *metadata, int metadata_size);
+int psample_add_peer(struct top_context *tc, struct nodeID *neighbour, void *metadata, int metadata_size);
 
 /**
   @brief Pass a received packet to the Peer Sampler.
@@ -131,10 +143,11 @@ int psample_add_peer(struct nodeID *neighbour, void *metadata, int metadata_size
   been received from the network. The Peer Sampler will parse
   such packet and run the protocol, adding or removing peers to the
   cache, and sending peer sampling messages to other peers.
+  @param tc the pointer to the current topology manager instance context
   @param buff a memory buffer containing the received message.
   @param len the size of such a memory buffer.
   @return 0 in case of success; -1 in case of error.
 */
-int psample_parse_data(const uint8_t *buff, int len);
+int psample_parse_data(struct top_context *tc, const uint8_t *buff, int len);
 
 #endif /* PEERSAMPLER_H */

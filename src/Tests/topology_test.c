@@ -26,6 +26,8 @@
 #include "peersampler.h"
 #include "net_helpers.h"
 
+
+static struct top_context *context;
 static const char *my_addr = "127.0.0.1";
 static int port = 6666;
 static int srv_port;
@@ -71,8 +73,8 @@ static struct nodeID *init(void)
 
     return NULL;
   }
-//  psample_init(myID, NULL, 0, "protocol=cyclon");
-  psample_init(myID, NULL, 0, "");
+//  context = psample_init(myID, NULL, 0, "protocol=cyclon");
+  context = psample_init(myID, NULL, 0, "");
 
   return myID;
 }
@@ -84,7 +86,7 @@ static void loop(struct nodeID *s)
   static uint8_t buff[BUFFSIZE];
   int cnt = 0;
   
-  psample_parse_data(NULL, 0);
+  psample_parse_data(context, NULL, 0);
   while (!done) {
     int len;
     int news;
@@ -97,15 +99,15 @@ static void loop(struct nodeID *s)
       struct nodeID *remote;
 
       len = recv_from_peer(s, &remote, buff, BUFFSIZE);
-      psample_parse_data(buff, len);
+      psample_parse_data(context, buff, len);
       nodeid_free(remote);
     } else {
-      psample_parse_data(NULL, 0);
+      psample_parse_data(context, NULL, 0);
       if (cnt % 10 == 0) {
         const struct nodeID **neighbourhoods;
         int n, i;
 
-        neighbourhoods = psample_get_cache(&n);
+        neighbourhoods = psample_get_cache(context, &n);
         printf("I have %d neighbours:\n", n);
         for (i = 0; i < n; i++) {
           printf("\t%d: %s\n", i, node_addr(neighbourhoods[i]));
@@ -149,7 +151,7 @@ int main(int argc, char *argv[])
 
       return -1;
     }
-    psample_add_peer(knownHost, NULL, 0);
+    psample_add_peer(context, knownHost, NULL, 0);
   }
 
   loop(my_sock);

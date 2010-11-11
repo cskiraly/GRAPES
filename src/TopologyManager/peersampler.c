@@ -11,64 +11,79 @@
 extern struct peersampler_iface ncast;
 extern struct peersampler_iface cyclon;
 extern struct peersampler_iface dummy;
-static struct peersampler_iface *ps;
 
-int psample_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+struct top_context{
+  struct peersampler_iface *ps;
+  void *ps_context;
+};
+
+struct top_context* psample_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
 {
+  struct top_context *tc;
   struct tag *cfg_tags;
   const char *proto;
 
-  ps = &ncast;
+
+  tc = (struct top_context*) malloc(sizeof(struct top_context));
+  if (!tc) return NULL;
+
+  tc->ps = &ncast;
   cfg_tags = config_parse(config);
   proto = config_value_str(cfg_tags, "protocol");
   if (proto) {
     if (strcmp(proto, "cyclon") == 0) {
-      ps = &cyclon;
+      tc->ps = &cyclon;
     }
     if (strcmp(proto, "dummy") == 0) {
-      ps = &dummy;
+      tc->ps = &dummy;
     }
   }
-
-  return ps->init(myID, metadata, metadata_size, config);
+  
+  tc->ps_context = tc->ps->init(myID, metadata, metadata_size, config);
+  if (!tc->ps_context){
+    free(tc);
+    return NULL;
+  }
+  
+  return tc;
 }
 
-int psample_change_metadata(void *metadata, int metadata_size)
+int psample_change_metadata(struct top_context *tc, void *metadata, int metadata_size)
 {
-  return ps->change_metadata(metadata, metadata_size);
+  return tc->ps->change_metadata(tc->ps_context, metadata, metadata_size);
 }
 
-int psample_add_peer(struct nodeID *neighbour, void *metadata, int metadata_size)
+int psample_add_peer(struct top_context *tc, struct nodeID *neighbour, void *metadata, int metadata_size)
 {
-  return ps->add_neighbour(neighbour, metadata, metadata_size);
+  return tc->ps->add_neighbour(tc->ps_context, neighbour, metadata, metadata_size);
 }
 
-int psample_parse_data(const uint8_t *buff, int len)
+int psample_parse_data(struct top_context *tc, const uint8_t *buff, int len)
 {
-  return ps->parse_data(buff, len);
+  return tc->ps->parse_data(tc->ps_context, buff, len);
 }
 
-const struct nodeID **psample_get_cache(int *n)
+const struct nodeID **psample_get_cache(struct top_context *tc, int *n)
 {
-  return ps->get_neighbourhood(n);
+  return tc->ps->get_neighbourhood(tc->ps_context, n);
 }
 
-const void *psample_get_metadata(int *metadata_size)
+const void *psample_get_metadata(struct top_context *tc, int *metadata_size)
 {
-  return ps->get_metadata(metadata_size);
+  return tc->ps->get_metadata(tc->ps_context, metadata_size);
 }
 
-int psample_grow_cache(int n)
+int psample_grow_cache(struct top_context *tc, int n)
 {
-  return ps->grow_neighbourhood(n);
+  return tc->ps->grow_neighbourhood(tc->ps_context, n);
 }
 
-int psample_shrink_cache(int n)
+int psample_shrink_cache(struct top_context *tc, int n)
 {
-  return ps->shrink_neighbourhood(n);
+  return tc->ps->shrink_neighbourhood(tc->ps_context, n);
 }
 
-int psample_remove_peer(struct nodeID *neighbour)
+int psample_remove_peer(struct top_context *tc, struct nodeID *neighbour)
 {
-  return ps->remove_neighbour(neighbour);
+  return tc->ps->remove_neighbour(tc->ps_context, neighbour);
 }
