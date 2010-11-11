@@ -20,7 +20,7 @@
 
 static int counter = 0;
 
-struct top_context *context;
+struct psample_context *context;
 
 int topoChangeMetadata(void *metadata, int metadata_size)
 {

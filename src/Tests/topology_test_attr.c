@@ -26,7 +26,7 @@
 #include "peersampler.h"
 #include "net_helpers.h"
 
-static struct top_context *context;
+static struct psample_context *context;
 static const char *my_addr = "127.0.0.1";
 static int port = 6666;
 static int srv_port;

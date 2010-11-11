@@ -6,7 +6,7 @@
 
 #include "net_helper.h"
 
-extern struct top_context *context;
+extern struct psample_context *context;
 
 int topoChangeMetadata(void *metadata, int metadata_size);
 
