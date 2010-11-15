@@ -12,5 +12,7 @@ struct topo_header {
 #define TMAN_REPLY 0x04
 #define CYCLON_QUERY 0x05
 #define CYCLON_REPLY 0x06
+#define CLOUDCAST_QUERY 0x07
+#define CLOUDCAST_REPLY 0x08
 
 #endif	/* PROTO */
