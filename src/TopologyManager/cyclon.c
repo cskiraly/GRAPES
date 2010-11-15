@@ -34,6 +34,8 @@ struct peersampler_context{
   
   struct peer_cache *flying_cache;
   struct nodeID *dst;
+
+  struct cyclon_proto_context *pc;
 };
 
 
@@ -110,17 +112,15 @@ static struct peersampler_context* cyclon_init(struct nodeID *myID, void *metada
     free(con);
     return NULL;
   }
-  topo_proto_init(myID, metadata, metadata_size);
-  return con;
-}
 
-static int cyclon_change_metadata(struct peersampler_context *context, void *metadata, int metadata_size)
-{
-  if (topo_proto_metadata_update(metadata, metadata_size) <= 0) {
-    return -1;
+  con->pc = cyclon_proto_init(myID, metadata, metadata_size);
+  if (!con->pc){
+    free(con->local_cache);
+    free(con);
+    return NULL;
   }
 
-  return 1;
+  return con;
 }
 
 static int cyclon_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, void *metadata, int metadata_size)
@@ -132,7 +132,7 @@ static int cyclon_add_neighbour(struct peersampler_context *context, struct node
     return -1;
   }
 
-  return cyclon_query(context->flying_cache, neighbour);
+  return cyclon_query(context->pc, context->flying_cache, neighbour);
 }
 
 static int cyclon_parse_data(struct peersampler_context *context, const uint8_t *buff, int len)
@@ -154,7 +154,7 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == CYCLON_QUERY) {
       sent_cache = rand_cache(context->local_cache, context->sent_entries);
-      cyclon_reply(remote_cache, sent_cache);
+      cyclon_reply(context->pc, remote_cache, sent_cache);
       context->dst = NULL;
     }
     cache_check(context->local_cache);
@@ -186,7 +186,7 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
     context->dst = nodeid_dup(context->dst);
     cache_del(context->local_cache, context->dst);
     context->flying_cache = rand_cache(context->local_cache, context->sent_entries - 1);
-    cyclon_query(context->flying_cache, context->dst);
+    cyclon_query(context->pc, context->flying_cache, context->dst);
   }
   cache_check(context->local_cache);
 
@@ -246,6 +246,11 @@ static int cyclon_shrink_neighbourhood(struct peersampler_context *context, int 
 static int cyclon_remove_neighbour(struct peersampler_context *context, struct nodeID *neighbour)
 {
   return cache_del(context->local_cache, neighbour);
+}
+
+static int cyclon_change_metadata(struct peersampler_context *context, void *metadata, int metadata_size)
+{
+  return cyclon_proto_change_metadata(context->pc, metadata, metadata_size);
 }
 
 struct peersampler_iface cyclon = {

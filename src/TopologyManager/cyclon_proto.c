@@ -15,13 +15,41 @@
 #include "cyclon_proto.h"
 #include "grapes_msg_types.h"
 
+struct cyclon_proto_context {
+  struct topo_context *context;
+};
 
-int cyclon_reply(const struct peer_cache *c, struct peer_cache *local_cache)
+struct cyclon_proto_context* cyclon_proto_init(struct nodeID *s, void *meta, int meta_size)
 {
-  return topo_reply(c, local_cache, MSG_TYPE_TOPOLOGY, CYCLON_REPLY, 0, 0);
+  struct cyclon_proto_context *con;
+  con = malloc(sizeof(struct cyclon_proto_context));
+
+  if (!con) return NULL;
+
+  con->context = topo_proto_init(s, meta, meta_size);
+  if (!con->context){
+    free(con);
+    return NULL;
+  }
+
+  return con;
 }
 
-int cyclon_query(struct peer_cache *sent_cache, struct nodeID *dst)
+int cyclon_reply(struct cyclon_proto_context *context, const struct peer_cache *c, struct peer_cache *local_cache)
 {
-  return topo_query_peer(sent_cache, dst, MSG_TYPE_TOPOLOGY, CYCLON_QUERY, 0);
+  return topo_reply(context->context, c, local_cache, MSG_TYPE_TOPOLOGY, CYCLON_REPLY, 0, 0);
+}
+
+int cyclon_query(struct cyclon_proto_context *context, struct peer_cache *sent_cache, struct nodeID *dst)
+{
+  return topo_query_peer(context->context, sent_cache, dst, MSG_TYPE_TOPOLOGY, CYCLON_QUERY, 0);
+}
+
+int cyclon_proto_change_metadata(struct cyclon_proto_context *context, void *metadata, int metadata_size)
+{
+  if (topo_proto_metadata_update(context->context, metadata, metadata_size) <= 0) {
+    return -1;
+  }
+
+  return 1;
 }
