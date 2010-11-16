@@ -3,7 +3,7 @@ BASE = ..
 endif
 CFGDIR ?= .
 
-SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler Cache
+SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler Cache PeerSampler
 COMMON_OBJS = config.o
 
 .PHONY: subdirs $(SUBDIRS)
