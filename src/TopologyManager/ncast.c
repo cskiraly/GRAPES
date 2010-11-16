@@ -14,10 +14,10 @@
 
 #include "net_helper.h"
 #include "peersampler_iface.h"
-#include "topocache.h"
-#include "topo_proto.h"
-#include "ncast_proto.h"
-#include "proto.h"
+#include "../Cache/topocache.h"
+#include "../Cache/topo_proto.h"
+#include "../Cache/ncast_proto.h"
+#include "../Cache/proto.h"
 #include "config.h"
 #include "grapes_msg_types.h"
 
