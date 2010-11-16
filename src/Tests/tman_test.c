@@ -99,7 +99,7 @@ static struct nodeID *init()
 
     return NULL;
   }
-  psample_init(myID,&my_metadata, sizeof(my_metadata),NULL);
+  context = psample_init(myID,&my_metadata, sizeof(my_metadata),NULL);
   tmanInit(myID,&my_metadata, sizeof(my_metadata),funct,NULL);
 
   return myID;

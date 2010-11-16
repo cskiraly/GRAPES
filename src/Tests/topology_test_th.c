@@ -28,6 +28,7 @@
 #include "peersampler.h"
 #include "net_helpers.h"
 
+static struct psample_context *context;
 static const char *my_addr = "127.0.0.1";
 static int port = 6666;
 static int srv_port;
@@ -74,8 +75,8 @@ static struct nodeID *init(void)
 
     return NULL;
   }
-  psample_init(myID, NULL, 0, "protocol=cyclon");
-//  psample_init(myID, NULL, 0, "");
+  context = psample_init(myID, NULL, 0, "protocol=cyclon");
+//  context = psample_init(myID, NULL, 0, "");
 
   return myID;
 }
@@ -89,14 +90,14 @@ static void *cycle_loop(void *p)
     const int tout = 1;
 
     pthread_mutex_lock(&neigh_lock);
-    psample_parse_data(NULL, 0);
+    psample_parse_data(context, NULL, 0);
     pthread_mutex_unlock(&neigh_lock);
     if (cnt % 10 == 0) {
       const struct nodeID **neighbours;
       int n, i;
 
       pthread_mutex_lock(&neigh_lock);
-      neighbours = psample_get_cache(&n);
+      neighbours = psample_get_cache(context, &n);
       printf("I have %d neighbours:\n", n);
       for (i = 0; i < n; i++) {
         printf("\t%d: %s\n", i, node_addr(neighbours[i]));
@@ -136,7 +137,7 @@ static void *recv_loop(void *p)
 
     len = recv_from_peer(s, &remote, buff, BUFFSIZE);
     pthread_mutex_lock(&neigh_lock);
-    psample_parse_data(buff, len);
+    psample_parse_data(context, buff, len);
     pthread_mutex_unlock(&neigh_lock);
     nodeid_free(remote);
   }
@@ -165,7 +166,7 @@ int main(int argc, char *argv[])
 
       return -1;
     }
-    psample_add_peer(knownHost, NULL, 0);
+    psample_add_peer(context, knownHost, NULL, 0);
   }
   pthread_mutex_init(&neigh_lock, NULL);
   pthread_create(&recv_id, NULL, recv_loop, my_sock);

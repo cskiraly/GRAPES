@@ -6,6 +6,8 @@
 
 #include "net_helper.h"
 
+extern struct psample_context *context;
+
 int topoChangeMetadata(void *metadata, int metadata_size);
 
 int topoAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size);
