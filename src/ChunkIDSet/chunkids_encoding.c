@@ -4,7 +4,6 @@
  *  This is free software; see lgpl-2.1.txt
  */
 
-#include <arpa/inet.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>

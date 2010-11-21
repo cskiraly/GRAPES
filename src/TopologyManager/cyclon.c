@@ -34,8 +34,9 @@ struct peersampler_context{
   
   struct peer_cache *flying_cache;
   struct nodeID *dst;
-  
-  struct cyclon_proto_context *pc; 
+
+
+ struct cyclon_proto_context *pc;
 };
 
 

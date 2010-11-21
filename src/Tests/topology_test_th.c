@@ -16,16 +16,17 @@
  *  (in general, to be part of the overlay a peer must either use
  *  "-i<known peer IP> -p<known peer port>" or be referenced by another peer).
  */
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
+#include <pthread.h>
 
 #include "net_helper.h"
 #include "peersampler.h"
 #include "net_helpers.h"
-
 
 static struct psample_context *context;
 static const char *my_addr = "127.0.0.1";
@@ -33,6 +34,7 @@ static int port = 6666;
 static int srv_port;
 static const char *srv_ip;
 static char *fprefix;
+static pthread_mutex_t neigh_lock;
 
 static void cmdline_parse(int argc, char *argv[])
 {
@@ -73,67 +75,80 @@ static struct nodeID *init(void)
 
     return NULL;
   }
-//  context = psample_init(myID, NULL, 0, "protocol=cyclon");
-  context = psample_init(myID, NULL, 0, "");
+  context = psample_init(myID, NULL, 0, "protocol=cyclon");
+//  context = psample_init(myID, NULL, 0, "");
 
   return myID;
 }
 
-static void loop(struct nodeID *s)
+static void *cycle_loop(void *p)
 {
+  int done = 0;
+  int cnt = 0;
+  
+  while (!done) {
+    const int tout = 1;
+
+    pthread_mutex_lock(&neigh_lock);
+    psample_parse_data(context, NULL, 0);
+    pthread_mutex_unlock(&neigh_lock);
+    if (cnt % 10 == 0) {
+      const struct nodeID **neighbours;
+      int n, i;
+
+      pthread_mutex_lock(&neigh_lock);
+      neighbours = psample_get_cache(context, &n);
+      printf("I have %d neighbours:\n", n);
+      for (i = 0; i < n; i++) {
+        printf("\t%d: %s\n", i, node_addr(neighbours[i]));
+      }
+      fflush(stdout);
+      if (fprefix) {
+        FILE *f;
+        char fname[64];
+
+        sprintf(fname, "%s-%d.txt", fprefix, port);
+        f = fopen(fname, "w");
+        if (f) fprintf(f, "#Cache size: %d\n", n);
+        for (i = 0; i < n; i++) {
+          if (f) fprintf(f, "%d\t\t%d\t%s\n", port, i, node_addr(neighbours[i]));
+        }
+        fclose(f);
+      }
+      pthread_mutex_unlock(&neigh_lock);
+    }
+    cnt++;
+    sleep(tout);
+  }
+
+  return NULL;
+}
+
+static void *recv_loop(void *p)
+{
+  struct nodeID *s = p;
   int done = 0;
 #define BUFFSIZE 1024
   static uint8_t buff[BUFFSIZE];
-  int cnt = 0;
   
-  psample_parse_data(context, NULL, 0);
   while (!done) {
     int len;
-    int news;
-    const struct timeval tout = {1, 0};
-    struct timeval t1;
+    struct nodeID *remote;
 
-    t1 = tout;
-    news = wait4data(s, &t1, NULL);
-    if (news > 0) {
-      struct nodeID *remote;
-
-      len = recv_from_peer(s, &remote, buff, BUFFSIZE);
-      psample_parse_data(context, buff, len);
-      nodeid_free(remote);
-    } else {
-      psample_parse_data(context, NULL, 0);
-      if (cnt % 10 == 0) {
-        const struct nodeID **neighbourhoods;
-        int n, i;
-
-        neighbourhoods = psample_get_cache(context, &n);
-        printf("I have %d neighbours:\n", n);
-        for (i = 0; i < n; i++) {
-          printf("\t%d: %s\n", i, node_addr(neighbourhoods[i]));
-        }
-        fflush(stdout);
-        if (fprefix) {
-          FILE *f;
-          char fname[64];
-
-          sprintf(fname, "%s-%d.txt", fprefix, port);
-          f = fopen(fname, "w");
-          if (f) fprintf(f, "#Cache size: %d\n", n);
-          for (i = 0; i < n; i++) {
-            if (f) fprintf(f, "%d\t\t%d\t%s\n", port, i, node_addr(neighbourhoods[i]));
-          }
-          fclose(f);
-        }
-      }
-      cnt++;
-    }
+    len = recv_from_peer(s, &remote, buff, BUFFSIZE);
+    pthread_mutex_lock(&neigh_lock);
+    psample_parse_data(context, buff, len);
+    pthread_mutex_unlock(&neigh_lock);
+    nodeid_free(remote);
   }
+
+  return NULL;
 }
 
 int main(int argc, char *argv[])
 {
   struct nodeID *my_sock;
+  pthread_t cycle_id, recv_id;
 
   cmdline_parse(argc, argv);
 
@@ -153,8 +168,11 @@ int main(int argc, char *argv[])
     }
     psample_add_peer(context, knownHost, NULL, 0);
   }
-
-  loop(my_sock);
+  pthread_mutex_init(&neigh_lock, NULL);
+  pthread_create(&recv_id, NULL, recv_loop, my_sock);
+  pthread_create(&cycle_id, NULL, cycle_loop, my_sock);
+  pthread_join(recv_id, NULL);
+  pthread_join(cycle_id, NULL);
 
   return 0;
 }

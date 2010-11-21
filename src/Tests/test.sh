@@ -41,7 +41,8 @@ while getopts "s:S:p:P:N:f:e:v:VX:" opt; do
       VIDEO=$OPTARG
       ;;
     V)	#TODO
-      VALGRIND=1
+      VALGRIND="valgrind --error-exitcode=1 --track-origins=yes  --leak-check=full "
+      VALGRIND="valgrind --error-exitcode=1 --leak-check=full "
       ;;
     X)
       NUM_PEERS_X=$OPTARG
@@ -57,12 +58,12 @@ while getopts "s:S:p:P:N:f:e:v:VX:" opt; do
   esac
 done
 
-valgrind --error-exitcode=1 --track-origins=yes  --leak-check=full $CLIENT $SOURCE_OPTIONS 2> /dev/null &
+$VALGRIND $CLIENT $SOURCE_OPTIONS 2> /dev/null &
 
 sleep 2
 ((PEER_PORT_MAX=PEER_PORT_BASE + NUM_PEERS - 1))
 for PORT in `seq $PEER_PORT_BASE 1 $PEER_PORT_MAX`; do
-    valgrind --error-exitcode=1 $CLIENT $PEER_OPTIONS -P $PORT -i 127.0.0.1 -p $SOURCE_PORT 2>stderr.$PORT > stdout.$PORT &
+    $VALGRIND $CLIENT $PEER_OPTIONS -P $PORT -i 127.0.0.1 -p $SOURCE_PORT 2>stderr.$PORT > stdout.$PORT &
 done
 
 ((PEER_PORT_BASE = PEER_PORT_MAX + 1))

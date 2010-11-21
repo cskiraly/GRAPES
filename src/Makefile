@@ -1,4 +1,8 @@
+ifndef BASE
 BASE = ..
+endif
+CFGDIR ?= .
+
 SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler
 COMMON_OBJS = config.o
 
@@ -12,7 +16,7 @@ $(OBJ_LSTS):
 	$(MAKE) -C $(dir $@) objs.lst
 
 libgrapes.a: $(OBJ_LSTS) $(COMMON_OBJS)
-	ar rcs libgrapes.a `cat $(OBJ_LSTS)` $(COMMON_OBJS)
+	$(AR) rcs libgrapes.a `cat $(OBJ_LSTS)` $(COMMON_OBJS)
 	rm */*.lst
 
 tests: libgrapes.a
@@ -28,4 +32,4 @@ allclean: clean
 	rm -f *.d
 	$(MAKE) -C Tests clean
 
-include utils.mak
+include $(BASE)/src/utils.mak

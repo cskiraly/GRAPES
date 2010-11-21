@@ -13,18 +13,18 @@
 
 #include "grapes_msg_types.h"
 #include "net_helper.h"
-#include "topmanager.h"
+#include "peersampler.h"
 #include "tman.h"
 
 #define TMAN_MAX_IDLE 5
 
 static int counter = 0;
 
-//TODO: need to add context support to topmanager!
+struct psample_context *context;
 
 int topoChangeMetadata(void *metadata, int metadata_size)
 {
-  int res = topChangeMetadata(NULL, metadata,metadata_size);
+	int res = psample_change_metadata(context,metadata,metadata_size);
 	if (counter >= TMAN_MAX_IDLE)
 		return tmanChangeMetadata(metadata,metadata_size);
 	else return res;
@@ -34,7 +34,7 @@ int topoAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size
 {
 	// TODO: check this!! Just to use this function to bootstrap ncast...
 	if (counter < TMAN_MAX_IDLE)
-	  return topAddNeighbour(NULL, neighbour,metadata,metadata_size);
+		return psample_add_peer(context,neighbour,metadata,metadata_size);
 	else return tmanAddNeighbour(neighbour,metadata,metadata_size);
 }
 
@@ -43,14 +43,14 @@ int topoParseData(const uint8_t *buff, int len)
 	int res,ncs,msize;
 	const struct nodeID **n; const void *m;
 	if (!buff || buff[0] == MSG_TYPE_TOPOLOGY) {
-	  res = topParseData(NULL,buff,len);
+		res = psample_parse_data(context,buff,len);
 		if (counter <= TMAN_MAX_IDLE)
 			counter++;
 	}
 	if (counter >= TMAN_MAX_IDLE && (!buff || buff[0] == MSG_TYPE_TMAN))
 	{
-	  n = topGetNeighbourhood(NULL, &ncs);
-	  m = topGetMetadata(NULL, &msize);
+		n = psample_get_cache(context,&ncs);
+		m = psample_get_metadata(context,&msize);
 		res = tmanParseData(buff,len,n,ncs,m,msize);
 	}
   return res;
@@ -69,7 +69,7 @@ const struct nodeID **topoGetNeighbourhood(int *n)
 		return (const struct nodeID **)neighbors;
 	}
 	else
-	  return topGetNeighbourhood(NULL, n);
+		return psample_get_cache(context,n);
 }
 
 const void *topoGetMetadata(int *metadata_size)
@@ -78,13 +78,13 @@ const void *topoGetMetadata(int *metadata_size)
 	if (n)
 		return tmanGetMetadata(metadata_size);
 	else
-	  return topGetMetadata(NULL, metadata_size);
+		return psample_get_metadata(context,metadata_size);
 }
 
 int topoGrowNeighbourhood(int n)
 {
 	if (counter < TMAN_MAX_IDLE)
-	  return topGrowNeighbourhood(NULL, n);
+		return psample_grow_cache(context,n);
 	else
 	  return tmanGrowNeighbourhood(n);
 }
@@ -92,14 +92,15 @@ int topoGrowNeighbourhood(int n)
 int topoShrinkNeighbourhood(int n)
 {
 	if (counter < TMAN_MAX_IDLE)
-	  return topShrinkNeighbourhood(NULL, n);
+		return psample_shrink_cache(context,n);
 	else
 		return tmanShrinkNeighbourhood(n);
 }
 
 int topoRemoveNeighbour(struct nodeID *neighbour)
 {
-  return topRemoveNeighbour(NULL, neighbour);
+	if (counter < TMAN_MAX_IDLE)
+		return psample_remove_peer(context,neighbour);
+	else
+		return tmanRemoveNeighbour(neighbour);
 }
-
-

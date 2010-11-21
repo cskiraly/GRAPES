@@ -1,6 +1,12 @@
 #ifndef INT_CODING
 #define INT_CODING
 
+#if defined(_WIN32)
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 static inline void int_cpy(uint8_t *p, int v)
 {
   uint32_t tmp;

@@ -15,11 +15,13 @@
 #include "ncast_proto.h"
 #include "grapes_msg_types.h"
 
-struct ncast_proto_context{
+struct ncast_proto_context {
   struct topo_context *context;
 };
 
-struct ncast_proto_context* ncast_proto_init(struct nodeID *s, void *meta, int meta_size){
+struct ncast_proto_context* ncast_proto_init(struct nodeID *s, void *meta, int meta_size)
+{
+
   struct ncast_proto_context *con;
   con = malloc(sizeof(struct ncast_proto_context));
 
@@ -31,7 +33,7 @@ struct ncast_proto_context* ncast_proto_init(struct nodeID *s, void *meta, int m
     return NULL;
   }
 
-  return con;    
+  return con;
 }
 
 int ncast_reply(struct ncast_proto_context *context, const struct peer_cache *c, struct peer_cache *local_cache)

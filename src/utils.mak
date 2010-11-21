@@ -5,8 +5,14 @@ ld-option = $(shell if echo "int main(){return 0;}" | \
 		$(CC) $(CFLAGS) $(1) -o /dev/null -xc - \
 		> /dev/null 2>&1; then echo "$(1)"; fi ;)
 
+-include $(CFGDIR)/config.mk
+ifdef CROSS_COMPILE
+CC = $(CROSS_COMPILE)cc
+AR = $(CROSS_COMPILE)ar
+LD = $(CROSS_COMPILE)ld
+endif
 
-
+ifndef STATIC_CFLAGS
 CFLAGS += -g -Wall
 CFLAGS += $(call cc-option, -Wdeclaration-after-statement)
 CFLAGS += $(call cc-option, -Wno-switch)
@@ -20,6 +26,9 @@ CFLAGS += $(call cc-option, -Wtype-limits)
 CFLAGS += $(call cc-option, -Wundef)
 
 CFLAGS += $(call cc-option, -funit-at-a-time)
+else
+CFLAGS += $(STATIC_CFLAGS)
+endif
 
 ifdef GPROF
 CFLAGS += -pg
@@ -32,16 +41,16 @@ LIBCOMMON = libgrapes.a
 COMMON = common.o
 
 %.a: $(OBJS)
-	ar rcs $@ $^
+	$(AR) rcs $@ $^
 
 libcommon: $(OBJS)
-	ar rcs $(BASE)/src/$(LIBCOMMON) $^
+	$(AR) rcs $(BASE)/src/$(LIBCOMMON) $^
 
 objs.lst: $(OBJS)
 	echo $(addprefix `pwd`/, $(OBJS)) > objs.lst
 
 $(COMMON): objs.lst
-	ld -r -o $(COMMON) `cat objs.lst`
+	$(LD) -r -o $(COMMON) `cat objs.lst`
 clean::
 	rm -f *.a
 	rm -f *.o

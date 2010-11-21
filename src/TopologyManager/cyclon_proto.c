@@ -15,11 +15,12 @@
 #include "cyclon_proto.h"
 #include "grapes_msg_types.h"
 
-struct cyclon_proto_context{
+struct cyclon_proto_context {
   struct topo_context *context;
 };
 
-struct cyclon_proto_context* cyclon_proto_init(struct nodeID *s, void *meta, int meta_size){
+struct cyclon_proto_context* cyclon_proto_init(struct nodeID *s, void *meta, int meta_size)
+{
   struct cyclon_proto_context *con;
   con = malloc(sizeof(struct cyclon_proto_context));
 
@@ -32,8 +33,7 @@ struct cyclon_proto_context* cyclon_proto_init(struct nodeID *s, void *meta, int
   }
 
   return con;
-}    
-
+}
 
 int cyclon_reply(struct cyclon_proto_context *context, const struct peer_cache *c, struct peer_cache *local_cache)
 {

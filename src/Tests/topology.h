@@ -5,8 +5,8 @@
  */
 
 #include "net_helper.h"
-#include "topmanager.h"
-#include "tman.h"
+
+extern struct psample_context *context;
 
 int topoChangeMetadata(void *metadata, int metadata_size);
 

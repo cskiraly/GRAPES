@@ -3,17 +3,16 @@
 
 /** @file tman.h
  *
- * @brief Tman interface.
+ * @brief Topology Manager interface.
  *
- * This is the Tman interface. Tman builds a given topology according to a user provided ranking
- * algorithm, by means of epidemic-style message exchanges with neighbor peers.
+ * This is the Topology Manager interface.
  *
  */
 
 /**
   @brief Compare neighbors features.
 
-  The functions implementing this prototype are used to compare neighbors features against a given
+  The functions implementing this prototype may be used to compare neighbors features against a given
   target neighbor, in order to obtain a rank, to be used to build a given topology.
 
   @param target pointer to data that describe the target against which the ranking has to be made.
@@ -24,18 +23,18 @@
 typedef int (*tmanRankingFunction)(const void *target, const void *p1, const void *p2);
 
 /**
-  @brief Initialise Tman.
+  @brief Initialise the Topology Manager.
 
-  This function initializes tman protocol with all the mandatory parameters.
+  This function initializes the Topology Manager protocol with all the mandatory parameters.
 
   @param myID the ID of this peer.
   @param metadata Pointer to data associated with the local peer.
   @param metadata_size Size (number of bytes) of the metadata associated with the local peer.
-  @param rfun Ranking function to be used to order the peers in tman cache.
-  @param gossip_peers Number of peers, among those in the cache, to be gossiped in a messaged exchange.
+  @param rfun Ranking function that may be used to order the peers in tman cache.
+  @param config Pointer to a configuration file that contains all relevant initialization data.
   @return 0 in case of success; -1 in case of error.
 */
-int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, tmanRankingFunction rfun, int gossip_peers); 
+int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, tmanRankingFunction rfun, const char *config); 
 
 
 /**
@@ -51,15 +50,15 @@ int tmanInit(struct nodeID *myID, void *metadata, int metadata_size, tmanRanking
 int tmanAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size);
 
 /**
-  @brief Pass a received packet to Tman.
+  @brief Pass a received packet to Topology Manager.
 
-  This function passes to Tman a packet that has
+  This function passes to Topology Manager a packet that has
   been received from the network. The Topology Manager will parse
   such packet and run the protocol, adding or removing peers to the
   neighbourhood, and sending overlay management messages to other peers.
   @param buff a memory buffer containing the received message.
   @param len the size of such a memory buffer.
-  @param peers Array of nodeID pointers to be added in tman cache.
+  @param peers Array of nodeID pointers to be added in Topology Manager cache.
   @param size Number of elements in peers.
   @param metadata Pointer to the array of metadata belonging to the peers to be added.
   @param metadata_size Number of bytes of each metadata.
@@ -69,7 +68,7 @@ int tmanParseData(const uint8_t *buff, int len, struct nodeID **peers, int size,
 
 
 /**
-  @brief Change the metadata in tman neighborhood.
+  @brief Change the metadata in Topology Manager neighborhood.
 
   This function changes the metadata associated with the current node.
 
@@ -91,7 +90,7 @@ const void *tmanGetMetadata(int *metadata_size);
 /**
   @brief Get the current neighborhood size.
 
-  This function returns the current number of peers in the local tman neighborhood.
+  This function returns the current number of peers in the local Topology Manager neighborhood.
 
   @return The current size of the neighborhood.
 */
@@ -99,18 +98,13 @@ int tmanGetNeighbourhoodSize(void);
 
 
 /**
- * @brief Get the highest ranked tman peers.
+ * @brief Get the best peers.
  *
- * This function allows the user to retrieve the highest ranked n peers from tman cache, along with
+ * This function allows the user to retrieve the best n peers from Topology Manager cache, along with
  * their metadata. The number of peers actually returned may be different from what is asked, depending
  * on the current size of the cache.
- * Notice that if the user asks for a number of peers that exceeds the current cache size, a join with
- * the known peers set provided via tmanParseData will be triggered at the next
- * time tmanParseData is called. This will change (and make unstable,
- * at least for few subsequent iterations) the current known topology. Thus, it is advisable to do so only if
- * necessary (i.e. when the user really needs more peers to communicate with).
  *
- * @param n The number of peer tman is asked for.
+ * @param n The number of peer the Topology Manager is asked for.
  * @param peers Array of nodeID pointers to be filled.
  * @param metadata Pointer to the array of metadata belonging to the peers to be given.
  * @return The number of elements in peers.
@@ -147,4 +141,16 @@ int tmanGrowNeighbourhood(int n);
 */
 int tmanShrinkNeighbourhood(int n);
 
+
+/**
+ * @brief Remove a neighbour.
+
+  Delete a neighbour from the Topology Manager neighborhood.
+
+  @param neighbour Pointer to the nodeID of the neighbor to be removed.
+  @return 1 if removal was successful, -1 if it was not.
+ */
+int tmanRemoveNeighbour(struct nodeID *neighbour);
+
 #endif /* TMAN_H */
+

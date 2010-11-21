@@ -16,7 +16,6 @@
  *  (in general, to be part of the overlay a peer must either use
  *  "-i<known peer IP> -p<known peer port>" or be referenced by another peer).
  */
-#include <sys/select.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -24,10 +23,10 @@
 #include <getopt.h>
 
 #include "net_helper.h"
-#include "topmanager.h"
+#include "peersampler.h"
 #include "net_helpers.h"
 
-static struct top_context *context;
+static struct psample_context *context;
 static const char *my_addr = "127.0.0.1";
 static int port = 6666;
 static int srv_port;
@@ -88,7 +87,7 @@ static struct nodeID *init(void)
   }
 
   strcpy(my_attr.name, node_addr(myID));
-  context = topInit(myID, &my_attr, sizeof(struct peer_attributes), "");
+  context = psample_init(myID, &my_attr, sizeof(struct peer_attributes), "");
 
   return myID;
 }
@@ -124,7 +123,7 @@ static void status_update(void)
   }
   printf("goin' %s\n", status_print(my_attr.state));
   myself = create_node(my_addr, port);
-  topChangeMetadata(context, &my_attr, sizeof(struct peer_attributes));
+  psample_change_metadata(context, &my_attr, sizeof(struct peer_attributes));
   nodeid_free(myself);
 }
 
@@ -135,7 +134,7 @@ static void loop(struct nodeID *s)
   static uint8_t buff[BUFFSIZE];
   int cnt = 0;
   
-  topParseData(context, NULL, 0);
+  psample_parse_data(context, NULL, 0);
   while (!done) {
     int len;
     int news;
@@ -146,20 +145,20 @@ static void loop(struct nodeID *s)
       struct nodeID *remote;
 
       len = recv_from_peer(s, &remote, buff, BUFFSIZE);
-      topParseData(context, buff, len);
+      psample_parse_data(context, buff, len);
       nodeid_free(remote);
     } else {
       if (cnt % 30 == 0) {
         status_update();
       }
-      topParseData(context, NULL, 0);
+      psample_parse_data(context, NULL, 0);
       if (cnt++ % 10 == 0) {
         const struct nodeID **neighbourhoods;
         int n, i, size;
         const struct peer_attributes *meta;
 
-        neighbourhoods = topGetNeighbourhood(context, &n);
-        meta = topGetMetadata(context, &size);
+        neighbourhoods = psample_get_cache(context, &n);
+        meta = psample_get_metadata(context, &size);
         if (meta == NULL) {
           printf("No MetaData!\n");
         } else {
@@ -201,7 +200,7 @@ int main(int argc, char *argv[])
 
       return -1;
     }
-    topAddNeighbour(context, knownHost, NULL, 0);
+    psample_add_peer(context, knownHost, NULL, 0);
   }
 
   loop(my_sock);

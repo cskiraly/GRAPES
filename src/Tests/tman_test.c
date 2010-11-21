@@ -16,8 +16,6 @@
  *  (in general, to be part of the overlay a peer must either use
  *  "-i<known peer IP> -p<known peer port>" or be referenced by another peer).
  */
-
-#include <sys/select.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -27,13 +25,12 @@
 #include "peer.h"
 #include "net_helper.h"
 #include "tman.h"
-#include "topmanager.h"
+#include "peersampler.h"
 #include "net_helpers.h"
 
 #include "topology.h"
 #include "peer_util.h"
 
-static struct topContext *context;
 static const char *my_addr = "127.0.0.1";
 static unsigned int port = 6666;
 static int srv_port=0;
@@ -84,7 +81,6 @@ static void cmdline_parse(int argc, char *argv[])
   fprintf(stderr,"\tMy metadata = %d\n",my_metadata);
 }
 
-#if 0
 static void change_metadata (struct nodeID *id) {
 
 	my_metadata = 1 + ((double)rand() / (double)RAND_MAX)*1000;
@@ -92,7 +88,6 @@ static void change_metadata (struct nodeID *id) {
 
 	tmanChangeMetadata(&my_metadata, sizeof(my_metadata));
 }
-#endif
 
 static struct nodeID *init()
 {
@@ -104,8 +99,8 @@ static struct nodeID *init()
 
     return NULL;
   }
-  context = topInit(myID,&my_metadata, sizeof(my_metadata),NULL);
-  tmanInit(myID,&my_metadata, sizeof(my_metadata),funct,0);
+  context = psample_init(myID,&my_metadata, sizeof(my_metadata),NULL);
+  tmanInit(myID,&my_metadata, sizeof(my_metadata),funct,NULL);
 
   return myID;
 }
@@ -146,9 +141,9 @@ static void loop(struct nodeID *s)
     		fprintf(stderr, "\t%d: %s -- %d\n", i, node_addr(neighbours[i]), *d);
     	}
     }
-//    if (cnt % 20 == 0) {
-//    	change_metadata(s);
-//    }
+    if (cnt % 20 == 0) {
+    	change_metadata(s);
+    }
 //    if (cnt % 13 == 0) {
 //    	more = ((double)rand() / (double)RAND_MAX)*10;
 //    	now = topoGrowNeighbourhood(more);
