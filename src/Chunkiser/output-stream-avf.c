@@ -94,7 +94,7 @@ static AVFormatContext *format_init(struct output_stream *o, const uint8_t *data
 
 struct output_stream *out_stream_init(const char *config)
 {
-  out.output_format = "ffm";
+  out.output_format = "nut";
   if (config) {
     out.output_file = strdup(config);
   } else {
