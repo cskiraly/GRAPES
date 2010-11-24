@@ -16,4 +16,5 @@ all: libchunkiser.a
 include $(BASE)/src/utils.mak
 ifdef FFDIR
 CPPFLAGS += -I$(FFDIR)
+CPPFLAGS += -DAVF
 endif
