@@ -11,6 +11,7 @@
 //#include "dbg.h"
 #include "payload.h"
 #include "config.h"
+#include "chunkiser_iface.h"
 
 #define STATIC_BUFF_SIZE 1000 * 1024
 static int header_refresh_period;
@@ -110,7 +111,20 @@ static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *
   frame_header_write(data, size, pts, dts);
 }
 
-struct input_stream *input_stream_open(const char *fname, int *period, const char *config)
+static int input_stream_rewind(struct input_stream *s)
+{
+    int ret;
+
+    ret = av_seek_frame(s->s,-1,0,0);
+    s->base_ts = s->last_ts;
+
+    return ret;
+}
+
+
+/* Interface functions */
+
+static struct input_stream *avf_open(const char *fname, int *period, const char *config)
 {
   struct input_stream *desc;
   int i, res;
@@ -161,24 +175,13 @@ struct input_stream *input_stream_open(const char *fname, int *period, const cha
   return desc;
 }
 
-void input_stream_close(struct input_stream *s)
+static void avf_close(struct input_stream *s)
 {
     av_close_input_file(s->s);
     free(s);
 }
 
-int input_stream_rewind(struct input_stream *s)
-{
-    int ret;
-
-    ret = av_seek_frame(s->s,-1,0,0);
-    s->base_ts = s->last_ts;
-
-    return ret;
-}
-
-
-uint8_t *chunkise(struct input_stream *s, int id, int *size, uint64_t *ts)
+static uint8_t *avf_chunkise(struct input_stream *s, int id, int *size, uint64_t *ts)
 {
     AVPacket pkt;
     int res;
@@ -338,3 +341,9 @@ int chunk_read_avs1(void *s_h, struct chunk *c)
     return 0;
 }
 #endif
+
+struct chunkiser_iface in_avf = {
+  .open = avf_open,
+  .close = avf_close,
+  .chunkise = avf_chunkise,
+};

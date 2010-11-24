@@ -11,6 +11,7 @@
 #include "chunkiser.h"
 //#include "dbg.h"
 #include "payload.h"
+#include "dechunkiser_iface.h"
 
 struct output_stream {
   const char *output_format;
@@ -92,7 +93,7 @@ static AVFormatContext *format_init(struct output_stream *o, const uint8_t *data
   return of;
 }
 
-struct output_stream *out_stream_init(const char *config)
+static struct output_stream *avf_init(const char *config)
 {
   out.output_format = "nut";
   if (config) {
@@ -105,7 +106,7 @@ struct output_stream *out_stream_init(const char *config)
   return &out;
 }
 
-void chunk_write(struct output_stream *o, int id, const uint8_t *data, int size)
+static void avf_write(struct output_stream *o, int id, const uint8_t *data, int size)
 {
   const int header_size = VIDEO_PAYLOAD_HEADER_SIZE; 
   int frames, i;
@@ -161,3 +162,8 @@ void chunk_write(struct output_stream *o, int id, const uint8_t *data, int size)
     av_interleaved_write_frame(o->outctx, &pkt);
   }
 }
+
+struct dechunkiser_iface out_avf = {
+  .open = avf_init,
+  .write = avf_write,
+};
