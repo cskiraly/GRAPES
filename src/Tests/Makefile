@@ -17,6 +17,10 @@ TESTS = topology_test \
         tman_test \
         topology_test_th
 
+ifdef FFDIR
+TESTS += chunkiser_test
+endif
+
 CPPFLAGS = -I$(BASE)/include
 
 LDFLAGS += -L..
@@ -58,6 +62,13 @@ chunk_signaling_test: ../net_helper$(NH_INCARNATION).o
 
 tman_test: tman_test.o topology.o peer.o net_helpers.o
 tman_test: ../net_helper$(NH_INCARNATION).o
+
+chunkiser_test: chunkiser_test.o
+chunkiser_test: CFLAGS += -pthread
+chunkiser_test: LDFLAGS += -pthread -L$(FFDIR)/libavutil -L$(FFDIR)/libavcore -L$(FFDIR)/libavcodec -L$(FFDIR)/libavformat
+chunkiser_test: LDLIBS += -lm -lavformat -lavcodec -lavcore -lavutil
+chunkiser_test: LDLIBS += $(call ld-option, -lz)
+chunkiser_test: LDLIBS += $(call ld-option, -lbz2)
 
 clean::
 	rm -f $(TESTS)
