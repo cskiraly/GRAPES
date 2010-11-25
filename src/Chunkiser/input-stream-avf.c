@@ -165,6 +165,8 @@ static struct input_stream *avf_open(const char *fname, int *period, const char 
     }
     if (desc->s->streams[i]->codec->codec_id == CODEC_ID_MPEG4) {
       desc->bsf[i] = av_bitstream_filter_init("dump_extra");
+    } else if (desc->s->streams[i]->codec->codec_id == CODEC_ID_H264) {
+      desc->bsf[i] = av_bitstream_filter_init("h264_mp4toannexb");
     } else {
       desc->bsf[i] = NULL;
     }
