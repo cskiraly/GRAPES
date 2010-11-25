@@ -50,7 +50,9 @@ int main(int argc, char *argv[])
     } else if (size < 0) {
       done = 1;
     }
+    free(c);
   }
+  input_stream_close(input);
 
   return 0;
 }
