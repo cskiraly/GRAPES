@@ -179,8 +179,15 @@ static struct input_stream *avf_open(const char *fname, int *period, const char 
 
 static void avf_close(struct input_stream *s)
 {
-    av_close_input_file(s->s);
-    free(s);
+  int i;
+
+  for (i = 0; i < s->s->nb_streams; i++) {
+    if (s->bsf[i]) {
+      av_bitstream_filter_close(s->bsf[i]);
+    }
+  }
+  av_close_input_file(s->s);
+  free(s);
 }
 
 static uint8_t *avf_chunkise(struct input_stream *s, int id, int *size, uint64_t *ts)
