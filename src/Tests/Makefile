@@ -15,7 +15,10 @@ TESTS = topology_test \
         cb_test \
         config_test \
         tman_test \
-        topology_test_th
+        topology_test_th \
+	cloud_test
+
+DEPENDENCIES = libfilecloud.so
 
 CPPFLAGS = -I$(BASE)/include
 
@@ -59,5 +62,17 @@ chunk_signaling_test: ../net_helper$(NH_INCARNATION).o
 tman_test: tman_test.o topology.o peer.o net_helpers.o
 tman_test: ../net_helper$(NH_INCARNATION).o
 
+cloud_test: cloud_test.o net_helpers.o libfilecloud.so
+cloud_test: ../net_helper$(NH_INCARNATION).o
+cloud_test: LDFLAGS += -ldl
+
+
+libfilecloud.so: CFLAGS += -shared -pthread
+libfilecloud.so: cloud_helper_delegate_file.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+cloud_helper_delegate_file.o: CFLAGS += -fPIC
+
 clean::
 	rm -f $(TESTS)
+	rm -f $(DEPENDENCIES)
