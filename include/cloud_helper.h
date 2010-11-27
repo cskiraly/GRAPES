@@ -43,9 +43,11 @@ struct cloud_helper_context* get_cloud_helper_for(struct nodeID *local);
  * Use the wait4cloud to listen for the answer and revc_from_cloud to read the response.
  * @param[in] context The contex representing the desired cloud_helper instance.
  * @param[in] key Key to retrieve.
+ * @param[in] header_ptr A pointer to the header which will be added to the retrieved data. May be NULL
+ * @param[in] header_size The length of the header.
  * @return 0 if the request was successfully sent, 1 0therwise
  */
-int get_from_cloud(struct cloud_helper_context *context, char *key);
+int get_from_cloud(struct cloud_helper_context *context, char *key, uint8_t *header_ptr, int header_size);
 
 /**
  * @brief Put on the cloud the value for a specified key.

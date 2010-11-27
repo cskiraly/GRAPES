@@ -32,6 +32,9 @@ static int operation;
 static char *key;
 static char *value;
 
+static const uint8_t *HEADER = (const uint8_t *) "<header>";
+
+
 static void cmdline_parse(int argc, char *argv[])
 {
   int o;
@@ -112,7 +115,7 @@ int main(int argc, char *argv[])
     break;
   case GET:
     printf("Getting from cloud value for key \"%s\": ", key);
-    err = get_from_cloud(cloud, key);
+    err = get_from_cloud(cloud, key, HEADER, sizeof(HEADER));
     if (err) {
       printf("Error performing the operation");
       return 1;
@@ -134,7 +137,9 @@ int main(int argc, char *argv[])
       printf("No response from cloud\n");
       return 1;
     } else {
-      printf("No value for the specified key\n");
+      err = recv_from_cloud(cloud, buffer, sizeof(buffer)-1);
+      buffer[sizeof(buffer) - 1] = '\0';
+      printf("No value for the specified key. Received: %s\n", buffer);
       return 1;      
     }
   }

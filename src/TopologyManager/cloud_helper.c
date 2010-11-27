@@ -72,9 +72,9 @@ struct cloud_helper_context* get_cloud_helper_for(struct nodeID *local){
   return NULL;
 }
 
-int get_from_cloud(struct cloud_helper_context *context, char *key)
+int get_from_cloud(struct cloud_helper_context *context, char *key, uint8_t *header_ptr, int header_size)
 {
-  return context->ch->get_from_cloud(context->ch_context, key);
+  return context->ch->get_from_cloud(context->ch_context, key, header_ptr, header_size);
 }
 
 int put_on_cloud(struct cloud_helper_context *context, char *key, uint8_t *buffer_ptr, int buffer_size)

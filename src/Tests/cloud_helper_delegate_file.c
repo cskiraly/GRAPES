@@ -11,7 +11,7 @@
 
 struct delegate_iface {
   void* (*cloud_helper_init)(struct nodeID *local, const char *config);
-  int (*get_from_cloud)(void *context, char *key);
+  int (*get_from_cloud)(void *context, char *key, uint8_t *header_ptr, int header_size);
   int (*put_on_cloud)(void *context, char *key, uint8_t *buffer_ptr, int buffer_size);
   struct nodeID* (*get_cloud_node)(void *context);
   int (*wait4cloud)(void *context, struct timeval *tout);
@@ -38,6 +38,8 @@ struct gpThreadContext{
   char *key;
   uint8_t *value;
   int value_len;
+  uint8_t *header_ptr;
+  int header_size;
 };
 
 struct entry {
@@ -52,6 +54,8 @@ void* getValueForKey(void *context)
   struct entry e;
   struct gpThreadContext *ctx;
   FILE *fd;
+  uint8_t *buffer_ptr;
+  struct mem_offset *len;
   ctx = (struct gpThreadContext *) context;
 
   fd = fopen(ctx->cloud->path, "r");
@@ -62,17 +66,24 @@ void* getValueForKey(void *context)
   ctx->cloud->key_error = -1;
   sem_post(&ctx->cloud->sem);
 
+  ctx->cloud->out_cnt++;
+  ctx->cloud->out_buffer[ctx->cloud->out_cnt] = calloc(100, sizeof(uint8_t));
+  len = malloc(sizeof(struct mem_offset));
+  len->start = 0;
+  len->end = ctx->header_size;
+
+  buffer_ptr = ctx->cloud->out_buffer[ctx->cloud->out_cnt];
+  memcpy(buffer_ptr, ctx->header_ptr, ctx->header_size);
+
+  buffer_ptr += ctx->header_size;
+
   while (fread(&e, sizeof(e), 1, fd) != 0){
     if (strcmp(e.key, ctx->key) == 0){
-      struct mem_offset *len = malloc(sizeof(struct mem_offset));
+
       sem_wait(&ctx->cloud->sem);
-      ctx->cloud->out_cnt++;
-      ctx->cloud->out_buffer[ctx->cloud->out_cnt] = calloc(100, sizeof(uint8_t));
-      memcpy(ctx->cloud->out_buffer[ctx->cloud->out_cnt], e.value, e.value_len);
-      
-      len->start = 0;
-      len->end = e.value_len;
-      ctx->cloud->out_len[ctx->cloud->out_cnt] = *len;
+      memcpy(buffer_ptr, e.value, e.value_len);
+      len->end += e.value_len;      
+
       ctx->cloud->key_error = 0;
       sem_post(&ctx->cloud->sem);
       break;
@@ -80,6 +91,7 @@ void* getValueForKey(void *context)
   }
 
   sem_wait(&ctx->cloud->sem);
+  ctx->cloud->out_len[ctx->cloud->out_cnt] = *len;
   if (ctx->cloud->key_error == -1)
     ctx->cloud->key_error = 1;
   sem_post(&ctx->cloud->sem);
@@ -160,7 +172,7 @@ static void* file_cloud_helper_init(struct nodeID *local, const char *config)
   return ctx;
 }
 
-static int file_cloud_get_from_cloud(void *context, char *key)
+static int file_cloud_get_from_cloud(void *context, char *key, uint8_t *header_ptr, int header_size)
 {
   struct file_cloud_context *ctx;
   int err;
@@ -172,6 +184,8 @@ static int file_cloud_get_from_cloud(void *context, char *key)
   tc = malloc(sizeof(struct gpThreadContext));
   tc->cloud = ctx;
   tc->key = strdup(key);
+  tc->header_ptr = header_ptr;
+  tc->header_size = header_size;
 
   err = pthread_create(thread, NULL, getValueForKey, (void *)tc);
   if (err) return 1;
@@ -219,13 +233,15 @@ static int file_cloud_wait4cloud(void *context, struct timeval *tout)
 
   ctx = (struct file_cloud_context *)context;
   if (ctx->key_error == 1) return -1;
-  if (ctx->out_cnt >= 0) return 1;
+  if (ctx->out_cnt > 0) return 1;
+  if (ctx->out_cnt == 0 && ctx->key_error >= 0) return 1;
 
   while (timeout > 0){
     usleep(100);
     timeout -= 100;
-    if (ctx->out_cnt >= 0) return 1;
     if (ctx->key_error == 1) return -1;
+    if (ctx->out_cnt > 0) return 1;
+    if (ctx->out_cnt == 0 && ctx->key_error >= 0) return 1;
   }
   return 0;
 }

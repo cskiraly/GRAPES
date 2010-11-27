@@ -7,7 +7,7 @@
 
 struct delegate_iface {
   void* (*cloud_helper_init)(struct nodeID *local, const char *config);
-  int (*get_from_cloud)(void *context, char *key);
+  int (*get_from_cloud)(void *context, char *key, uint8_t *header_ptr, int header_size);
   int (*put_on_cloud)(void *context, char *key, uint8_t *buffer_ptr, int buffer_size);
   struct nodeID* (*get_cloud_node)(void *context);
   int (*wait4cloud)(void *context, struct timeval *tout);
@@ -51,9 +51,9 @@ static struct cloud_helper_impl_context* delegate_cloud_init(struct nodeID *loca
   return ctx;
 }
 
-static int delegate_cloud_get_from_cloud(struct cloud_helper_impl_context *context, char *key)
+static int delegate_cloud_get_from_cloud(struct cloud_helper_impl_context *context, char *key, uint8_t *header_ptr, int header_size)
 {
-  return context->delegate->get_from_cloud(context->delegate_context, key);
+  return context->delegate->get_from_cloud(context->delegate_context, key, header_ptr, header_size);
 }
 
 static int delegate_cloud_put_on_cloud(struct cloud_helper_impl_context *context, char *key, uint8_t *buffer_ptr, int buffer_size)
