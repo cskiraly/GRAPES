@@ -19,7 +19,7 @@ struct topo_context{
  struct peer_cache *myEntry;
 };
 
-static int topo_payload_fill(struct topo_context *context, uint8_t *payload, int size, struct peer_cache *c, struct nodeID *snot, int max_peers, int include_me)
+int topo_payload_fill(struct topo_context *context, uint8_t *payload, int size, struct peer_cache *c, struct nodeID *snot, int max_peers, int include_me)
 {
   int i;
   uint8_t *p = payload;
