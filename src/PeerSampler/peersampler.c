@@ -14,7 +14,7 @@ extern struct peersampler_iface dummy;
 
 struct psample_context{
   struct peersampler_iface *ps;
-  void *ps_context;
+  struct peersampler_context *ps_context;
 };
 
 struct psample_context* psample_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)

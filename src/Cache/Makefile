@@ -5,8 +5,8 @@ vpath %.c $(BASE)/src/$(notdir $(CURDIR))
 endif
 CFGDIR ?= ..
 
-OBJS = topman.o tman.o dumbTopman.o
+OBJS = ncast_proto.o cyclon_proto.o topo_proto.o topocache.o blist_cache.o blist_proto.o
 
-all: libtopman.a
+all: libnodecache.a
 
 include $(BASE)/src/utils.mak
