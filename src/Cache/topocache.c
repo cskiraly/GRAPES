@@ -243,7 +243,7 @@ static int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
   return -1;
 }
 
-struct nodeID *rand_peer(struct peer_cache *c, void **meta, int max)
+struct nodeID *rand_peer(const struct peer_cache *c, void **meta, int max)
 {
   int j;
 
@@ -263,7 +263,7 @@ struct nodeID *rand_peer(struct peer_cache *c, void **meta, int max)
   return c->entries[j].id;
 }
 
-struct nodeID *last_peer(struct peer_cache *c)
+struct nodeID *last_peer(const struct peer_cache *c)
 {
   if (c->current_size == 0) {
     return NULL;
@@ -337,7 +337,7 @@ int cache_header_dump(uint8_t *b, const struct peer_cache *c, int include_me)
   return 8;
 }
 
-int entry_dump(uint8_t *b, struct peer_cache *c, int i, size_t max_write_size)
+int entry_dump(uint8_t *b, const struct peer_cache *c, int i, size_t max_write_size)
 {
   int res;
   int size = 0;
@@ -400,7 +400,7 @@ struct peer_cache *cache_rank (const struct peer_cache *c, ranking_function rank
   return res;
 }
 
-struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int *size)
+struct peer_cache *cache_union(const struct peer_cache *c1, const struct peer_cache *c2, int *size)
 {
   int n, pos;
   struct peer_cache *new_cache;
@@ -473,7 +473,7 @@ int cache_resize (struct peer_cache *c, int size)
   return c->current_size;
 }
   
-struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source)
+struct peer_cache *merge_caches(const struct peer_cache *c1, const struct peer_cache *c2, int newsize, int *source)
 {
   int n1, n2;
   struct peer_cache *new_cache;
