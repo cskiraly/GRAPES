@@ -35,17 +35,17 @@ struct ncast_proto_context* ncast_proto_init(struct nodeID *s, const void *meta,
   return con;
 }
 
-int ncast_reply(struct ncast_proto_context *context, const struct peer_cache *c, struct peer_cache *local_cache)
+int ncast_reply(struct ncast_proto_context *context, const struct peer_cache *c, const struct peer_cache *local_cache)
 {
   return topo_reply(context->context, c, local_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY, 0, 1);
 }
 
-int ncast_query_peer(struct ncast_proto_context *context, struct peer_cache *local_cache, struct nodeID *dst)
+int ncast_query_peer(struct ncast_proto_context *context, const struct peer_cache *local_cache, struct nodeID *dst)
 {
   return topo_query_peer(context->context, local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY, 0);
 }
 
-int ncast_query(struct ncast_proto_context *context, struct peer_cache *local_cache)
+int ncast_query(struct ncast_proto_context *context, const struct peer_cache *local_cache)
 {
   struct nodeID *dst;
 
