@@ -19,7 +19,7 @@ struct ncast_proto_context {
   struct topo_context *context;
 };
 
-struct ncast_proto_context* ncast_proto_init(struct nodeID *s, void *meta, int meta_size)
+struct ncast_proto_context* ncast_proto_init(struct nodeID *s, const void *meta, int meta_size)
 {
   struct ncast_proto_context *con;
   con = malloc(sizeof(struct ncast_proto_context));
@@ -56,6 +56,6 @@ int ncast_query(struct ncast_proto_context *context, struct peer_cache *local_ca
   return topo_query_peer(context->context, local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY, 0);
 }
 
-int ncast_proto_metadata_update(struct ncast_proto_context *context, void *meta, int meta_size){
+int ncast_proto_metadata_update(struct ncast_proto_context *context, const void *meta, int meta_size){
   return topo_proto_metadata_update(context->context, meta, meta_size);
 }

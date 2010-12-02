@@ -71,7 +71,7 @@ const void *get_metadata(const struct peer_cache *c, int *size)
   return c->metadata;
 }
 
-int cache_metadata_update(struct peer_cache *c, struct nodeID *p, const void *meta, int meta_size)
+int cache_metadata_update(struct peer_cache *c, const struct nodeID *p, const void *meta, int meta_size)
 {
   int i;
 
@@ -135,7 +135,7 @@ int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, 
   return cache_add_ranked(c, neighbour, meta, meta_size, NULL, NULL);
 }
 
-int cache_del(struct peer_cache *c, struct nodeID *neighbour)
+int cache_del(struct peer_cache *c, const struct nodeID *neighbour)
 {
   int i;
   int found = 0;
