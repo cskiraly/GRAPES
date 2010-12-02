@@ -44,7 +44,8 @@ static uint64_t gettime(void)
   return tv.tv_usec + tv.tv_sec * 1000000ull;
 }
 
-static struct peersampler_context* ncast_context_init(void){
+static struct peersampler_context* ncast_context_init(void)
+{
   struct peersampler_context* con;
   con = (struct peersampler_context*) calloc(1,sizeof(struct peersampler_context));
 
