@@ -19,7 +19,7 @@ static struct nodeID *table[MAX_PEERS];
 //TODO: context support not implemented
 struct peersampler_context{};
 
-static struct peersampler_context* dummy_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+static struct peersampler_context* dummy_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
 {
   FILE *f;
   int i = 0;
@@ -43,13 +43,13 @@ fprintf(stderr, "Creating table[%d]\n", i);
   return NULL;
 }
 
-static int dummy_change_metadata(struct peersampler_context *context, void *metadata, int metadata_size)
+static int dummy_change_metadata(struct peersampler_context *context, const void *metadata, int metadata_size)
 {
   /* Metadata not supported: fail! */
   return -1;
 }
 
-static int dummy_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, void *metadata, int metadata_size)
+static int dummy_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, const void *metadata, int metadata_size)
 {
   int i;
 
@@ -92,7 +92,7 @@ static int dummy_shrink_neighbourhood(struct peersampler_context *context, int n
   return -1;
 }
 
-static int dummy_remove_neighbour(struct peersampler_context *context, struct nodeID *neighbour)
+static int dummy_remove_neighbour(struct peersampler_context *context, const struct nodeID *neighbour)
 {
   return -1;
 }

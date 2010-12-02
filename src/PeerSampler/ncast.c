@@ -73,7 +73,7 @@ static int time_to_send(struct peersampler_context *context)
 /*
  * Exported Functions!
  */
-static struct peersampler_context* ncast_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+static struct peersampler_context* ncast_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
 {
   struct tag *cfg_tags;
   struct peersampler_context *context;
@@ -109,7 +109,7 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, void *metadat
   return context;
 }
 
-static int ncast_change_metadata(struct peersampler_context *context, void *metadata, int metadata_size)
+static int ncast_change_metadata(struct peersampler_context *context, const void *metadata, int metadata_size)
 {
   if (ncast_proto_metadata_update(context->tc, metadata, metadata_size) <= 0) {
     return -1;
@@ -118,7 +118,7 @@ static int ncast_change_metadata(struct peersampler_context *context, void *meta
   return 1;
 }
 
-static int ncast_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, void *metadata, int metadata_size)
+static int ncast_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, const void *metadata, int metadata_size)
 {
   if (cache_add(context->local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
@@ -202,7 +202,7 @@ static int ncast_shrink_neighbourhood(struct peersampler_context *context, int n
   return context->cache_size;
 }
 
-static int ncast_remove_neighbour(struct peersampler_context *context, struct nodeID *neighbour)
+static int ncast_remove_neighbour(struct peersampler_context *context, const struct nodeID *neighbour)
 {
   return cache_del(context->local_cache, neighbour);
 }
