@@ -48,14 +48,15 @@ void input_stream_close(struct input_stream *c);
  * 
  * Read some data from the A/V stream, and generate a new chunk
  * 
- * @param c chunkiser's context.
- * @param id the stream id.
- * @param size pointer to an integer where the chunk size is returned.
- * @param ts pointer to a long long integer where the chunk release time
- *        is returned.
- * @return the chunk payload on success, NULL on error
+ * @param s chunkiser's context.
+ * @param c is a pointer to the chunk structure that has to be filled by the
+ *        chunkiser. In particular, the chunk payload, the playload size, and
+ *        the timestamp (chunk release time) will be filled.
+ * @return a negative value on error, 0 if no chunk has been generated,
+ *         (and chunkise() has to be invoked again), > 0 if a chunk has
+ *         been succesfully generated
  */
-uint8_t *chunkise(struct input_stream *c, int id, int *size, uint64_t *ts);
+int chunkise(struct input_stream *s, struct chunk *c);
 
 /**
  * @brief Initialise a dechunkiser.

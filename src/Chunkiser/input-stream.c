@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "chunk.h"
 #include "chunkiser.h"
 #include "chunkiser_iface.h"
 
@@ -23,7 +24,16 @@ void input_stream_close(struct input_stream *s)
   return in->close(s);
 }
 
-uint8_t *chunkise(struct input_stream *s, int id, int *size, uint64_t *ts)
+int chunkise(struct input_stream *s, struct chunk *c)
 {
-  return in->chunkise(s, id, size, ts);
+  c->data = in->chunkise(s, c->id, &c->size, &c->timestamp);
+  if (c->data == NULL) {
+    if (c->size < 0) {
+      return -1;
+    }
+
+    return 0;
+  }
+
+  return 1;
 }

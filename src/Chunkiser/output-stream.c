@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "chunk.h"
 #include "chunkiser.h"
 #include "dechunkiser_iface.h"
 

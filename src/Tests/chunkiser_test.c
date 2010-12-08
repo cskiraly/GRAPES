@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include "chunk.h"
 #include "chunkiser.h"
 
 int main(int argc, char *argv[])
@@ -39,18 +40,18 @@ int main(int argc, char *argv[])
 
   done = 0; id = 0;
   while(!done) {
-    int size;
-    uint64_t ts;
-    uint8_t *c;
+    int res;
+    struct chunk c;
 
-    c = chunkise(input, id, &size, &ts);
-    if (c) {
-      fprintf(stderr,"chunk %d: %d %llu\n", id++, size, ts);
-      chunk_write(output, id, c, size);
-    } else if (size < 0) {
+    c.id = id;
+    res = chunkise(input, &c);
+    if (res > 0) {
+      fprintf(stderr,"chunk %d: %d %llu\n", id++, c.size, c.timestamp);
+      chunk_write(output, c.id, c.data, c.size);
+    } else if (res < 0) {
       done = 1;
     }
-    free(c);
+    free(c.data);
   }
   input_stream_close(input);
 
