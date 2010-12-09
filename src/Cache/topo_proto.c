@@ -19,7 +19,7 @@ struct topo_context{
  struct peer_cache *myEntry;
 };
 
-static int topo_payload_fill(struct topo_context *context, uint8_t *payload, int size, struct peer_cache *c, struct nodeID *snot, int max_peers, int include_me)
+static int topo_payload_fill(struct topo_context *context, uint8_t *payload, int size, const struct peer_cache *c, const struct nodeID *snot, int max_peers, int include_me)
 {
   int i;
   uint8_t *p = payload;
@@ -46,7 +46,7 @@ static int topo_payload_fill(struct topo_context *context, uint8_t *payload, int
   return p - payload;
 }
 
-int topo_reply(struct topo_context *context, const struct peer_cache *c, struct peer_cache *local_cache, int protocol, int type, int max_peers, int include_me)
+int topo_reply(struct topo_context *context, const struct peer_cache *c, const struct peer_cache *local_cache, int protocol, int type, int max_peers, int include_me)
 {
   uint8_t pkt[MAX_MSG_SIZE];
   struct topo_header *h = (struct topo_header *)pkt;
@@ -70,7 +70,7 @@ int topo_reply(struct topo_context *context, const struct peer_cache *c, struct 
   return res;
 }
 
-int topo_query_peer(struct topo_context *context, struct peer_cache *local_cache, struct nodeID *dst, int protocol, int type, int max_peers)
+int topo_query_peer(struct topo_context *context, const struct peer_cache *local_cache, struct nodeID *dst, int protocol, int type, int max_peers)
 {
   uint8_t pkt[MAX_MSG_SIZE];
   struct topo_header *h = (struct topo_header *)pkt;
@@ -82,7 +82,7 @@ int topo_query_peer(struct topo_context *context, struct peer_cache *local_cache
   return len > 0  ? send_to_peer(nodeid(context->myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
 }
 
-int topo_proto_metadata_update(struct topo_context *context, void *meta, int meta_size)
+int topo_proto_metadata_update(struct topo_context *context, const void *meta, int meta_size)
 {
   if (cache_metadata_update(context->myEntry, nodeid(context->myEntry, 0), meta, meta_size) > 0) {
     return 1;
@@ -91,7 +91,7 @@ int topo_proto_metadata_update(struct topo_context *context, void *meta, int met
   return -1;
 }
 
-struct topo_context* topo_proto_init(struct nodeID *s, void *meta, int meta_size)
+struct topo_context* topo_proto_init(struct nodeID *s, const void *meta, int meta_size)
 {
   struct topo_context* con;
 

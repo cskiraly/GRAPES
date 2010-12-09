@@ -17,7 +17,7 @@ struct psample_context{
   struct peersampler_context *ps_context;
 };
 
-struct psample_context* psample_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+struct psample_context* psample_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
 {
   struct psample_context *tc;
   struct tag *cfg_tags;
@@ -48,12 +48,12 @@ struct psample_context* psample_init(struct nodeID *myID, void *metadata, int me
   return tc;
 }
 
-int psample_change_metadata(struct psample_context *tc, void *metadata, int metadata_size)
+int psample_change_metadata(struct psample_context *tc, const void *metadata, int metadata_size)
 {
   return tc->ps->change_metadata(tc->ps_context, metadata, metadata_size);
 }
 
-int psample_add_peer(struct psample_context *tc, struct nodeID *neighbour, void *metadata, int metadata_size)
+int psample_add_peer(struct psample_context *tc, struct nodeID *neighbour, const void *metadata, int metadata_size)
 {
   return tc->ps->add_neighbour(tc->ps_context, neighbour, metadata, metadata_size);
 }
@@ -83,7 +83,7 @@ int psample_shrink_cache(struct psample_context *tc, int n)
   return tc->ps->shrink_neighbourhood(tc->ps_context, n);
 }
 
-int psample_remove_peer(struct psample_context *tc, struct nodeID *neighbour)
+int psample_remove_peer(struct psample_context *tc, const struct nodeID *neighbour)
 {
   return tc->ps->remove_neighbour(tc->ps_context, neighbour);
 }

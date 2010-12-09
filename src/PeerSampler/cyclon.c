@@ -47,7 +47,8 @@ static uint64_t gettime(void)
   return tv.tv_usec + tv.tv_sec * 1000000ull;
 }
 
-static struct peersampler_context* cyclon_context_init(void){
+static struct peersampler_context* cyclon_context_init(void)
+{
   struct peersampler_context* con;
   con = (struct peersampler_context*) calloc(1,sizeof(struct peersampler_context));
 
@@ -87,7 +88,7 @@ static void cache_add_cache(struct peer_cache *dst, const struct peer_cache *add
 /*
  * Public Functions!
  */
-static struct peersampler_context* cyclon_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+static struct peersampler_context* cyclon_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
 {
   struct tag *cfg_tags;
   struct peersampler_context *con;
@@ -122,7 +123,7 @@ static struct peersampler_context* cyclon_init(struct nodeID *myID, void *metada
   return con;
 }
 
-static int cyclon_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, void *metadata, int metadata_size)
+static int cyclon_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, const void *metadata, int metadata_size)
 {
   if (!context->flying_cache) {
     context->flying_cache = rand_cache(context->local_cache, context->sent_entries - 1);
@@ -242,12 +243,12 @@ static int cyclon_shrink_neighbourhood(struct peersampler_context *context, int 
   return context->cache_size;
 }
 
-static int cyclon_remove_neighbour(struct peersampler_context *context, struct nodeID *neighbour)
+static int cyclon_remove_neighbour(struct peersampler_context *context, const struct nodeID *neighbour)
 {
   return cache_del(context->local_cache, neighbour);
 }
 
-static int cyclon_change_metadata(struct peersampler_context *context, void *metadata, int metadata_size)
+static int cyclon_change_metadata(struct peersampler_context *context, const void *metadata, int metadata_size)
 {
   return cyclon_proto_change_metadata(context->pc, metadata, metadata_size);
 }
