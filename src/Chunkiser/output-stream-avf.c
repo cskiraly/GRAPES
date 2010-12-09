@@ -105,11 +105,11 @@ static struct output_stream *avf_init(const char *config)
   return &out;
 }
 
-static void avf_write(struct output_stream *o, int id, const uint8_t *data, int size)
+static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
 {
   const int header_size = VIDEO_PAYLOAD_HEADER_SIZE; 
   int frames, i;
-  const uint8_t *p;
+  uint8_t *p;
 
   if (data[0] > 127) {
     fprintf(stderr, "Error! Non video chunk: %x!!!\n", data[0]);
@@ -155,7 +155,7 @@ static void avf_write(struct output_stream *o, int id, const uint8_t *data, int 
     dts += (dts < o->prev_dts - ((1LL << 31) - 1)) ? ((o->prev_dts >> 32) + 1) << 32 : (o->prev_dts >> 32) << 32;
     o->prev_dts = dts;
     pkt.dts = av_rescale_q(dts, o->outctx->streams[0]->codec->time_base, o->outctx->streams[0]->time_base);
-    pkt.data = (uint8_t *)p;
+    pkt.data = p;
     p += frame_size;
     pkt.size = frame_size;
     av_interleaved_write_frame(o->outctx, &pkt);

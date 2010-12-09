@@ -79,5 +79,5 @@ struct output_stream *out_stream_init(const char *config);
  * @param data pointer to the chunk's payload.
  * @param size chunk size.
  */
-void chunk_write(struct output_stream *out, int id, const uint8_t *data, int size);
+void chunk_write(struct output_stream *out, const struct chunk *c);
 #endif	/* CHUNKISER_H */

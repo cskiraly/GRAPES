@@ -19,7 +19,7 @@ struct output_stream *out_stream_init(const char *config)
   return out->open(config);
 }
 
-void chunk_write(struct output_stream *o, int id, const uint8_t *data, int size)
+void chunk_write(struct output_stream *o, const struct chunk *c)
 {
-  out->write(o, id, data, size);
+  out->write(o, c->id, c->data, c->size);
 }

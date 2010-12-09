@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     res = chunkise(input, &c);
     if (res > 0) {
       fprintf(stderr,"chunk %d: %d %llu\n", id++, c.size, c.timestamp);
-      chunk_write(output, c.id, c.data, c.size);
+      chunk_write(output, &c);
     } else if (res < 0) {
       done = 1;
     }
