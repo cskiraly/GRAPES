@@ -15,7 +15,7 @@
 #define STATIC_BUFF_SIZE 1000 * 1024
 struct input_stream {
   AVFormatContext *s;
-  bool loop;	//loop on input file infinitely
+  int loop;	//loop on input file infinitely
   int audio_stream;
   int video_stream;
   int64_t last_ts;
@@ -123,6 +123,7 @@ static struct input_stream *avf_open(const char *fname, int *period, const char 
 {
   struct input_stream *desc;
   int i, res;
+  struct tag *cfg_tags;
 
   avcodec_register_all();
   av_register_all();
@@ -149,7 +150,11 @@ static struct input_stream *avf_open(const char *fname, int *period, const char 
   desc->audio_stream = -1;
   desc->last_ts = 0;
   desc->base_ts = 0;
-  desc->loop = 0;	// FIXME: Check config!
+  desc->loop = 0;
+  cfg_tags = config_parse(config);
+  if (cfg_tags) {
+    config_value_int(cfg_tags, "loop", &desc->loop);
+  }
   for (i = 0; i < desc->s->nb_streams; i++) {
     if (desc->video_stream == -1 && desc->s->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO) {
       desc->video_stream = i;
