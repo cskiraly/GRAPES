@@ -3,7 +3,7 @@ BASE = ..
 endif
 CFGDIR ?= .
 
-SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler Cache PeerSampler
+SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler Cache PeerSampler Chunkiser
 COMMON_OBJS = config.o
 
 .PHONY: subdirs $(SUBDIRS)
@@ -13,7 +13,7 @@ OBJ_LSTS = $(addsuffix /objs.lst, $(SUBDIRS))
 all: libgrapes.a
 
 $(OBJ_LSTS):
-	$(MAKE) -C $(dir $@) objs.lst
+	$(MAKE) -C $(dir $@) objs.lst FFDIR=$(FFDIR)
 
 libgrapes.a: $(OBJ_LSTS) $(COMMON_OBJS)
 	$(AR) rcs libgrapes.a `cat $(OBJ_LSTS)` $(COMMON_OBJS)
