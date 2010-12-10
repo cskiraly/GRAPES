@@ -6,6 +6,7 @@
 #include "chunkiser_iface.h"
 
 extern struct chunkiser_iface in_avf;
+extern struct chunkiser_iface in_dummy;
 
 static struct chunkiser_iface *in;
 
@@ -14,8 +15,9 @@ struct input_stream *input_stream_open(const char *fname, int *period, const cha
 #ifdef AVF
   in = &in_avf;
 #else
-  return NULL;
+  in = &in_dummy;
 #endif
+
   return in->open(fname, period, config);
 }
 

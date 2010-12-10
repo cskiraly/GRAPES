@@ -6,6 +6,7 @@
 #include "dechunkiser_iface.h"
 
 extern struct dechunkiser_iface out_avf;
+extern struct dechunkiser_iface out_raw;
 static struct dechunkiser_iface *out;
 
 struct output_stream *out_stream_init(const char *config)
@@ -13,7 +14,7 @@ struct output_stream *out_stream_init(const char *config)
 #ifdef AVF
   out = &out_avf;
 #else
-  return NULL;
+  out = &out_raw;
 #endif
 
   return out->open(config);

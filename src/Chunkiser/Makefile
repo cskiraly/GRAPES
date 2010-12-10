@@ -5,7 +5,7 @@ vpath %.c $(BASE)/src/$(notdir $(CURDIR))
 endif
 CFGDIR ?= ..
 
-OBJS = input-stream.o output-stream.o
+OBJS = input-stream.o input-stream-dummy.o output-stream-raw.o output-stream.o
 
 ifdef FFDIR
 OBJS += input-stream-avf.o output-stream-avf.o
