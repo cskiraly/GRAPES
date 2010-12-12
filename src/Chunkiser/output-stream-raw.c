@@ -45,7 +45,7 @@ static struct output_stream *raw_open(const char *fname, const char *config)
 
     pt = config_value_str(cfg_tags, "payload");
     if (pt) {
-      if (strcmp(pt, "avf")) {
+      if (!strcmp(pt, "avf")) {
         res->payload_type = 1;
       }
     }
@@ -65,7 +65,7 @@ static void raw_write(struct output_stream *o, int id, uint8_t *data, int size)
     uint8_t codec;
 
     payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
-    if (codec != 1) {
+    if (codec > 127) {
       fprintf(stderr, "Error! Non video chunk: %x!!!\n", codec);
       return;
     }
