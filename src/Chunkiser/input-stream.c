@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "chunk.h"
+#include "config.h"
 #include "chunkiser.h"
 #include "chunkiser_iface.h"
 
@@ -12,11 +14,23 @@ static struct chunkiser_iface *in;
 
 struct input_stream *input_stream_open(const char *fname, int *period, const char *config)
 {
+  struct tag *cfg_tags;
+
 #ifdef AVF
   in = &in_avf;
 #else
   in = &in_dummy;
 #endif
+  cfg_tags = config_parse(config);
+
+  if (cfg_tags) {
+    const char *type;
+
+    type = config_value_str(cfg_tags, "chunkiser");
+    if (type && !strcmp(type, "dummy")) {
+      in = &in_dummy;
+    }
+  }
 
   return in->open(fname, period, config);
 }
