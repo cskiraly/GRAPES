@@ -14,6 +14,7 @@ struct delegate_iface {
   int (*get_from_cloud)(void *context, char *key, uint8_t *header_ptr, int header_size);
   int (*put_on_cloud)(void *context, char *key, uint8_t *buffer_ptr, int buffer_size);
   struct nodeID* (*get_cloud_node)(void *context);
+  int (*is_cloud_node)(void *context, struct nodeID* node);
   int (*wait4cloud)(void *context, struct timeval *tout);
   int (*recv_from_cloud)(void *context, uint8_t *buffer_ptr, int buffer_size);
 };
@@ -30,6 +31,7 @@ struct file_cloud_context {
   struct mem_offset out_len[10];
   int out_cnt;
   int key_error;
+  struct nodeID* cloud_node_base;
 };
 
 
@@ -169,6 +171,7 @@ static void* file_cloud_helper_init(struct nodeID *local, const char *config)
   sem_init(&ctx->sem, 0, 1);
   ctx->path = path;
   ctx->out_cnt = -1;
+  ctx->cloud_node_base = create_node("0.0.0.0", 0);
   return ctx;
 }
 
@@ -223,7 +226,22 @@ static int file_cloud_put_on_cloud(void *context, char *key, uint8_t *buffer_ptr
 
 struct nodeID* file_cloud_get_cloud_node(void *context)
 {
-  return NULL;
+  struct file_cloud_context *ctx;
+  ctx = (struct file_cloud_context *)context;
+  return ctx->cloud_node_base;
+}
+
+int file_cloud_is_cloud_node(void *context, struct nodeID* node)
+{
+  struct file_cloud_context *ctx;
+  struct nodeID *candidate_node;
+  int result = -1;
+  ctx = (struct file_cloud_context *)context;
+  candidate_node = create_node(node_ip(node), 0);
+
+  result = nodeid_equal(ctx->cloud_node_base, candidate_node);
+  nodeid_free(candidate_node);
+  return result;
 }
 
 static int file_cloud_wait4cloud(void *context, struct timeval *tout)
@@ -283,6 +301,7 @@ struct delegate_iface delegate_impl = {
   .get_from_cloud = &file_cloud_get_from_cloud,
   .put_on_cloud = &file_cloud_put_on_cloud,
   .get_cloud_node = &file_cloud_get_cloud_node,
+  .is_cloud_node = &file_cloud_is_cloud_node,
   .wait4cloud = file_cloud_wait4cloud,
   .recv_from_cloud = file_cloud_recv_from_cloud
 };

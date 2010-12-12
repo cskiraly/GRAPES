@@ -87,6 +87,11 @@ struct nodeID* get_cloud_node(struct cloud_helper_context *context)
   return context->ch->get_cloud_node(context->ch_context);
 }
 
+int is_cloud_node(struct cloud_helper_context *context, struct nodeID* node)
+{
+  return context->ch->is_cloud_node(context->ch_context, node);
+}
+
 int wait4cloud(struct cloud_helper_context *context, struct timeval *tout)
 {
   return context->ch->wait4cloud(context->ch_context, tout);

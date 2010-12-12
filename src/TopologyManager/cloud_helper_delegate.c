@@ -10,6 +10,7 @@ struct delegate_iface {
   int (*get_from_cloud)(void *context, char *key, uint8_t *header_ptr, int header_size);
   int (*put_on_cloud)(void *context, char *key, uint8_t *buffer_ptr, int buffer_size);
   struct nodeID* (*get_cloud_node)(void *context);
+  int (*is_cloud_node)(void *context, struct nodeID* node);
   int (*wait4cloud)(void *context, struct timeval *tout);
   int (*recv_from_cloud)(void *context, uint8_t *buffer_ptr, int buffer_size);
 };
@@ -66,6 +67,11 @@ static struct nodeID* delegate_cloud_get_cloud_node(struct cloud_helper_impl_con
   return context->delegate->get_cloud_node(context->delegate_context);
 }
 
+int delegate_is_cloud_node(struct cloud_helper_impl_context *context, struct nodeID* node)
+{
+  return context->delegate->is_cloud_node(context->delegate_context, node);
+}
+
 static int delegate_cloud_wait4cloud(struct cloud_helper_impl_context *context, struct timeval *tout)
 {
   return context->delegate->wait4cloud(context->delegate_context, tout);
@@ -81,6 +87,7 @@ struct cloud_helper_iface delegate = {
   .get_from_cloud = delegate_cloud_get_from_cloud,
   .put_on_cloud = delegate_cloud_put_on_cloud,
   .get_cloud_node = delegate_cloud_get_cloud_node,
+  .is_cloud_node = delegate_is_cloud_node,
   .wait4cloud = delegate_cloud_wait4cloud,
   .recv_from_cloud = delegate_cloud_recv_from_cloud,
 };

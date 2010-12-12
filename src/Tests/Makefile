@@ -67,6 +67,8 @@ cloud_test: ../net_helper$(NH_INCARNATION).o
 cloud_test: LDFLAGS += -ldl
 
 
+libfilecloud.so: net_helpers.o
+libfilecloud.so: ../net_helper$(NH_INCARNATION).o
 libfilecloud.so: CFLAGS += -shared -pthread
 libfilecloud.so: cloud_helper_delegate_file.o
 	$(CC) $(CFLAGS) -o $@ $^

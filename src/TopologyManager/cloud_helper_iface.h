@@ -10,6 +10,7 @@ struct cloud_helper_iface {
   int (*get_from_cloud)(struct cloud_helper_impl_context *context, char *key, uint8_t *header_ptr, int header_size);
   int (*put_on_cloud)(struct cloud_helper_impl_context *context, char *key, uint8_t *buffer_ptr, int buffer_size);
   struct nodeID* (*get_cloud_node)(struct cloud_helper_impl_context *context);
+  int (*is_cloud_node)(struct cloud_helper_impl_context *context, struct nodeID* node);
   int (*wait4cloud)(struct cloud_helper_impl_context *context, struct timeval *tout);
   int (*recv_from_cloud)(struct cloud_helper_impl_context *context, uint8_t *buffer_ptr, int buffer_size);
 };

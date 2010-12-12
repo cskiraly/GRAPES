@@ -5,9 +5,13 @@
  *
  *  This is a small test program for the cloud interface
  *  To try the simple test: run it with
- *    ./cloud_test -c "provider=<cloud_provider>,<provider_opts>" [-g key | -p key=value]
+ *    ./cloud_test -c "provider=<cloud_provider>,<provider_opts>" [-g key | -p key=value | -n | -e ip:port]
  *
- *    the "-g" and "-p" parameters select the GET or PUT operation
+ *    -g  GET key from cloud
+ *    -p  PUT key=value on cloud
+ *    -n  print the cloud node
+ *    -e  check if ip:port references the cloud
+ *    -c  set the configuration of the cloud provider
  *
  *    For example, run
  *      ./cloud_test -c "provider=delegate,delegate_lib=libfilecloud.so" -p hello=world
@@ -26,6 +30,8 @@
 
 #define GET 0
 #define PUT 1
+#define GET_CLOUD_NODE 2
+#define EQ_CLOUD_NODE 3
 
 static const char *config;
 static int operation;
@@ -40,7 +46,7 @@ static void cmdline_parse(int argc, char *argv[])
   int o;
   char *temp;
       
-  while ((o = getopt(argc, argv, "c:g:p:")) != -1) {
+  while ((o = getopt(argc, argv, "c:g:p:ne:")) != -1) {
     switch(o) {
     case 'c':
       config = strdup(optarg);
@@ -61,7 +67,24 @@ static void cmdline_parse(int argc, char *argv[])
       case 'g':
         key =  strdup(optarg);
         break;
-      default:
+    case 'n':
+      operation = GET_CLOUD_NODE;
+      break;
+    case 'e':
+      operation = EQ_CLOUD_NODE;
+      temp = strdup(optarg);
+      
+      key = strsep(&optarg, ":");
+      value = optarg;
+
+
+      if (!value || !key){
+	printf("Expected ip:port for option -e");
+	free(temp);
+	exit(-1);
+      }  
+      break;
+    default:
         fprintf(stderr, "Error: unknown option %c\n", o);
 
         exit(-1);
@@ -96,6 +119,7 @@ int main(int argc, char *argv[])
   struct cloud_helper_context *cloud;
   char buffer[100];
   int err;
+  struct nodeID *t;
   struct timeval tout = {10, 0};
 
   cmdline_parse(argc, argv);
@@ -142,6 +166,15 @@ int main(int argc, char *argv[])
       printf("No value for the specified key. Received: %s\n", buffer);
       return 1;      
     }
+    break;
+  case GET_CLOUD_NODE:
+    printf("Cloud node: %s\n", node_addr(get_cloud_node(cloud)));
+    break;
+  case EQ_CLOUD_NODE:
+    t = create_node(key, atoi(value));
+    printf("Node %s references cloud? %d\n", node_addr(get_cloud_node(cloud)),
+	   is_cloud_node(cloud, t));
+    break;
   }
 
 

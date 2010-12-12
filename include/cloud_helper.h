@@ -69,6 +69,15 @@ int put_on_cloud(struct cloud_helper_context *context, char *key, uint8_t *buffe
 struct nodeID* get_cloud_node(struct cloud_helper_context *context);
 
 /**
+ * @brief Check if the specified node references the cloud
+ * This function transparently handles the comparation of cloud nodes.
+ * @param[in] context The contex representing the desired cloud_helper instance.
+ * @param[in] node The supposed cloud node
+ * @return 1 if cloud node, 0 otherwise
+ */
+int is_cloud_node(struct cloud_helper_context *context, struct nodeID* node);
+
+/**
  * @brief Check for cloud responses.
  * Check if the some cloud GET operation has concluded. It sets a timeout to return at most after a given time.
  * @param[in] context The contex representing the desired cloud_helper instance.
