@@ -9,7 +9,7 @@ extern struct dechunkiser_iface out_avf;
 extern struct dechunkiser_iface out_raw;
 static struct dechunkiser_iface *out;
 
-struct output_stream *out_stream_init(const char *config)
+struct output_stream *out_stream_init(const char *fname, const char *config)
 {
 #ifdef AVF
   out = &out_avf;
@@ -17,7 +17,7 @@ struct output_stream *out_stream_init(const char *config)
   out = &out_raw;
 #endif
 
-  return out->open(config);
+  return out->open(fname, config);
 }
 
 void chunk_write(struct output_stream *o, const struct chunk *c)

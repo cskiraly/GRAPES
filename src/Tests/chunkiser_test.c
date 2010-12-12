@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
     return -1;
   }
-  output = out_stream_init(argv[2]);
+  output = out_stream_init(argv[2], NULL);
   if (output == NULL) {
     fprintf(stderr, "Cannot open output %s\n", argv[2]);
 

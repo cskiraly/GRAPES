@@ -18,7 +18,7 @@ struct output_stream {
   int fd;
 };
 
-static struct output_stream *raw_open(const char *config)
+static struct output_stream *raw_open(const char *fname, const char *config)
 {
   struct output_stream *res;
 
@@ -27,8 +27,8 @@ static struct output_stream *raw_open(const char *config)
     return NULL;
   }
   res->fd = 1;
-  if (config) {
-    res->fd = open(config, O_WRONLY | O_CREAT, S_IROTH | S_IWUSR | S_IRUSR);
+  if (fname) {
+    res->fd = open(fname, O_WRONLY | O_CREAT, S_IROTH | S_IWUSR | S_IRUSR);
     if (res->fd < 0) {
       res->fd = 1;
     }

@@ -92,11 +92,11 @@ static AVFormatContext *format_init(struct output_stream *o, const uint8_t *data
   return of;
 }
 
-static struct output_stream *avf_init(const char *config)
+static struct output_stream *avf_init(const char *fname, const char *config)
 {
   out.output_format = "nut";
-  if (config) {
-    out.output_file = strdup(config);
+  if (fname) {
+    out.output_file = strdup(fname);
   } else {
     out.output_file = "/dev/stdout";
   }
