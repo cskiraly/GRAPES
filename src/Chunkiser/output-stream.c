@@ -30,6 +30,7 @@ struct output_stream *out_stream_init(const char *fname, const char *config)
       out = &out_raw;
     }
   }
+  free(cfg_tags);
 
   return out->open(fname, config);
 }

@@ -31,6 +31,7 @@ struct input_stream *input_stream_open(const char *fname, int *period, const cha
       in = &in_dummy;
     }
   }
+  free(cfg_tags);
 
   return in->open(fname, period, config);
 }

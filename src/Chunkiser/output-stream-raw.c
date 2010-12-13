@@ -50,6 +50,7 @@ static struct output_stream *raw_open(const char *fname, const char *config)
       }
     }
   }
+  free(cfg_tags);
 
   return res;
 }

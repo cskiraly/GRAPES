@@ -14,8 +14,8 @@
 #include "dechunkiser_iface.h"
 
 struct output_stream {
-  const char *output_format;
-  const char *output_file;
+  char *output_format;
+  char *output_file;
   int64_t prev_pts, prev_dts;
   AVFormatContext *outctx;
 };
@@ -102,11 +102,11 @@ static struct output_stream *avf_init(const char *fname, const char *config)
   }
 
   memset(out, 0, sizeof(struct output_stream));
-  out->output_format = "nut";
+  out->output_format = strdup("nut");
   if (fname) {
     out->output_file = strdup(fname);
   } else {
-    out->output_file = "/dev/stdout";
+    out->output_file = strdup("/dev/stdout");
   }
   cfg_tags = config_parse(config);
   if (cfg_tags) {
@@ -117,6 +117,7 @@ static struct output_stream *avf_init(const char *fname, const char *config)
       out->output_format = strdup(format);
     }
   }
+  free(cfg_tags);
 
   return out;
 }
@@ -181,6 +182,16 @@ static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
 static void avf_close(struct output_stream *s)
 {
   av_write_trailer(s->outctx);
+  url_fclose(s->outctx->pb);
+
+  av_metadata_free(&s->outctx->streams[0]->metadata);
+  av_free(s->outctx->streams[0]->codec);
+  av_free(s->outctx->streams[0]->info);
+  av_free(s->outctx->streams[0]);
+  av_metadata_free(&s->outctx->metadata);
+  free(s->outctx);
+  free(s->output_format);
+  free(s->output_file);
   free(s);
 }
 
