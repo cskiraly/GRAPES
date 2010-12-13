@@ -10,6 +10,7 @@
 
 //#include "dbg.h"
 #include "payload.h"
+#include "config.h"
 #include "dechunkiser_iface.h"
 
 struct output_stream {
@@ -93,6 +94,7 @@ static AVFormatContext *format_init(struct output_stream *o, const uint8_t *data
 static struct output_stream *avf_init(const char *fname, const char *config)
 {
   struct output_stream *out;
+  struct tag *cfg_tags;
 
   out = malloc(sizeof(struct output_stream));
   if (out == NULL) {
@@ -105,6 +107,15 @@ static struct output_stream *avf_init(const char *fname, const char *config)
     out->output_file = strdup(fname);
   } else {
     out->output_file = "/dev/stdout";
+  }
+  cfg_tags = config_parse(config);
+  if (cfg_tags) {
+    const char *format;
+
+    format = config_value_str(cfg_tags, "format");
+    if (format) {
+      out->output_format = strdup(format);
+    }
   }
 
   return out;
