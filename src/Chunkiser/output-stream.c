@@ -34,6 +34,11 @@ struct output_stream *out_stream_init(const char *fname, const char *config)
   return out->open(fname, config);
 }
 
+void out_stream_close(struct output_stream *s)
+{
+  return out->close(s);
+}
+
 void chunk_write(struct output_stream *o, const struct chunk *c)
 {
   out->write(o, c->id, c->data, c->size);

@@ -178,7 +178,14 @@ static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
   }
 }
 
+static void avf_close(struct output_stream *s)
+{
+  av_write_trailer(s->outctx);
+  free(s);
+}
+
 struct dechunkiser_iface out_avf = {
   .open = avf_init,
   .write = avf_write,
+  .close = avf_close,
 };

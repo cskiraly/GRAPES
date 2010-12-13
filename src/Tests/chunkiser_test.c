@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
     free(c.data);
   }
   input_stream_close(input);
+  out_stream_close(output);
 
   return 0;
 }

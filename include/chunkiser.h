@@ -81,4 +81,15 @@ struct output_stream *out_stream_init(const char *fname, const char *config);
  * @param size chunk size.
  */
 void chunk_write(struct output_stream *out, const struct chunk *c);
+
+/**
+ * @brief Cleanup a dechunkiser.
+ * 
+ * Close an A/V stream, and cleanup all the data structures related to the
+ * dechunkiser.
+ * 
+ * @param c dechunkiser's context.
+ */
+void out_stream_close(struct output_stream *c);
+
 #endif	/* CHUNKISER_H */

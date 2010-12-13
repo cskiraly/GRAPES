@@ -86,7 +86,14 @@ static void raw_write(struct output_stream *o, int id, uint8_t *data, int size)
   write(o->fd, data + offset, size - offset);
 }
 
+static void raw_close(struct output_stream *s)
+{
+  close(s->fd);
+  free(s);
+}
+
 struct dechunkiser_iface out_raw = {
   .open = raw_open,
   .write = raw_write,
+  .close = raw_close,
 };
