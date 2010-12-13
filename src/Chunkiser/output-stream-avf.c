@@ -19,8 +19,6 @@ struct output_stream {
   AVFormatContext *outctx;
 };
 
-static struct output_stream out;
-
 static enum CodecID libav_codec_id(uint8_t mytype)
 {
   switch (mytype) {
@@ -94,15 +92,22 @@ static AVFormatContext *format_init(struct output_stream *o, const uint8_t *data
 
 static struct output_stream *avf_init(const char *fname, const char *config)
 {
-  out.output_format = "nut";
-  if (fname) {
-    out.output_file = strdup(fname);
-  } else {
-    out.output_file = "/dev/stdout";
-  }
-  out.outctx = NULL;
+  struct output_stream *out;
 
-  return &out;
+  out = malloc(sizeof(struct output_stream));
+  if (out == NULL) {
+    return NULL;
+  }
+
+  memset(out, 0, sizeof(struct output_stream));
+  out->output_format = "nut";
+  if (fname) {
+    out->output_file = strdup(fname);
+  } else {
+    out->output_file = "/dev/stdout";
+  }
+
+  return out;
 }
 
 static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
