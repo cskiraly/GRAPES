@@ -10,16 +10,15 @@
 
 //#include "dbg.h"
 #include "payload.h"
+#include "config.h"
 #include "dechunkiser_iface.h"
 
 struct output_stream {
-  const char *output_format;
-  const char *output_file;
+  char *output_format;
+  char *output_file;
   int64_t prev_pts, prev_dts;
   AVFormatContext *outctx;
 };
-
-static struct output_stream out;
 
 static enum CodecID libav_codec_id(uint8_t mytype)
 {
@@ -92,17 +91,35 @@ static AVFormatContext *format_init(struct output_stream *o, const uint8_t *data
   return of;
 }
 
-static struct output_stream *avf_init(const char *config)
+static struct output_stream *avf_init(const char *fname, const char *config)
 {
-  out.output_format = "nut";
-  if (config) {
-    out.output_file = strdup(config);
-  } else {
-    out.output_file = "/dev/stdout";
-  }
-  out.outctx = NULL;
+  struct output_stream *out;
+  struct tag *cfg_tags;
 
-  return &out;
+  out = malloc(sizeof(struct output_stream));
+  if (out == NULL) {
+    return NULL;
+  }
+
+  memset(out, 0, sizeof(struct output_stream));
+  out->output_format = strdup("nut");
+  if (fname) {
+    out->output_file = strdup(fname);
+  } else {
+    out->output_file = strdup("/dev/stdout");
+  }
+  cfg_tags = config_parse(config);
+  if (cfg_tags) {
+    const char *format;
+
+    format = config_value_str(cfg_tags, "format");
+    if (format) {
+      out->output_format = strdup(format);
+    }
+  }
+  free(cfg_tags);
+
+  return out;
 }
 
 static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
@@ -162,7 +179,24 @@ static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
   }
 }
 
+static void avf_close(struct output_stream *s)
+{
+  av_write_trailer(s->outctx);
+  url_fclose(s->outctx->pb);
+
+  av_metadata_free(&s->outctx->streams[0]->metadata);
+  av_free(s->outctx->streams[0]->codec);
+  av_free(s->outctx->streams[0]->info);
+  av_free(s->outctx->streams[0]);
+  av_metadata_free(&s->outctx->metadata);
+  free(s->outctx);
+  free(s->output_format);
+  free(s->output_file);
+  free(s);
+}
+
 struct dechunkiser_iface out_avf = {
   .open = avf_init,
   .write = avf_write,
+  .close = avf_close,
 };

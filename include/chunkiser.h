@@ -64,10 +64,11 @@ int chunkise(struct input_stream *s, struct chunk *c);
  * Open an A/V stream for output , and prepare it for writing chunks,
  * returning the dechunkiser's context.
  * 
+ * @param fname output file name (if NULL, output goes to stdout).
  * @param config configuration string.
  * @return the pointer to the dechunkiser context on success, NULL on error
  */
-struct output_stream *out_stream_init(const char *config);
+struct output_stream *out_stream_init(const char *fname, const char *config);
 
 /**
  * @brief Write a chunk.
@@ -80,4 +81,15 @@ struct output_stream *out_stream_init(const char *config);
  * @param size chunk size.
  */
 void chunk_write(struct output_stream *out, const struct chunk *c);
+
+/**
+ * @brief Cleanup a dechunkiser.
+ * 
+ * Close an A/V stream, and cleanup all the data structures related to the
+ * dechunkiser.
+ * 
+ * @param c dechunkiser's context.
+ */
+void out_stream_close(struct output_stream *c);
+
 #endif	/* CHUNKISER_H */
