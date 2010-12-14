@@ -13,7 +13,7 @@
 #include "config.h"
 #include "dechunkiser_iface.h"
 
-struct output_stream {
+struct dechunkiser_ctx {
   char *output_format;
   char *output_file;
   int64_t prev_pts, prev_dts;
@@ -55,7 +55,7 @@ static enum CodecID libav_codec_id(uint8_t mytype)
   }
 }
 
-static AVFormatContext *format_init(struct output_stream *o, const uint8_t *data)
+static AVFormatContext *format_init(struct dechunkiser_ctx *o, const uint8_t *data)
 {
   AVFormatContext *of;
   AVCodecContext *c;
@@ -91,17 +91,17 @@ static AVFormatContext *format_init(struct output_stream *o, const uint8_t *data
   return of;
 }
 
-static struct output_stream *avf_init(const char *fname, const char *config)
+static struct dechunkiser_ctx *avf_init(const char *fname, const char *config)
 {
-  struct output_stream *out;
+  struct dechunkiser_ctx *out;
   struct tag *cfg_tags;
 
-  out = malloc(sizeof(struct output_stream));
+  out = malloc(sizeof(struct dechunkiser_ctx));
   if (out == NULL) {
     return NULL;
   }
 
-  memset(out, 0, sizeof(struct output_stream));
+  memset(out, 0, sizeof(struct dechunkiser_ctx));
   out->output_format = strdup("nut");
   if (fname) {
     out->output_file = strdup(fname);
@@ -122,7 +122,7 @@ static struct output_stream *avf_init(const char *fname, const char *config)
   return out;
 }
 
-static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
+static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size)
 {
   const int header_size = VIDEO_PAYLOAD_HEADER_SIZE; 
   int frames, i;
@@ -179,7 +179,7 @@ static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
   }
 }
 
-static void avf_close(struct output_stream *s)
+static void avf_close(struct dechunkiser_ctx *s)
 {
   av_write_trailer(s->outctx);
   url_fclose(s->outctx->pb);

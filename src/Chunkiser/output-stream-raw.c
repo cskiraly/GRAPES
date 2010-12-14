@@ -17,17 +17,17 @@
 #include "config.h"
 #include "dechunkiser_iface.h"
 
-struct output_stream {
+struct dechunkiser_ctx {
   int fd;
   int payload_type;
 };
 
-static struct output_stream *raw_open(const char *fname, const char *config)
+static struct dechunkiser_ctx *raw_open(const char *fname, const char *config)
 {
-  struct output_stream *res;
+  struct dechunkiser_ctx *res;
   struct tag *cfg_tags;
 
-  res = malloc(sizeof(struct output_stream));
+  res = malloc(sizeof(struct dechunkiser_ctx));
   if (res == NULL) {
     return NULL;
   }
@@ -55,7 +55,7 @@ static struct output_stream *raw_open(const char *fname, const char *config)
   return res;
 }
 
-static void raw_write(struct output_stream *o, int id, uint8_t *data, int size)
+static void raw_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size)
 {
   int offset;
 
@@ -87,7 +87,7 @@ static void raw_write(struct output_stream *o, int id, uint8_t *data, int size)
   write(o->fd, data + offset, size - offset);
 }
 
-static void raw_close(struct output_stream *s)
+static void raw_close(struct dechunkiser_ctx *s)
 {
   close(s->fd);
   free(s);
