@@ -13,7 +13,7 @@
 #include "chunkiser_iface.h"
 
 #define STATIC_BUFF_SIZE 1000 * 1024
-struct input_stream {
+struct chunkiser_ctx {
   AVFormatContext *s;
   int loop;	//loop on input file infinitely
   int audio_stream;
@@ -106,7 +106,7 @@ static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *
   frame_header_write(data, size, pts, dts);
 }
 
-static int input_stream_rewind(struct input_stream *s)
+static int input_stream_rewind(struct chunkiser_ctx *s)
 {
     int ret;
 
@@ -119,16 +119,16 @@ static int input_stream_rewind(struct input_stream *s)
 
 /* Interface functions */
 
-static struct input_stream *avf_open(const char *fname, int *period, const char *config)
+static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char *config)
 {
-  struct input_stream *desc;
+  struct chunkiser_ctx *desc;
   int i, res;
   struct tag *cfg_tags;
 
   avcodec_register_all();
   av_register_all();
 
-  desc = malloc(sizeof(struct input_stream));
+  desc = malloc(sizeof(struct chunkiser_ctx));
   if (desc == NULL) {
     return NULL;
   }
@@ -182,7 +182,7 @@ static struct input_stream *avf_open(const char *fname, int *period, const char 
   return desc;
 }
 
-static void avf_close(struct input_stream *s)
+static void avf_close(struct chunkiser_ctx *s)
 {
   int i;
 
@@ -195,7 +195,7 @@ static void avf_close(struct input_stream *s)
   free(s);
 }
 
-static uint8_t *avf_chunkise(struct input_stream *s, int id, int *size, uint64_t *ts)
+static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts)
 {
     AVPacket pkt;
     int res;
