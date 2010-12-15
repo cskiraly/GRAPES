@@ -49,6 +49,14 @@ static enum CodecID libav_codec_id(uint8_t mytype)
       return CODEC_ID_VP6;
     case 13:
       return CODEC_ID_DIRAC;
+    case 129:
+      return CODEC_ID_MP3;
+    case 130:
+      return CODEC_ID_AAC;
+    case 131:
+      return CODEC_ID_AC3;
+    case 132:
+      return CODEC_ID_VORBIS;
     default:
       fprintf(stderr, "Unknown codec %d\n", mytype);
       return 0;

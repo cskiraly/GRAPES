@@ -54,6 +54,15 @@ static uint8_t codec_type(enum CodecID cid)
       return 12;
     case CODEC_ID_DIRAC:
       return 13;
+    case CODEC_ID_MP2:
+    case CODEC_ID_MP3:
+      return 129;
+    case CODEC_ID_AAC:
+      return 130;
+    case CODEC_ID_AC3:
+      return 131;
+    case CODEC_ID_VORBIS:
+      return 132;
     default:
       fprintf(stderr, "Unknown codec ID %d\n", cid);
       return 0;

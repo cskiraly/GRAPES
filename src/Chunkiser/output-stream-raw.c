@@ -60,18 +60,25 @@ static void raw_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
   int offset;
 
   if (o->payload_type == 1) {
-    const int header_size = VIDEO_PAYLOAD_HEADER_SIZE;
-    int width, height, frame_rate_n, frame_rate_d, frames;
+    int header_size;
+    int frames;
     int i;
     uint8_t codec;
 
-    video_payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
-    if (codec > 127) {
-      fprintf(stderr, "Error! Non video chunk: %x!!!\n", codec);
+    if (data[0] == 0) {
+      fprintf(stderr, "Error! Strange chunk: %x!!!\n", codec);
       return;
-    }
+    } else if (data[0] < 127) {
+      int width, height, frame_rate_n, frame_rate_d;
+
+      header_size = VIDEO_PAYLOAD_HEADER_SIZE;
+      video_payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
 //    dprintf("Frame size: %dx%d -- Frame rate: %d / %d\n", width, height, frame_rate_n, frame_rate_d);
-    frames = data[9];
+    } else {
+      header_size = AUDIO_PAYLOAD_HEADER_SIZE;
+    }
+
+    frames = data[header_size - 1];
     for (i = 0; i < frames; i++) {
       int frame_size;
       int64_t pts, dts;
