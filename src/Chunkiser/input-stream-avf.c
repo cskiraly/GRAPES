@@ -61,6 +61,11 @@ static uint8_t codec_type(enum CodecID cid)
   }
 }
 
+static void audio_header_fill(uint8_t *data, AVStream *st)
+{
+  audio_payload_header_write(data, codec_type(st->codec->codec_id), st->codec->channels, st->codec->sample_rate, st->codec->frame_size);
+}
+
 static void video_header_fill(uint8_t *data, AVStream *st)
 {
   int num, den;
@@ -248,6 +253,9 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
     case CODEC_TYPE_VIDEO:
       header_size = VIDEO_PAYLOAD_HEADER_SIZE;
       break;
+    case CODEC_TYPE_AUDIO:
+      header_size = AUDIO_PAYLOAD_HEADER_SIZE;
+      break;
     default:
       /* Cannot arrive here... */
       fprintf(stderr, "Internal chunkiser error!\n");
@@ -268,6 +276,10 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
       if (new_tb.num == 0) {
         new_tb = s->s->streams[pkt.stream_index]->r_frame_rate;
       }
+      break;
+    case CODEC_TYPE_AUDIO:
+      audio_header_fill(data, s->s->streams[pkt.stream_index]);
+      new_tb = (AVRational){s->s->streams[pkt.stream_index]->codec->frame_size, s->s->streams[pkt.stream_index]->codec->sample_rate};
       break;
     default:
       /* Cannot arrive here... */
