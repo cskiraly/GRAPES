@@ -16,8 +16,7 @@
 struct chunkiser_ctx {
   AVFormatContext *s;
   int loop;	//loop on input file infinitely
-  int audio_stream;
-  int video_stream;
+  uint64_t streams;
   int64_t last_ts;
   int64_t base_ts;
   AVBitStreamFilterContext *bsf[MAX_STREAMS];
@@ -124,6 +123,7 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
   struct chunkiser_ctx *desc;
   int i, res;
   struct tag *cfg_tags;
+  int video_streams = 0, audio_streams = 1;
 
   avcodec_register_all();
   av_register_all();
@@ -146,8 +146,7 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
 
     return NULL;
   }
-  desc->video_stream = -1;
-  desc->audio_stream = -1;
+  desc->streams = 0;
   desc->last_ts = 0;
   desc->base_ts = 0;
   desc->loop = 0;
@@ -157,16 +156,20 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
   }
   free(cfg_tags);
   for (i = 0; i < desc->s->nb_streams; i++) {
-    if (desc->video_stream == -1 && desc->s->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO) {
-      desc->video_stream = i;
+    if (desc->s->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO) {
+      if (video_streams++ == 0) {
+        desc->streams |= 1ULL << i;
+      }
       fprintf(stderr, "Video Frame Rate = %d/%d --- Period: %lld\n",
               desc->s->streams[i]->r_frame_rate.num,
               desc->s->streams[i]->r_frame_rate.den,
               av_rescale(1000000, desc->s->streams[i]->r_frame_rate.den, desc->s->streams[i]->r_frame_rate.num));
       *period = av_rescale(1000000, desc->s->streams[i]->r_frame_rate.den, desc->s->streams[i]->r_frame_rate.num);
     }
-    if (desc->audio_stream == -1 && desc->s->streams[i]->codec->codec_type == CODEC_TYPE_AUDIO) {
-      desc->audio_stream = i;
+    if (desc->s->streams[i]->codec->codec_type == CODEC_TYPE_AUDIO) {
+      if (audio_streams++ == 0) {
+        desc->streams |= 1ULL << i;
+      }
     }
     if (desc->s->streams[i]->codec->codec_id == CODEC_ID_MPEG4) {
       desc->bsf[i] = av_bitstream_filter_init("dump_extra");
@@ -218,7 +221,7 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
 
     return NULL;
   }
-  if (pkt.stream_index != s->video_stream) {
+  if ((s->streams & (1ULL << pkt.stream_index)) == 0) {
     *size = 0;
     *ts = s->last_ts;
     av_free_packet(&pkt);
