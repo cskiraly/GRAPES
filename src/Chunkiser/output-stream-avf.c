@@ -68,12 +68,10 @@ static AVFormatContext *format_init(struct dechunkiser_ctx *o, const uint8_t *da
   AVFormatContext *of;
   AVCodecContext *c;
   AVOutputFormat *outfmt;
-  int width, height, frame_rate_n, frame_rate_d;
   uint8_t codec;
 
   av_register_all();
 
-  video_payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
   //dprintf("Frame size: %dx%d -- Frame rate: %d / %d\n", width, height, frame_rate_n, frame_rate_d);
   outfmt = av_guess_format(o->output_format, o->output_file, NULL);
   of = avformat_alloc_context();
@@ -83,15 +81,32 @@ static AVFormatContext *format_init(struct dechunkiser_ctx *o, const uint8_t *da
   of->oformat = outfmt;
   av_new_stream(of, 0);
   c = of->streams[0]->codec;
+  codec = data[0];
   c->codec_id = libav_codec_id(codec);
-  c->codec_type = CODEC_TYPE_VIDEO;
-  c->width = width;
-  c->height= height;
-  c->time_base.den = frame_rate_n;
-  c->time_base.num = frame_rate_d;
-  of->streams[0]->avg_frame_rate.num = frame_rate_n;
-  of->streams[0]->avg_frame_rate.den = frame_rate_d;
-  c->pix_fmt = PIX_FMT_YUV420P;
+  if (codec < 128) {
+    int width, height, frame_rate_n, frame_rate_d;
+
+    video_payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
+    c->codec_type = CODEC_TYPE_VIDEO;
+    c->width = width;
+    c->height= height;
+    c->time_base.den = frame_rate_n;
+    c->time_base.num = frame_rate_d;
+    of->streams[0]->avg_frame_rate.num = frame_rate_n;
+    of->streams[0]->avg_frame_rate.den = frame_rate_d;
+    c->pix_fmt = PIX_FMT_YUV420P;
+  } else if (codec > 128) {
+    uint8_t channels;
+    int sample_rate, frame_size;
+
+    audio_payload_header_parse(data, &codec, &channels, &sample_rate, &frame_size);
+    c->codec_type = CODEC_TYPE_AUDIO;
+    c->sample_rate = sample_rate;
+    c->channels = channels;
+    c->frame_size = frame_size;
+    c->time_base.num = frame_size;
+    c->time_base.den = sample_rate;
+  }
 
   o->prev_pts = 0;
   o->prev_dts = 0;
@@ -132,13 +147,17 @@ static struct dechunkiser_ctx *avf_init(const char *fname, const char *config)
 
 static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size)
 {
-  const int header_size = VIDEO_PAYLOAD_HEADER_SIZE; 
+  int header_size;
   int frames, i;
   uint8_t *p;
 
-  if (data[0] > 127) {
-    fprintf(stderr, "Error! Non video chunk: %x!!!\n", data[0]);
+  if (data[0] == 0) {
+    fprintf(stderr, "Error! strange chunk: %x!!!\n", data[0]);
     return;
+  } else if (data[0] < 127) {
+    header_size = VIDEO_PAYLOAD_HEADER_SIZE;
+  } else {
+    header_size = AUDIO_PAYLOAD_HEADER_SIZE;
   }
   if (o->outctx == NULL) {
     o->outctx = format_init(o, data);
