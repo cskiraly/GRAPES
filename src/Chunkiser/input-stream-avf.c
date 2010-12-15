@@ -97,15 +97,15 @@ static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *
   int32_t pts, dts;
 
   if (pkt->pts != AV_NOPTS_VALUE) {
-    pts = av_rescale_q(pkt->pts, st->time_base, (AVRational){new_tb.den, new_tb.num}),
-    pts += av_rescale_q(base_ts, AV_TIME_BASE_Q, (AVRational){new_tb.den, new_tb.num});
+    pts = av_rescale_q(pkt->pts, st->time_base, new_tb),
+    pts += av_rescale_q(base_ts, AV_TIME_BASE_Q, new_tb);
   } else {
     pts = -1;
   }
   //dprintf("pkt->pts=%ld PTS=%d",pkt->pts, pts);
   if (pkt->dts != AV_NOPTS_VALUE) {
-    dts = av_rescale_q(pkt->dts, st->time_base, (AVRational){new_tb.den, new_tb.num});
-    dts += av_rescale_q(base_ts, AV_TIME_BASE_Q, (AVRational){new_tb.den, new_tb.num});
+    dts = av_rescale_q(pkt->dts, st->time_base, new_tb);
+    dts += av_rescale_q(base_ts, AV_TIME_BASE_Q, new_tb);
   } else {
     fprintf(stderr, "No DTS???\n");
     dts = 0;
@@ -299,9 +299,11 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
   switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
     case CODEC_TYPE_VIDEO:
       video_header_fill(data, s->s->streams[pkt.stream_index]);
-      new_tb = s->s->streams[pkt.stream_index]->avg_frame_rate;
+      new_tb.den = s->s->streams[pkt.stream_index]->avg_frame_rate.num;
+      new_tb.num = s->s->streams[pkt.stream_index]->avg_frame_rate.den;
       if (new_tb.num == 0) {
-        new_tb = s->s->streams[pkt.stream_index]->r_frame_rate;
+        new_tb.den = s->s->streams[pkt.stream_index]->r_frame_rate.num;
+        new_tb.num = s->s->streams[pkt.stream_index]->r_frame_rate.den;
       }
       break;
     case CODEC_TYPE_AUDIO:
