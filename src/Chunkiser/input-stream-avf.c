@@ -79,25 +79,20 @@ static void video_header_fill(uint8_t *data, AVStream *st)
   video_payload_header_write(data, codec_type(st->codec->codec_id), st->codec->width, st->codec->height, num, den);
 }
 
-static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *st, int64_t base_ts)
+static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *st, AVRational new_tb, int64_t base_ts)
 {
-  AVRational fps;
   int32_t pts, dts;
 
-  fps = st->avg_frame_rate;
-  if (fps.num == 0) {
-    fps = st->r_frame_rate;
-  }
   if (pkt->pts != AV_NOPTS_VALUE) {
-    pts = av_rescale_q(pkt->pts, st->time_base, (AVRational){fps.den, fps.num}),
-    pts += av_rescale_q(base_ts, AV_TIME_BASE_Q, (AVRational){fps.den, fps.num});
+    pts = av_rescale_q(pkt->pts, st->time_base, (AVRational){new_tb.den, new_tb.num}),
+    pts += av_rescale_q(base_ts, AV_TIME_BASE_Q, (AVRational){new_tb.den, new_tb.num});
   } else {
     pts = -1;
   }
   //dprintf("pkt->pts=%ld PTS=%d",pkt->pts, pts);
   if (pkt->dts != AV_NOPTS_VALUE) {
-    dts = av_rescale_q(pkt->dts, st->time_base, (AVRational){fps.den, fps.num});
-    dts += av_rescale_q(base_ts, AV_TIME_BASE_Q, (AVRational){fps.den, fps.num});
+    dts = av_rescale_q(pkt->dts, st->time_base, (AVRational){new_tb.den, new_tb.num});
+    dts += av_rescale_q(base_ts, AV_TIME_BASE_Q, (AVRational){new_tb.den, new_tb.num});
   } else {
     fprintf(stderr, "No DTS???\n");
     dts = 0;
@@ -198,6 +193,7 @@ static void avf_close(struct chunkiser_ctx *s)
 static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts)
 {
     AVPacket pkt;
+    AVRational new_tb;
     int res;
     uint8_t *data;
     int header_size;
@@ -268,6 +264,10 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
     switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
       case CODEC_TYPE_VIDEO:
         video_header_fill(data, s->s->streams[pkt.stream_index]);
+        new_tb = s->s->streams[pkt.stream_index]->avg_frame_rate;
+        if (new_tb.num == 0) {
+          new_tb = s->s->streams[pkt.stream_index]->r_frame_rate;
+        }
         break;
       default:
         /* Cannot arrive here... */
@@ -275,7 +275,7 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
         exit(-1);
     }
     data[header_size - 1] = 1;
-    frame_header_fill(data + header_size, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], s->base_ts);
+    frame_header_fill(data + header_size, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
 
     memcpy(data + header_size + FRAME_HEADER_SIZE, pkt.data, pkt.size);
     *ts = av_rescale_q(pkt.dts, s->s->streams[pkt.stream_index]->time_base, AV_TIME_BASE_Q);
