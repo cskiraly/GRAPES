@@ -248,8 +248,14 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
       pkt= new_pkt;
     }
 
-    if (s->s->streams[pkt.stream_index]->codec->codec_type == CODEC_TYPE_VIDEO) {
-      header_size = VIDEO_PAYLOAD_HEADER_SIZE;
+    switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
+      case CODEC_TYPE_VIDEO:
+        header_size = VIDEO_PAYLOAD_HEADER_SIZE;
+        break;
+      default:
+        /* Cannot arrive here... */
+        fprintf(stderr, "Internal chunkiser error!\n");
+        exit(-1);
     }
     *size = pkt.size + header_size + FRAME_HEADER_SIZE;
     data = malloc(*size);
@@ -259,8 +265,14 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
 
       return NULL;
     }
-    if (s->s->streams[pkt.stream_index]->codec->codec_type == CODEC_TYPE_VIDEO) {
-      video_header_fill(data, s->s->streams[pkt.stream_index]);
+    switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
+      case CODEC_TYPE_VIDEO:
+        video_header_fill(data, s->s->streams[pkt.stream_index]);
+        break;
+      default:
+        /* Cannot arrive here... */
+        fprintf(stderr, "Internal chunkiser error!\n");
+        exit(-1);
     }
     data[header_size - 1] = 1;
     frame_header_fill(data + header_size, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], s->base_ts);
