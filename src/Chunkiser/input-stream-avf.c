@@ -152,7 +152,22 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
   desc->loop = 0;
   cfg_tags = config_parse(config);
   if (cfg_tags) {
+    const char *media;
+
     config_value_int(cfg_tags, "loop", &desc->loop);
+    media = config_value_str(cfg_tags, "media");
+    if (media) {
+      if (!strcmp(media, "audio")) {
+        audio_streams = 0;
+        video_streams = 1;
+      } else if (!strcmp(media, "video")) {
+        audio_streams = 1;
+        video_streams = 0;
+      } else if (!strcmp(media, "av")) {
+        audio_streams = 0;
+        video_streams = 0;
+      }
+    }
   }
   free(cfg_tags);
   for (i = 0; i < desc->s->nb_streams; i++) {
