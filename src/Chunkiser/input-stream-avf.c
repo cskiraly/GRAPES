@@ -262,8 +262,8 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
     if (s->s->streams[pkt.stream_index]->codec->codec_type == CODEC_TYPE_VIDEO) {
       video_header_fill(data, s->s->streams[pkt.stream_index]);
     }
-    data[VIDEO_PAYLOAD_HEADER_SIZE - 1] = 1;
-    frame_header_fill(data + VIDEO_PAYLOAD_HEADER_SIZE, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], s->base_ts);
+    data[header_size - 1] = 1;
+    frame_header_fill(data + header_size, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], s->base_ts);
 
     memcpy(data + header_size + FRAME_HEADER_SIZE, pkt.data, pkt.size);
     *ts = av_rescale_q(pkt.dts, s->s->streams[pkt.stream_index]->time_base, AV_TIME_BASE_Q);
