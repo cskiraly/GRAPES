@@ -103,12 +103,12 @@ static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *
 
 static int input_stream_rewind(struct chunkiser_ctx *s)
 {
-    int ret;
+  int ret;
 
-    ret = av_seek_frame(s->s,-1,0,0);
-    s->base_ts = s->last_ts;
+  ret = av_seek_frame(s->s,-1,0,0);
+  s->base_ts = s->last_ts;
 
-    return ret;
+  return ret;
 }
 
 
@@ -192,100 +192,100 @@ static void avf_close(struct chunkiser_ctx *s)
 
 static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts)
 {
-    AVPacket pkt;
-    AVRational new_tb;
-    int res;
-    uint8_t *data;
-    int header_size;
+  AVPacket pkt;
+  AVRational new_tb;
+  int res;
+  uint8_t *data;
+  int header_size;
 
-    res = av_read_frame(s->s, &pkt);
-    if (res < 0) {
-      if (s->loop) {
-        if (input_stream_rewind(s) >= 0) {
-          *size = 0;
-          *ts = s->last_ts;
-
-          return NULL;
-        }
-      }
-      fprintf(stderr, "AVPacket read failed: %d!!!\n", res);
-      *size = -1;
-
-      return NULL;
-    }
-    if (pkt.stream_index != s->video_stream) {
-      *size = 0;
-      *ts = s->last_ts;
-      av_free_packet(&pkt);
-
-      return NULL;
-    }
-    if (s->bsf[pkt.stream_index]) {
-      AVPacket new_pkt= pkt;
-      int res;
-
-      res = av_bitstream_filter_filter(s->bsf[pkt.stream_index],
-                                       s->s->streams[pkt.stream_index]->codec,
-                                       NULL, &new_pkt.data, &new_pkt.size,
-                                       pkt.data, pkt.size, pkt.flags & AV_PKT_FLAG_KEY);
-      if(res > 0){
-        av_free_packet(&pkt);
-        new_pkt.destruct= av_destruct_packet;
-      } else if(res < 0){
-        fprintf(stderr, "%s failed for stream %d, codec %s: ",
-                        s->bsf[pkt.stream_index]->filter->name,
-                        pkt.stream_index,
-                        s->s->streams[pkt.stream_index]->codec->codec->name);
-        fprintf(stderr, "%d\n", res);
+  res = av_read_frame(s->s, &pkt);
+  if (res < 0) {
+    if (s->loop) {
+      if (input_stream_rewind(s) >= 0) {
         *size = 0;
+        *ts = s->last_ts;
 
         return NULL;
       }
-      pkt= new_pkt;
     }
+    fprintf(stderr, "AVPacket read failed: %d!!!\n", res);
+    *size = -1;
 
-    switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
-      case CODEC_TYPE_VIDEO:
-        header_size = VIDEO_PAYLOAD_HEADER_SIZE;
-        break;
-      default:
-        /* Cannot arrive here... */
-        fprintf(stderr, "Internal chunkiser error!\n");
-        exit(-1);
-    }
-    *size = pkt.size + header_size + FRAME_HEADER_SIZE;
-    data = malloc(*size);
-    if (data == NULL) {
-      *size = -1;
+    return NULL;
+  }
+  if (pkt.stream_index != s->video_stream) {
+    *size = 0;
+    *ts = s->last_ts;
+    av_free_packet(&pkt);
+
+    return NULL;
+  }
+  if (s->bsf[pkt.stream_index]) {
+    AVPacket new_pkt= pkt;
+    int res;
+
+    res = av_bitstream_filter_filter(s->bsf[pkt.stream_index],
+                                     s->s->streams[pkt.stream_index]->codec,
+                                     NULL, &new_pkt.data, &new_pkt.size,
+                                     pkt.data, pkt.size, pkt.flags & AV_PKT_FLAG_KEY);
+    if(res > 0){
       av_free_packet(&pkt);
+      new_pkt.destruct= av_destruct_packet;
+    } else if(res < 0){
+      fprintf(stderr, "%s failed for stream %d, codec %s: ",
+                      s->bsf[pkt.stream_index]->filter->name,
+                      pkt.stream_index,
+                      s->s->streams[pkt.stream_index]->codec->codec->name);
+      fprintf(stderr, "%d\n", res);
+      *size = 0;
 
       return NULL;
     }
-    switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
-      case CODEC_TYPE_VIDEO:
-        video_header_fill(data, s->s->streams[pkt.stream_index]);
-        new_tb = s->s->streams[pkt.stream_index]->avg_frame_rate;
-        if (new_tb.num == 0) {
-          new_tb = s->s->streams[pkt.stream_index]->r_frame_rate;
-        }
-        break;
-      default:
-        /* Cannot arrive here... */
-        fprintf(stderr, "Internal chunkiser error!\n");
-        exit(-1);
-    }
-    data[header_size - 1] = 1;
-    frame_header_fill(data + header_size, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
+    pkt= new_pkt;
+  }
 
-    memcpy(data + header_size + FRAME_HEADER_SIZE, pkt.data, pkt.size);
-    *ts = av_rescale_q(pkt.dts, s->s->streams[pkt.stream_index]->time_base, AV_TIME_BASE_Q);
-    //dprintf("pkt.dts=%ld TS1=%lu" , pkt.dts, *ts);
-    *ts += s->base_ts;
-    //dprintf(" TS2=%lu\n",*ts);
-    s->last_ts = *ts;
+  switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
+    case CODEC_TYPE_VIDEO:
+      header_size = VIDEO_PAYLOAD_HEADER_SIZE;
+      break;
+    default:
+      /* Cannot arrive here... */
+      fprintf(stderr, "Internal chunkiser error!\n");
+      exit(-1);
+  }
+  *size = pkt.size + header_size + FRAME_HEADER_SIZE;
+  data = malloc(*size);
+  if (data == NULL) {
+    *size = -1;
     av_free_packet(&pkt);
 
-    return data;
+    return NULL;
+  }
+  switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
+    case CODEC_TYPE_VIDEO:
+      video_header_fill(data, s->s->streams[pkt.stream_index]);
+      new_tb = s->s->streams[pkt.stream_index]->avg_frame_rate;
+      if (new_tb.num == 0) {
+        new_tb = s->s->streams[pkt.stream_index]->r_frame_rate;
+      }
+      break;
+    default:
+      /* Cannot arrive here... */
+      fprintf(stderr, "Internal chunkiser error!\n");
+      exit(-1);
+  }
+  data[header_size - 1] = 1;
+  frame_header_fill(data + header_size, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
+
+  memcpy(data + header_size + FRAME_HEADER_SIZE, pkt.data, pkt.size);
+  *ts = av_rescale_q(pkt.dts, s->s->streams[pkt.stream_index]->time_base, AV_TIME_BASE_Q);
+  //dprintf("pkt.dts=%ld TS1=%lu" , pkt.dts, *ts);
+  *ts += s->base_ts;
+  //dprintf(" TS2=%lu\n",*ts);
+  s->last_ts = *ts;
+  av_free_packet(&pkt);
+
+  return data;
 }
 
 #if 0
