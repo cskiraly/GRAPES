@@ -75,7 +75,12 @@ static void raw_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
       video_payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
 //    dprintf("Frame size: %dx%d -- Frame rate: %d / %d\n", width, height, frame_rate_n, frame_rate_d);
     } else {
+      uint8_t channels;
+      int sample_rate, frame_size;
+
       header_size = AUDIO_PAYLOAD_HEADER_SIZE;
+      audio_payload_header_parse(data, &codec, &channels, &sample_rate, &frame_size);
+//    dprintf("Frame size: %d Sample rate: %d Channels: %d\n", frame_size, sample_rate, channels);
     }
 
     frames = data[header_size - 1];
