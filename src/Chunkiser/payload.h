@@ -27,7 +27,7 @@ static inline void frame_header_parse(const uint8_t *data, int *size, int64_t *p
   }
 }
 
-static inline void payload_header_parse(const uint8_t *data, uint8_t *codec, int *width, int *height, int *frame_rate_n, int *frame_rate_d)
+static inline void video_payload_header_parse(const uint8_t *data, uint8_t *codec, int *width, int *height, int *frame_rate_n, int *frame_rate_d)
 {
   *codec = data[0];
   *width = data[1] << 8 | data[2];
@@ -36,7 +36,7 @@ static inline void payload_header_parse(const uint8_t *data, uint8_t *codec, int
   *frame_rate_d = data[7] << 8 | data[8];
 }
 
-static inline void payload_header_write(uint8_t *data, uint8_t codec, int width, int height, int num, int den)
+static inline void video_payload_header_write(uint8_t *data, uint8_t codec, int width, int height, int num, int den)
 {
   data[0] = codec;
   data[1] = width >> 8;

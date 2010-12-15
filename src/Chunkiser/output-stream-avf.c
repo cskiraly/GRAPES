@@ -65,7 +65,7 @@ static AVFormatContext *format_init(struct dechunkiser_ctx *o, const uint8_t *da
 
   av_register_all();
 
-  payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
+  video_payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
   //dprintf("Frame size: %dx%d -- Frame rate: %d / %d\n", width, height, frame_rate_n, frame_rate_d);
   outfmt = av_guess_format(o->output_format, o->output_file, NULL);
   of = avformat_alloc_context();

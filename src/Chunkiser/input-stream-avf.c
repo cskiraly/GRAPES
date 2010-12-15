@@ -76,7 +76,7 @@ static void video_header_fill(uint8_t *data, AVStream *st)
     num /= 1000;
     den /= 1000;
   }
-  payload_header_write(data, codec_type(st->codec->codec_id), st->codec->width, st->codec->height, num, den);
+  video_payload_header_write(data, codec_type(st->codec->codec_id), st->codec->width, st->codec->height, num, den);
 }
 
 static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *st, int64_t base_ts)

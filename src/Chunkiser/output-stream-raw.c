@@ -65,7 +65,7 @@ static void raw_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
     int i;
     uint8_t codec;
 
-    payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
+    video_payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
     if (codec > 127) {
       fprintf(stderr, "Error! Non video chunk: %x!!!\n", codec);
       return;
