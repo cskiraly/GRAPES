@@ -249,13 +249,17 @@ static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
 
 static void avf_close(struct dechunkiser_ctx *s)
 {
+  int i;
+
   av_write_trailer(s->outctx);
   url_fclose(s->outctx->pb);
 
-  av_metadata_free(&s->outctx->streams[0]->metadata);
-  av_free(s->outctx->streams[0]->codec);
-  av_free(s->outctx->streams[0]->info);
-  av_free(s->outctx->streams[0]);
+  for (i = 0; i < s->outctx->nb_streams; i++) {
+    av_metadata_free(&s->outctx->streams[i]->metadata);
+    av_free(s->outctx->streams[i]->codec);
+    av_free(s->outctx->streams[i]->info);
+    av_free(s->outctx->streams[i]);
+  }
   av_metadata_free(&s->outctx->metadata);
   free(s->outctx);
   free(s->output_format);
