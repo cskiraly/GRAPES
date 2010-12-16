@@ -225,7 +225,7 @@ static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
                        &frame_size, &pts, &dts);
     //dprintf("Frame %d PTS1: %d\n", i, pts);
     av_init_packet(&pkt);
-    pkt.stream_index = (data[0] > 128) && ((o->streams & 0x01 == 0x01));
+    pkt.stream_index = (data[0] > 128) && (((o->streams & 0x01) == 0x01));
     if (pts != -1) {
       pts += (pts < o->prev_pts - ((1LL << 31) - 1)) ? ((o->prev_pts >> 32) + 1) << 32 : (o->prev_pts >> 32) << 32;
       //dprintf(" PTS2: %d\n", pts);
