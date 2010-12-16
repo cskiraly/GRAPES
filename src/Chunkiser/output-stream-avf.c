@@ -17,6 +17,7 @@ struct dechunkiser_ctx {
   enum CodecID video_codec_id;
   enum CodecID audio_codec_id;
   int streams;
+  int selected_streams;
   int width, height;
   int channels;
   int sample_rate, frame_size;
@@ -118,7 +119,7 @@ static AVFormatContext *format_gen(struct dechunkiser_ctx *o, const uint8_t *dat
     o->audio_time_base.den = sample_rate;
   }
 
-  if (o->streams == 0x03) {
+  if (o->streams == o->selected_streams) {
     AVCodecContext *c;
 
     o->outctx = format_init(o);
@@ -167,6 +168,7 @@ static struct dechunkiser_ctx *avf_init(const char *fname, const char *config)
 
   memset(out, 0, sizeof(struct dechunkiser_ctx));
   out->output_format = strdup("nut");
+  out->selected_streams = 0x01;
   if (fname) {
     out->output_file = strdup(fname);
   } else {
@@ -180,6 +182,16 @@ static struct dechunkiser_ctx *avf_init(const char *fname, const char *config)
     if (format) {
       out->output_format = strdup(format);
     }
+    format = config_value_str(cfg_tags, "media");
+    if (format) {
+      if (!strcmp(format, "video")) {
+        out->selected_streams = 0x01;
+      } else if (!strcmp(format, "audio")) {
+        out->selected_streams = 0x02;
+      } else if (!strcmp(format, "av")) {
+        out->selected_streams = 0x03;
+      }
+    }
   }
   free(cfg_tags);
 
@@ -189,7 +201,7 @@ static struct dechunkiser_ctx *avf_init(const char *fname, const char *config)
 static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size)
 {
   int header_size;
-  int frames, i;
+  int frames, i, media_type;
   uint8_t *p;
 
   if (data[0] == 0) {
@@ -197,8 +209,10 @@ static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
     return;
   } else if (data[0] < 127) {
     header_size = VIDEO_PAYLOAD_HEADER_SIZE;
+    media_type = 1;
   } else {
     header_size = AUDIO_PAYLOAD_HEADER_SIZE;
+    media_type = 2;
   }
   if (o->outctx == NULL) {
     o->outctx = format_gen(o, data);
@@ -213,7 +227,9 @@ static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
     url_fopen(&o->outctx->pb, o->output_file, URL_WRONLY);
     av_write_header(o->outctx);
   }
-
+  if ((o->streams & media_type) == 0) {
+    return;		/* Received a chunk for a non-selected stream */
+  }
   frames = data[header_size - 1];
   p = data + header_size + FRAME_HEADER_SIZE * frames;
   for (i = 0; i < frames; i++) {
@@ -225,7 +241,7 @@ static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
                        &frame_size, &pts, &dts);
     //dprintf("Frame %d PTS1: %d\n", i, pts);
     av_init_packet(&pkt);
-    pkt.stream_index = (data[0] > 128) && (((o->streams & 0x01) == 0x01));
+    pkt.stream_index = (media_type == 2) && (((o->streams & 0x01) == 0x01));
     if (pts != -1) {
       pts += (pts < o->prev_pts - ((1LL << 31) - 1)) ? ((o->prev_pts >> 32) + 1) << 32 : (o->prev_pts >> 32) << 32;
       //dprintf(" PTS2: %d\n", pts);
