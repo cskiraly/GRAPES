@@ -74,3 +74,13 @@ int chunkise(struct input_stream *s, struct chunk *c)
 
   return 1;
 }
+
+const int *input_get_fds(const struct input_stream *s)
+{
+  if (s->in->get_fds) {
+    return s->in->get_fds(s->c);
+  }
+
+  return NULL;
+}
+
