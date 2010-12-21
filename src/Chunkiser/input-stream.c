@@ -9,6 +9,7 @@
 
 extern struct chunkiser_iface in_avf;
 extern struct chunkiser_iface in_dummy;
+extern struct chunkiser_iface in_dumb;
 
 struct input_stream {
   struct chunkiser_ctx *c;
@@ -28,7 +29,7 @@ struct input_stream *input_stream_open(const char *fname, int *period, const cha
 #ifdef AVF
   res->in = &in_avf;
 #else
-  res->in = &in_dummy;
+  res->in = &in_dumb;
 #endif
   cfg_tags = config_parse(config);
   if (cfg_tags) {
@@ -37,6 +38,9 @@ struct input_stream *input_stream_open(const char *fname, int *period, const cha
     type = config_value_str(cfg_tags, "chunkiser");
     if (type && !strcmp(type, "dummy")) {
       res->in = &in_dummy;
+    }
+    if (type && !strcmp(type, "dumb")) {
+      res->in = &in_dumb;
     }
   }
   free(cfg_tags);
