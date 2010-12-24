@@ -32,8 +32,12 @@ static int cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "f:rRdlavV")) != -1) {
+  while ((o = getopt(argc, argv, "u:f:rRdlavVU")) != -1) {
     switch(o) {
+      case 'u':
+        in_ptr = addopt(in_opts, in_ptr, "chunkiser", "udp");
+        in_ptr = addopt(in_opts, in_ptr, "port1", optarg);
+        break;
       case 'f':
         out_ptr = addopt(out_opts, out_ptr, "format", optarg);
         break;
@@ -43,6 +47,10 @@ static int cmdline_parse(int argc, char *argv[])
       case 'R':
         out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "raw");
         out_ptr = addopt(out_opts, out_ptr, "payload", "avf");
+        break;
+      case 'U':
+        out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "raw");
+        out_ptr = addopt(out_opts, out_ptr, "payload", "udp");
         break;
       case 'd':
         in_ptr = addopt(in_opts, in_ptr, "chunkiser", "dummy");
