@@ -13,6 +13,7 @@
 
 #include "chunk.h"
 #include "chunkiser.h"
+#include "net_helper.h"
 
 static char out_opts[1024];
 static char *out_ptr = out_opts;
@@ -77,11 +78,29 @@ static int cmdline_parse(int argc, char *argv[])
   return optind - 1;
 }
 
+static void in_wait(const int *fd)
+{
+  int my_fd[10];
+  int i = 0;
+  
+  if (fd == NULL) {
+    return;
+  }
+  while(fd[i] != -1) {
+    my_fd[i] = fd[i];
+    i++;
+  }
+  my_fd[i] = -1;
+
+  wait4data(NULL, NULL, my_fd);
+}
+
 int main(int argc, char *argv[])
 {
   int period, done, id;
   struct input_stream *input;
   struct output_stream *output;
+  const int *in_fds;
 
   if (argc < 3) {
     fprintf(stderr, "Usage: %s <input> <output>\n", argv[0]);
@@ -95,6 +114,11 @@ int main(int argc, char *argv[])
 
     return -1;
   }
+  if (period == 0) {
+    in_fds = input_get_fds(input);
+  } else {
+    in_fds = NULL;
+  }
   output = out_stream_init(argv[2], out_opts);
   if (output == NULL) {
     fprintf(stderr, "Cannot open output %s\n", argv[2]);
@@ -107,6 +131,7 @@ int main(int argc, char *argv[])
     int res;
     struct chunk c;
 
+    in_wait(in_fds);
     c.id = id;
     res = chunkise(input, &c);
     if (res > 0) {
