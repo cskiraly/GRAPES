@@ -53,6 +53,8 @@ static struct dechunkiser_ctx *raw_open(const char *fname, const char *config)
     if (pt) {
       if (!strcmp(pt, "avf")) {
         res->payload_type = avf;
+      } else if (!strcmp(pt, "udp")) {
+        res->payload_type = udp;
       }
     }
   }
@@ -98,6 +100,8 @@ static void raw_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
 //      dprintf("Frame %d has size %d\n", i, frame_size);
     }
     offset = header_size + frames * FRAME_HEADER_SIZE;
+  } else if (o->payload_type == udp) {
+    offset = UDP_CHUNK_HEADER_SIZE; 
   } else {
     offset = 0;
   }
