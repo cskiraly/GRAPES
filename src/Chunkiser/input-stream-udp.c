@@ -38,7 +38,6 @@ static int input_get_udp(uint8_t *data, int fd)
   if (msglen <= 0) {
     return 0;
   }
-  fprintf(stderr,"\treceived %d bytes\n",msglen);
 
   return msglen;
 }
@@ -152,7 +151,6 @@ static uint8_t *udp_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
 {
   int i;
 
-  fprintf(stderr,"input_get called\n");
   if (s->buff == NULL) {
     s->buff = malloc(UDP_BUF_SIZE + UDP_CHUNK_HEADER_SIZE);
     if (s->buff == NULL) {
@@ -162,7 +160,6 @@ static uint8_t *udp_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
     }
   }
   for (i = 0; s->fds[i] >= 0; i++) {
-    fprintf(stderr,"\treading on fd:%d (index:%d)\n", s->fds[i], i);
     if ((*size = input_get_udp(s->buff + s->size + UDP_CHUNK_HEADER_SIZE, s->fds[i]))) {
       uint8_t *res = s->buff;
       struct timeval now;
