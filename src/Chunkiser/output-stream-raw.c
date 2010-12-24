@@ -21,6 +21,7 @@ enum pt {
   raw,
   avf,
   udp,
+  rtp,
 };
 
 struct dechunkiser_ctx {
@@ -55,6 +56,8 @@ static struct dechunkiser_ctx *raw_open(const char *fname, const char *config)
         res->payload_type = avf;
       } else if (!strcmp(pt, "udp")) {
         res->payload_type = udp;
+      } else if (!strcmp(pt, "rtp")) {
+        res->payload_type = rtp;
       }
     }
   }
@@ -102,6 +105,8 @@ static void raw_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
     offset = header_size + frames * FRAME_HEADER_SIZE;
   } else if (o->payload_type == udp) {
     offset = UDP_CHUNK_HEADER_SIZE; 
+  } else if (o->payload_type == rtp) {
+    offset = UDP_CHUNK_HEADER_SIZE + 12; 
   } else {
     offset = 0;
   }
