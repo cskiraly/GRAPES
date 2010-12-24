@@ -89,5 +89,5 @@ static inline void udp_chunk_header_write(uint8_t *data, int size, uint8_t strea
 {
   data[0] = size >> 8;
   data[1] = size & 0xFF;
-  data[3] = stream;
+  data[2] = stream;
 }

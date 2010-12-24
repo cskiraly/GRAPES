@@ -40,7 +40,7 @@ static int input_get_udp(uint8_t *data, int fd)
   }
   fprintf(stderr,"\treceived %d bytes\n",msglen);
 
-  return 1;
+  return msglen;
 }
 
 static int listen_udp(int port)
@@ -168,7 +168,8 @@ static uint8_t *udp_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
       struct timeval now;
 
       udp_chunk_header_write(s->buff + s->size, *size, i);
-      s->size += UDP_CHUNK_HEADER_SIZE + *size;
+      *size += UDP_CHUNK_HEADER_SIZE;
+      s->size += *size;
 
       if (++s->counter % s->every) {
         *size = 0;
