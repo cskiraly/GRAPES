@@ -87,6 +87,7 @@ static const int *ports_parse(const char *config)
       }
     }
   }
+  free(cfg_tags);
   res[i] = -1;
 
   return res;
