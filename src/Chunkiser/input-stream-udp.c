@@ -133,6 +133,7 @@ static struct chunkiser_ctx *udp_open(const char *fname, int *period, const char
   res->size = 0;
   res->counter = 0;
   res->every = 1;
+  *period = 0;
 
   return res;
 }
