@@ -17,9 +17,15 @@
 #include "config.h"
 #include "dechunkiser_iface.h"
 
+enum pt {
+  raw,
+  avf,
+  udp,
+};
+
 struct dechunkiser_ctx {
   int fd;
-  int payload_type;
+  enum pt payload_type;
 };
 
 static struct dechunkiser_ctx *raw_open(const char *fname, const char *config)
@@ -32,7 +38,7 @@ static struct dechunkiser_ctx *raw_open(const char *fname, const char *config)
     return NULL;
   }
   res->fd = 1;
-  res->payload_type = 0;
+  res->payload_type = raw;
   if (fname) {
     res->fd = open(fname, O_WRONLY | O_CREAT, S_IROTH | S_IWUSR | S_IRUSR);
     if (res->fd < 0) {
@@ -46,7 +52,7 @@ static struct dechunkiser_ctx *raw_open(const char *fname, const char *config)
     pt = config_value_str(cfg_tags, "payload");
     if (pt) {
       if (!strcmp(pt, "avf")) {
-        res->payload_type = 1;
+        res->payload_type = avf;
       }
     }
   }
@@ -59,7 +65,7 @@ static void raw_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
 {
   int offset;
 
-  if (o->payload_type == 1) {
+  if (o->payload_type == avf) {
     int header_size;
     int frames;
     int i;
