@@ -87,7 +87,7 @@ static inline void frame_header_write(uint8_t *data, int size, int32_t pts, int3
 
 static inline void udp_chunk_header_write(uint8_t *data, int size, uint8_t stream)
 {
-  data[0] = size >> 16;
-  data[1] = size >> 8;
+  data[0] = size >> 8;
+  data[1] = size & 0xFF;
   data[3] = stream;
 }
