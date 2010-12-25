@@ -20,6 +20,23 @@ static char *out_ptr = out_opts;
 static char in_opts[1024];
 static char *in_ptr = in_opts;
 
+static void help(const char *name)
+{
+  fprintf(stderr, "Usage: %s [options] <input> <output>\n", name);
+  fprintf(stderr, "options: u:f:rRdlavVUT\n");
+  fprintf(stderr, "\t -u <port>: use the UDP chunkiser (on <port>) for input\n");
+  fprintf(stderr, "\t -f <fmt>: use the <fmt> format for ouptut (libav-based)\n");
+  fprintf(stderr, "\t -r: use RAW output\n");
+  fprintf(stderr, "\t -R: use RAW output, removing the libav payload header\n");
+  fprintf(stderr, "\t -d: use the dummy chunkiser\n");
+//  fprintf(stderr, "\t -l: \n");
+  fprintf(stderr, "\t -a: audio-only in the libav ouptut\n");
+  fprintf(stderr, "\t -v: video-only in the libav output\n");
+  fprintf(stderr, "\t -V: audio/video in the libav output\n");
+  fprintf(stderr, "\t -U: use RAW output, removing the UDP payload header\n");
+  fprintf(stderr, "\t -T: use RAW output, removing the RTP payload heade\n");
+}
+
 static char *addopt(char *opts, char *opts_ptr, const char *tag, const char *value)
 {
   if (opts_ptr != opts) {
@@ -107,7 +124,7 @@ int main(int argc, char *argv[])
   const int *in_fds;
 
   if (argc < 3) {
-    fprintf(stderr, "Usage: %s <input> <output>\n", argv[0]);
+    help(argv[0]);
 
     return -1;
   }
