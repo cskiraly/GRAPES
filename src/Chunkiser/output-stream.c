@@ -9,38 +9,55 @@
 
 extern struct dechunkiser_iface out_avf;
 extern struct dechunkiser_iface out_raw;
-static struct dechunkiser_iface *out;
+
+struct output_stream {
+  struct dechunkiser_ctx *c;
+  struct dechunkiser_iface *out;
+};
 
 struct output_stream *out_stream_init(const char *fname, const char *config)
 {
   struct tag *cfg_tags;
+  struct output_stream *res;
+
+  res = malloc(sizeof(struct output_stream));
+  if (res == NULL) {
+    return NULL;
+  }
 
 #ifdef AVF
-  out = &out_avf;
+  res->out = &out_avf;
 #else
-  out = &out_raw;
+  res->out = &out_raw;
 #endif
   cfg_tags = config_parse(config);
-
   if (cfg_tags) {
     const char *type;
 
     type = config_value_str(cfg_tags, "dechunkiser");
     if (type && !strcmp(type, "raw")) {
-      out = &out_raw;
+      res->out = &out_raw;
     }
   }
   free(cfg_tags);
 
-  return out->open(fname, config);
+  res->c = res->out->open(fname, config);
+  if (res->c == NULL) {
+    free(res);
+
+    return NULL;
+  }
+
+  return res;
 }
 
 void out_stream_close(struct output_stream *s)
 {
-  return out->close(s);
+  s->out->close(s->c);
+  free(s);
 }
 
 void chunk_write(struct output_stream *o, const struct chunk *c)
 {
-  out->write(o, c->id, c->data, c->size);
+  o->out->write(o->c, c->id, c->data, c->size);
 }

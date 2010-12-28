@@ -34,6 +34,19 @@ struct output_stream;
 struct input_stream *input_stream_open(const char *fname, int *period, const char *config);
 
 /**
+ * @brief Return the FDs used for input.
+ *
+ * Return a "-1 terminated" array of integers containing the FDs used for
+ * reading an input stream. Such an array can be directly passed to wait4data()
+ * as user_fds
+ *
+ * @param input_stream the pointer to the chunkiser context
+ * @return the array with the input FDs on success, NULL on error or if
+ *         such FDs are not available
+ */
+const int *input_get_fds(const struct input_stream *s);
+
+/**
  * @brief Cleanup a chunkiser.
  * 
  * Close an A/V stream, and cleanup all the data structures related to the

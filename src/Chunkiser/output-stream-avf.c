@@ -13,7 +13,17 @@
 #include "config.h"
 #include "dechunkiser_iface.h"
 
-struct output_stream {
+struct dechunkiser_ctx {
+  enum CodecID video_codec_id;
+  enum CodecID audio_codec_id;
+  int streams;
+  int selected_streams;
+  int width, height;
+  int channels;
+  int sample_rate, frame_size;
+  AVRational video_time_base;
+  AVRational audio_time_base;
+
   char *output_format;
   char *output_file;
   int64_t prev_pts, prev_dts;
@@ -49,60 +59,116 @@ static enum CodecID libav_codec_id(uint8_t mytype)
       return CODEC_ID_VP6;
     case 13:
       return CODEC_ID_DIRAC;
+    case 129:
+      return CODEC_ID_MP3;
+    case 130:
+      return CODEC_ID_AAC;
+    case 131:
+      return CODEC_ID_AC3;
+    case 132:
+      return CODEC_ID_VORBIS;
     default:
       fprintf(stderr, "Unknown codec %d\n", mytype);
       return 0;
   }
 }
-
-static AVFormatContext *format_init(struct output_stream *o, const uint8_t *data)
+  
+static AVFormatContext *format_init(struct dechunkiser_ctx *o)
 {
   AVFormatContext *of;
-  AVCodecContext *c;
   AVOutputFormat *outfmt;
-  int width, height, frame_rate_n, frame_rate_d;
-  uint8_t codec;
-
+  
   av_register_all();
 
-  payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
-  //dprintf("Frame size: %dx%d -- Frame rate: %d / %d\n", width, height, frame_rate_n, frame_rate_d);
   outfmt = av_guess_format(o->output_format, o->output_file, NULL);
   of = avformat_alloc_context();
   if (of == NULL) {
     return NULL;
   }
   of->oformat = outfmt;
-  av_new_stream(of, 0);
-  c = of->streams[0]->codec;
-  c->codec_id = libav_codec_id(codec);
-  c->codec_type = CODEC_TYPE_VIDEO;
-  c->width = width;
-  c->height= height;
-  c->time_base.den = frame_rate_n;
-  c->time_base.num = frame_rate_d;
-  of->streams[0]->avg_frame_rate.num = frame_rate_n;
-  of->streams[0]->avg_frame_rate.den = frame_rate_d;
-  c->pix_fmt = PIX_FMT_YUV420P;
-
-  o->prev_pts = 0;
-  o->prev_dts = 0;
 
   return of;
 }
 
-static struct output_stream *avf_init(const char *fname, const char *config)
+static AVFormatContext *format_gen(struct dechunkiser_ctx *o, const uint8_t *data)
 {
-  struct output_stream *out;
+  uint8_t codec;
+
+  codec = data[0];
+  if ((codec < 128) && ((o->streams & 0x01) == 0)) {
+    int width, height, frame_rate_n, frame_rate_d;
+
+    o->streams |= 0x01;
+    o->video_codec_id = libav_codec_id(codec);
+    video_payload_header_parse(data, &codec, &width, &height, &frame_rate_n, &frame_rate_d);
+    o->width = width;
+    o->height= height;
+    o->video_time_base.den = frame_rate_n;
+    o->video_time_base.num = frame_rate_d;
+  } else if ((codec > 128) && ((o->streams & 0x02) == 0)) {
+    uint8_t channels;
+    int sample_rate, frame_size;
+
+    audio_payload_header_parse(data, &codec, &channels, &sample_rate, &frame_size);
+    o->streams |= 0x02;
+    o->audio_codec_id = libav_codec_id(codec);
+    o->sample_rate = sample_rate;
+    o->channels = channels;
+    o->frame_size = frame_size;
+    o->audio_time_base.num = frame_size;
+    o->audio_time_base.den = sample_rate;
+  }
+
+  if (o->streams == o->selected_streams) {
+    AVCodecContext *c;
+
+    o->outctx = format_init(o);
+    if (o->streams & 0x01) {
+      av_new_stream(o->outctx, 0);
+      c = o->outctx->streams[o->outctx->nb_streams - 1]->codec;
+      c->codec_id = o->video_codec_id;
+      c->codec_type = CODEC_TYPE_VIDEO;
+      c->width = o->width;
+      c->height= o->height;
+      c->time_base.den = o->video_time_base.den;
+      c->time_base.num = o->video_time_base.num;
+      o->outctx->streams[0]->avg_frame_rate.num = o->video_time_base.den;
+      o->outctx->streams[0]->avg_frame_rate.den = o->video_time_base.num;
+      c->pix_fmt = PIX_FMT_YUV420P;
+    }
+    if (o->streams & 0x02) {
+      av_new_stream(o->outctx, 1);
+      c = o->outctx->streams[o->outctx->nb_streams - 1]->codec;
+      c->codec_id = o->audio_codec_id;
+      c->codec_type = CODEC_TYPE_AUDIO;
+      c->sample_rate = o->sample_rate;
+      c->channels = o->channels;
+      c->frame_size = o->frame_size;
+      c->time_base.num = o->audio_time_base.num;
+      c->time_base.den = o->audio_time_base.den;
+    }
+    o->prev_pts = 0;
+    o->prev_dts = 0;
+
+    return o->outctx;
+  }
+
+  return NULL;
+}
+
+static struct dechunkiser_ctx *avf_init(const char *fname, const char *config)
+{
+  struct dechunkiser_ctx *out;
   struct tag *cfg_tags;
 
-  out = malloc(sizeof(struct output_stream));
+  out = malloc(sizeof(struct dechunkiser_ctx));
   if (out == NULL) {
     return NULL;
   }
 
-  memset(out, 0, sizeof(struct output_stream));
+  memset(out, 0, sizeof(struct dechunkiser_ctx));
   out->output_format = strdup("nut");
+  out->selected_streams = 0x01;
   if (fname) {
     out->output_file = strdup(fname);
   } else {
@@ -116,24 +182,40 @@ static struct output_stream *avf_init(const char *fname, const char *config)
     if (format) {
       out->output_format = strdup(format);
     }
+    format = config_value_str(cfg_tags, "media");
+    if (format) {
+      if (!strcmp(format, "video")) {
+        out->selected_streams = 0x01;
+      } else if (!strcmp(format, "audio")) {
+        out->selected_streams = 0x02;
+      } else if (!strcmp(format, "av")) {
+        out->selected_streams = 0x03;
+      }
+    }
   }
   free(cfg_tags);
 
   return out;
 }
 
-static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
+static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size)
 {
-  const int header_size = VIDEO_PAYLOAD_HEADER_SIZE; 
-  int frames, i;
+  int header_size;
+  int frames, i, media_type;
   uint8_t *p;
 
-  if (data[0] > 127) {
-    fprintf(stderr, "Error! Non video chunk: %x!!!\n", data[0]);
+  if (data[0] == 0) {
+    fprintf(stderr, "Error! strange chunk: %x!!!\n", data[0]);
     return;
+  } else if (data[0] < 127) {
+    header_size = VIDEO_PAYLOAD_HEADER_SIZE;
+    media_type = 1;
+  } else {
+    header_size = AUDIO_PAYLOAD_HEADER_SIZE;
+    media_type = 2;
   }
   if (o->outctx == NULL) {
-    o->outctx = format_init(o, data);
+    o->outctx = format_gen(o, data);
     if (o->outctx == NULL) {
       fprintf(stderr, "Format init failed\n");
 
@@ -145,7 +227,9 @@ static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
     url_fopen(&o->outctx->pb, o->output_file, URL_WRONLY);
     av_write_header(o->outctx);
   }
-
+  if ((o->streams & media_type) == 0) {
+    return;		/* Received a chunk for a non-selected stream */
+  }
   frames = data[header_size - 1];
   p = data + header_size + FRAME_HEADER_SIZE * frames;
   for (i = 0; i < frames; i++) {
@@ -157,7 +241,7 @@ static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
                        &frame_size, &pts, &dts);
     //dprintf("Frame %d PTS1: %d\n", i, pts);
     av_init_packet(&pkt);
-    pkt.stream_index = 0;	// FIXME!
+    pkt.stream_index = (media_type == 2) && (((o->streams & 0x01) == 0x01));
     if (pts != -1) {
       pts += (pts < o->prev_pts - ((1LL << 31) - 1)) ? ((o->prev_pts >> 32) + 1) << 32 : (o->prev_pts >> 32) << 32;
       //dprintf(" PTS2: %d\n", pts);
@@ -179,15 +263,19 @@ static void avf_write(struct output_stream *o, int id, uint8_t *data, int size)
   }
 }
 
-static void avf_close(struct output_stream *s)
+static void avf_close(struct dechunkiser_ctx *s)
 {
+  int i;
+
   av_write_trailer(s->outctx);
   url_fclose(s->outctx->pb);
 
-  av_metadata_free(&s->outctx->streams[0]->metadata);
-  av_free(s->outctx->streams[0]->codec);
-  av_free(s->outctx->streams[0]->info);
-  av_free(s->outctx->streams[0]);
+  for (i = 0; i < s->outctx->nb_streams; i++) {
+    av_metadata_free(&s->outctx->streams[i]->metadata);
+    av_free(s->outctx->streams[i]->codec);
+    av_free(s->outctx->streams[i]->info);
+    av_free(s->outctx->streams[i]);
+  }
   av_metadata_free(&s->outctx->metadata);
   free(s->outctx);
   free(s->output_format);

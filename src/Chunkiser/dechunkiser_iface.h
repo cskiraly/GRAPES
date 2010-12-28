@@ -1,6 +1,8 @@
+struct dechunkiser_ctx;
+
 struct dechunkiser_iface {
-  struct output_stream *(*open)(const char *fname, const char *config);
-  void (*close)(struct output_stream *s);
-  void (*write)(struct output_stream *o, int id, uint8_t *data, int size);
+  struct dechunkiser_ctx *(*open)(const char *fname, const char *config);
+  void (*close)(struct dechunkiser_ctx *s);
+  void (*write)(struct dechunkiser_ctx *o, int id, uint8_t *data, int size);
 };
 

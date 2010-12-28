@@ -13,11 +13,10 @@
 #include "chunkiser_iface.h"
 
 #define STATIC_BUFF_SIZE 1000 * 1024
-struct input_stream {
+struct chunkiser_ctx {
   AVFormatContext *s;
   int loop;	//loop on input file infinitely
-  int audio_stream;
-  int video_stream;
+  uint64_t streams;
   int64_t last_ts;
   int64_t base_ts;
   AVBitStreamFilterContext *bsf[MAX_STREAMS];
@@ -55,10 +54,24 @@ static uint8_t codec_type(enum CodecID cid)
       return 12;
     case CODEC_ID_DIRAC:
       return 13;
+    case CODEC_ID_MP2:
+    case CODEC_ID_MP3:
+      return 129;
+    case CODEC_ID_AAC:
+      return 130;
+    case CODEC_ID_AC3:
+      return 131;
+    case CODEC_ID_VORBIS:
+      return 132;
     default:
       fprintf(stderr, "Unknown codec ID %d\n", cid);
       return 0;
   }
+}
+
+static void audio_header_fill(uint8_t *data, AVStream *st)
+{
+  audio_payload_header_write(data, codec_type(st->codec->codec_id), st->codec->channels, st->codec->sample_rate, st->codec->frame_size);
 }
 
 static void video_header_fill(uint8_t *data, AVStream *st)
@@ -76,28 +89,23 @@ static void video_header_fill(uint8_t *data, AVStream *st)
     num /= 1000;
     den /= 1000;
   }
-  payload_header_write(data, codec_type(st->codec->codec_id), st->codec->width, st->codec->height, num, den);
+  video_payload_header_write(data, codec_type(st->codec->codec_id), st->codec->width, st->codec->height, num, den);
 }
 
-static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *st, int64_t base_ts)
+static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *st, AVRational new_tb, int64_t base_ts)
 {
-  AVRational fps;
   int32_t pts, dts;
 
-  fps = st->avg_frame_rate;
-  if (fps.num == 0) {
-    fps = st->r_frame_rate;
-  }
   if (pkt->pts != AV_NOPTS_VALUE) {
-    pts = av_rescale_q(pkt->pts, st->time_base, (AVRational){fps.den, fps.num}),
-    pts += av_rescale_q(base_ts, AV_TIME_BASE_Q, (AVRational){fps.den, fps.num});
+    pts = av_rescale_q(pkt->pts, st->time_base, new_tb),
+    pts += av_rescale_q(base_ts, AV_TIME_BASE_Q, new_tb);
   } else {
     pts = -1;
   }
   //dprintf("pkt->pts=%ld PTS=%d",pkt->pts, pts);
   if (pkt->dts != AV_NOPTS_VALUE) {
-    dts = av_rescale_q(pkt->dts, st->time_base, (AVRational){fps.den, fps.num});
-    dts += av_rescale_q(base_ts, AV_TIME_BASE_Q, (AVRational){fps.den, fps.num});
+    dts = av_rescale_q(pkt->dts, st->time_base, new_tb);
+    dts += av_rescale_q(base_ts, AV_TIME_BASE_Q, new_tb);
   } else {
     fprintf(stderr, "No DTS???\n");
     dts = 0;
@@ -106,29 +114,30 @@ static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *
   frame_header_write(data, size, pts, dts);
 }
 
-static int input_stream_rewind(struct input_stream *s)
+static int input_stream_rewind(struct chunkiser_ctx *s)
 {
-    int ret;
+  int ret;
 
-    ret = av_seek_frame(s->s,-1,0,0);
-    s->base_ts = s->last_ts;
+  ret = av_seek_frame(s->s,-1,0,0);
+  s->base_ts = s->last_ts;
 
-    return ret;
+  return ret;
 }
 
 
 /* Interface functions */
 
-static struct input_stream *avf_open(const char *fname, int *period, const char *config)
+static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char *config)
 {
-  struct input_stream *desc;
+  struct chunkiser_ctx *desc;
   int i, res;
   struct tag *cfg_tags;
+  int video_streams = 0, audio_streams = 1;
 
   avcodec_register_all();
   av_register_all();
 
-  desc = malloc(sizeof(struct input_stream));
+  desc = malloc(sizeof(struct chunkiser_ctx));
   if (desc == NULL) {
     return NULL;
   }
@@ -146,27 +155,45 @@ static struct input_stream *avf_open(const char *fname, int *period, const char 
 
     return NULL;
   }
-  desc->video_stream = -1;
-  desc->audio_stream = -1;
+  desc->streams = 0;
   desc->last_ts = 0;
   desc->base_ts = 0;
   desc->loop = 0;
   cfg_tags = config_parse(config);
   if (cfg_tags) {
+    const char *media;
+
     config_value_int(cfg_tags, "loop", &desc->loop);
+    media = config_value_str(cfg_tags, "media");
+    if (media) {
+      if (!strcmp(media, "audio")) {
+        audio_streams = 0;
+        video_streams = 1;
+      } else if (!strcmp(media, "video")) {
+        audio_streams = 1;
+        video_streams = 0;
+      } else if (!strcmp(media, "av")) {
+        audio_streams = 0;
+        video_streams = 0;
+      }
+    }
   }
   free(cfg_tags);
   for (i = 0; i < desc->s->nb_streams; i++) {
-    if (desc->video_stream == -1 && desc->s->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO) {
-      desc->video_stream = i;
+    if (desc->s->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO) {
+      if (video_streams++ == 0) {
+        desc->streams |= 1ULL << i;
+      }
       fprintf(stderr, "Video Frame Rate = %d/%d --- Period: %lld\n",
               desc->s->streams[i]->r_frame_rate.num,
               desc->s->streams[i]->r_frame_rate.den,
               av_rescale(1000000, desc->s->streams[i]->r_frame_rate.den, desc->s->streams[i]->r_frame_rate.num));
       *period = av_rescale(1000000, desc->s->streams[i]->r_frame_rate.den, desc->s->streams[i]->r_frame_rate.num);
     }
-    if (desc->audio_stream == -1 && desc->s->streams[i]->codec->codec_type == CODEC_TYPE_AUDIO) {
-      desc->audio_stream = i;
+    if (desc->s->streams[i]->codec->codec_type == CODEC_TYPE_AUDIO) {
+      if (audio_streams++ == 0) {
+        desc->streams |= 1ULL << i;
+      }
     }
     if (desc->s->streams[i]->codec->codec_id == CODEC_ID_MPEG4) {
       desc->bsf[i] = av_bitstream_filter_init("dump_extra");
@@ -182,7 +209,7 @@ static struct input_stream *avf_open(const char *fname, int *period, const char 
   return desc;
 }
 
-static void avf_close(struct input_stream *s)
+static void avf_close(struct chunkiser_ctx *s)
 {
   int i;
 
@@ -195,85 +222,111 @@ static void avf_close(struct input_stream *s)
   free(s);
 }
 
-static uint8_t *avf_chunkise(struct input_stream *s, int id, int *size, uint64_t *ts)
+static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts)
 {
-    AVPacket pkt;
-    int res;
-    uint8_t *data;
-    int header_size;
+  AVPacket pkt;
+  AVRational new_tb;
+  int res;
+  uint8_t *data;
+  int header_size;
 
-    res = av_read_frame(s->s, &pkt);
-    if (res < 0) {
-      if (s->loop) {
-        if (input_stream_rewind(s) >= 0) {
-          *size = 0;
-          *ts = s->last_ts;
-
-          return NULL;
-        }
-      }
-      fprintf(stderr, "AVPacket read failed: %d!!!\n", res);
-      *size = -1;
-
-      return NULL;
-    }
-    if (pkt.stream_index != s->video_stream) {
-      *size = 0;
-      *ts = s->last_ts;
-      av_free_packet(&pkt);
-
-      return NULL;
-    }
-    if (s->bsf[pkt.stream_index]) {
-      AVPacket new_pkt= pkt;
-      int res;
-
-      res = av_bitstream_filter_filter(s->bsf[pkt.stream_index],
-                                       s->s->streams[pkt.stream_index]->codec,
-                                       NULL, &new_pkt.data, &new_pkt.size,
-                                       pkt.data, pkt.size, pkt.flags & AV_PKT_FLAG_KEY);
-      if(res > 0){
-        av_free_packet(&pkt);
-        new_pkt.destruct= av_destruct_packet;
-      } else if(res < 0){
-        fprintf(stderr, "%s failed for stream %d, codec %s: ",
-                        s->bsf[pkt.stream_index]->filter->name,
-                        pkt.stream_index,
-                        s->s->streams[pkt.stream_index]->codec->codec->name);
-        fprintf(stderr, "%d\n", res);
+  res = av_read_frame(s->s, &pkt);
+  if (res < 0) {
+    if (s->loop) {
+      if (input_stream_rewind(s) >= 0) {
         *size = 0;
+        *ts = s->last_ts;
 
         return NULL;
       }
-      pkt= new_pkt;
     }
+    fprintf(stderr, "AVPacket read failed: %d!!!\n", res);
+    *size = -1;
 
-    if (s->s->streams[pkt.stream_index]->codec->codec_type == CODEC_TYPE_VIDEO) {
-      header_size = VIDEO_PAYLOAD_HEADER_SIZE;
-    }
-    *size = pkt.size + header_size + FRAME_HEADER_SIZE;
-    data = malloc(*size);
-    if (data == NULL) {
-      *size = -1;
+    return NULL;
+  }
+  if ((s->streams & (1ULL << pkt.stream_index)) == 0) {
+    *size = 0;
+    *ts = s->last_ts;
+    av_free_packet(&pkt);
+
+    return NULL;
+  }
+  if (s->bsf[pkt.stream_index]) {
+    AVPacket new_pkt= pkt;
+    int res;
+
+    res = av_bitstream_filter_filter(s->bsf[pkt.stream_index],
+                                     s->s->streams[pkt.stream_index]->codec,
+                                     NULL, &new_pkt.data, &new_pkt.size,
+                                     pkt.data, pkt.size, pkt.flags & AV_PKT_FLAG_KEY);
+    if(res > 0){
       av_free_packet(&pkt);
+      new_pkt.destruct= av_destruct_packet;
+    } else if(res < 0){
+      fprintf(stderr, "%s failed for stream %d, codec %s: ",
+                      s->bsf[pkt.stream_index]->filter->name,
+                      pkt.stream_index,
+                      s->s->streams[pkt.stream_index]->codec->codec->name);
+      fprintf(stderr, "%d\n", res);
+      *size = 0;
 
       return NULL;
     }
-    if (s->s->streams[pkt.stream_index]->codec->codec_type == CODEC_TYPE_VIDEO) {
-      video_header_fill(data, s->s->streams[pkt.stream_index]);
-    }
-    data[VIDEO_PAYLOAD_HEADER_SIZE - 1] = 1;
-    frame_header_fill(data + VIDEO_PAYLOAD_HEADER_SIZE, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], s->base_ts);
+    pkt= new_pkt;
+  }
 
-    memcpy(data + header_size + FRAME_HEADER_SIZE, pkt.data, pkt.size);
-    *ts = av_rescale_q(pkt.dts, s->s->streams[pkt.stream_index]->time_base, AV_TIME_BASE_Q);
-    //dprintf("pkt.dts=%ld TS1=%lu" , pkt.dts, *ts);
-    *ts += s->base_ts;
-    //dprintf(" TS2=%lu\n",*ts);
-    s->last_ts = *ts;
+  switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
+    case CODEC_TYPE_VIDEO:
+      header_size = VIDEO_PAYLOAD_HEADER_SIZE;
+      break;
+    case CODEC_TYPE_AUDIO:
+      header_size = AUDIO_PAYLOAD_HEADER_SIZE;
+      break;
+    default:
+      /* Cannot arrive here... */
+      fprintf(stderr, "Internal chunkiser error!\n");
+      exit(-1);
+  }
+  *size = pkt.size + header_size + FRAME_HEADER_SIZE;
+  data = malloc(*size);
+  if (data == NULL) {
+    *size = -1;
     av_free_packet(&pkt);
 
-    return data;
+    return NULL;
+  }
+  switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
+    case CODEC_TYPE_VIDEO:
+      video_header_fill(data, s->s->streams[pkt.stream_index]);
+      new_tb.den = s->s->streams[pkt.stream_index]->avg_frame_rate.num;
+      new_tb.num = s->s->streams[pkt.stream_index]->avg_frame_rate.den;
+      if (new_tb.num == 0) {
+        new_tb.den = s->s->streams[pkt.stream_index]->r_frame_rate.num;
+        new_tb.num = s->s->streams[pkt.stream_index]->r_frame_rate.den;
+      }
+      break;
+    case CODEC_TYPE_AUDIO:
+      audio_header_fill(data, s->s->streams[pkt.stream_index]);
+      new_tb = (AVRational){s->s->streams[pkt.stream_index]->codec->frame_size, s->s->streams[pkt.stream_index]->codec->sample_rate};
+      break;
+    default:
+      /* Cannot arrive here... */
+      fprintf(stderr, "Internal chunkiser error!\n");
+      exit(-1);
+  }
+  data[header_size - 1] = 1;
+  frame_header_fill(data + header_size, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
+
+  memcpy(data + header_size + FRAME_HEADER_SIZE, pkt.data, pkt.size);
+  *ts = av_rescale_q(pkt.dts, s->s->streams[pkt.stream_index]->time_base, AV_TIME_BASE_Q);
+  //dprintf("pkt.dts=%ld TS1=%lu" , pkt.dts, *ts);
+  *ts += s->base_ts;
+  //dprintf(" TS2=%lu\n",*ts);
+  s->last_ts = *ts;
+  av_free_packet(&pkt);
+
+  return data;
 }
 
 #if 0
