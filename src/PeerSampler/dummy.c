@@ -17,7 +17,9 @@
 static struct nodeID *table[MAX_PEERS];
 
 //TODO: context support not implemented
-struct peersampler_context{};
+struct peersampler_context{
+  const struct nodeID **r;
+};
 
 static struct peersampler_context* dummy_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
 {
@@ -68,10 +70,18 @@ static int dummy_parse_data(struct peersampler_context *context, const uint8_t *
 
 static const struct nodeID **dummy_get_neighbourhood(struct peersampler_context *context, int *n)
 {
+  if (context->r == NULL) {
+    context->r = malloc(MAX_PEERS * sizeof(struct nodeID *));
+    if (context->r == NULL) {
+      return NULL;
+    }
+  }
+
   for (*n = 0; table[*n] != NULL; (*n)++) {
+    context->r[*n] = table[*n];
 fprintf(stderr, "Checking table[%d]\n", *n);
   }
-  return (const struct nodeID **)table;
+  return context->r;
 }
 
 static const void *dummy_get_metadata(struct peersampler_context *context, int *metadata_size)

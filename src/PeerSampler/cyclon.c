@@ -35,6 +35,7 @@ struct peersampler_context{
   struct nodeID *dst;
 
   struct cyclon_proto_context *pc;
+  const struct nodeID **r;
 };
 
 
@@ -195,30 +196,28 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
 
 static const struct nodeID **cyclon_get_neighbourhood(struct peersampler_context *context, int *n)
 {
-  static struct nodeID **r;
-
-  r = realloc(r, context->cache_size * sizeof(struct nodeID *));
-  if (r == NULL) {
+  context->r = realloc(context->r, context->cache_size * sizeof(struct nodeID *));
+  if (context->r == NULL) {
     return NULL;
   }
 
   for (*n = 0; nodeid(context->local_cache, *n) && (*n < context->cache_size); (*n)++) {
-    r[*n] = nodeid(context->local_cache, *n);
+    context->r[*n] = nodeid(context->local_cache, *n);
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
   if (context->flying_cache) {
     int i;
 
     for (i = 0; nodeid(context->flying_cache, i) && (*n < context->cache_size); (*n)++, i++) {
-      r[*n] = nodeid(context->flying_cache, i);
+      context->r[*n] = nodeid(context->flying_cache, i);
     }
   }
   if (context->dst && (*n < context->cache_size)) {
-    r[*n] = context->dst;
+    context->r[*n] = context->dst;
     (*n)++;
   }
 
-  return (const struct nodeID **)r;
+  return context->r;
 }
 
 static const void *cyclon_get_metadata(struct peersampler_context *context, int *metadata_size)
