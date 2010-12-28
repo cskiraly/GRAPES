@@ -9,6 +9,7 @@
 
 extern struct dechunkiser_iface out_avf;
 extern struct dechunkiser_iface out_raw;
+extern struct dechunkiser_iface out_udp;
 
 struct output_stream {
   struct dechunkiser_ctx *c;
@@ -37,6 +38,8 @@ struct output_stream *out_stream_init(const char *fname, const char *config)
     type = config_value_str(cfg_tags, "dechunkiser");
     if (type && !strcmp(type, "raw")) {
       res->out = &out_raw;
+    } else if (type && !strcmp(type, "udp")) {
+      res->out = &out_udp;
     }
   }
   free(cfg_tags);
