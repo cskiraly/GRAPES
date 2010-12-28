@@ -26,15 +26,21 @@ struct dechunkiser_ctx {
   int ports;
 };
 
-static int ports_parse(const char *config, int *ports)
+static int dst_parse(const char *config, int *ports, char *ip)
 {
   int i = 0;
   struct tag *cfg_tags;
 
+  sprintf(ip, "127.0.0.1");
   cfg_tags = config_parse(config);
   if (cfg_tags) {
     int j;
+    const char *addr;
 
+    addr = config_value_str(cfg_tags, "addr");
+    if (addr) {
+      sprintf(ip, "%s", addr);
+    }
     for (j = 0; j < UDP_PORTS_NUM_MAX; j++) {
       char tag[8];
 
@@ -70,7 +76,7 @@ static struct dechunkiser_ctx *udp_open_out(const char *fname, const char *confi
     return NULL;
   }
 
-  res->ports = ports_parse(config, res->port);
+  res->ports = dst_parse(config, res->port, res->ip);
   if (res->ports ==  0) {
     fprintf(stderr, "cannot parse the output ports.\n");
     close(res->outfd);
