@@ -35,6 +35,8 @@ static void help(const char *name)
   fprintf(stderr, "\t -V: audio/video in the libav output\n");
   fprintf(stderr, "\t -U: use RAW output, removing the UDP payload header\n");
   fprintf(stderr, "\t -T: use RAW output, removing the RTP payload heade\n");
+  fprintf(stderr, "\t -I <config>: specify the chunkiser config\n");
+  fprintf(stderr, "\t -O <config>: specify the dechunkiser config\n");
 }
 
 static char *addopt(char *opts, char *opts_ptr, const char *tag, const char *value)
@@ -50,7 +52,7 @@ static int cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "u:f:rRdlavVUT")) != -1) {
+  while ((o = getopt(argc, argv, "u:f:rRdlavVUTO:I:")) != -1) {
     switch(o) {
       case 'u':
         in_ptr = addopt(in_opts, in_ptr, "chunkiser", "udp");
@@ -88,6 +90,12 @@ static int cmdline_parse(int argc, char *argv[])
       case 'V':
         in_ptr = addopt(in_opts, in_ptr, "media", "av");
         out_ptr = addopt(out_opts, out_ptr, "media", "av");
+        break;
+      case 'O':
+        out_ptr += sprintf(out_ptr, "%s", optarg);
+        break;
+      case 'I':
+        in_ptr += sprintf(in_ptr, "%s", optarg);
         break;
       default:
         fprintf(stderr, "Error: unknown option %c\n", o);
