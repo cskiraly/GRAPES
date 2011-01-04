@@ -33,6 +33,7 @@ struct peersampler_context{
   int period;
   int counter;
   struct ncast_proto_context *tc;
+  const struct nodeID **r;
 };
 
 static uint64_t gettime(void)
@@ -54,6 +55,7 @@ static struct peersampler_context* ncast_context_init(void)
   con->bootstrap_period = 2000000;
   con->period = 10000000;
   con->currtime = gettime();
+  con->r = NULL;
 
   return con;
 }
@@ -165,19 +167,17 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
 
 static const struct nodeID **ncast_get_neighbourhood(struct peersampler_context *context, int *n)
 {
-  static struct nodeID **r;
-
-  r = realloc(r, context->cache_size * sizeof(struct nodeID *));
-  if (r == NULL) {
+  context->r = realloc(context->r, context->cache_size * sizeof(struct nodeID *));
+  if (context->r == NULL) {
     return NULL;
   }
 
   for (*n = 0; nodeid(context->local_cache, *n) && (*n < context->cache_size); (*n)++) {
-    r[*n] = nodeid(context->local_cache, *n);
+    context->r[*n] = nodeid(context->local_cache, *n);
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
 
-  return (const struct nodeID **)r;
+  return context->r;
 }
 
 static const void *ncast_get_metadata(struct peersampler_context *context, int *metadata_size)
