@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,6 +75,11 @@ static uint8_t *dumb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64
   }
   *ts = 0;
   *size = read(s->fds[0], res, s->chunk_size);
+  if ((*size == 0) && (errno != EAGAIN)) {
+    *size = -1;
+    free(res);
+    res = NULL;
+  }
 
   return res;
 }
