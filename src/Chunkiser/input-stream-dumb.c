@@ -17,6 +17,7 @@
 #include "config.h"
 
 struct chunkiser_ctx {
+  int loop;	//loop on input file infinitely
   int chunk_size;
   int fds[2];
 };
@@ -32,6 +33,7 @@ static struct chunkiser_ctx *dumb_open(const char *fname, int *period, const cha
     return NULL;
   }
 
+  res->loop = 0;
   res->fds[0] = open(fname, O_RDONLY);
   if (res->fds[0] < 0) {
     free(res);
@@ -46,6 +48,7 @@ static struct chunkiser_ctx *dumb_open(const char *fname, int *period, const cha
   if (cfg_tags) {
     const char *access_mode;
 
+    config_value_int(cfg_tags, "loop", &res->loop);
     config_value_int(cfg_tags, "chunk_size", &res->chunk_size);
     access_mode = config_value_str(cfg_tags, "mode");
     if (access_mode && !strcmp(access_mode, "nonblock")) {
@@ -77,6 +80,11 @@ static uint8_t *dumb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64
   *size = read(s->fds[0], res, s->chunk_size);
   if ((*size == 0) && (errno != EAGAIN)) {
     *size = -1;
+    if (s->loop) {
+      if (lseek(s->fds[0], 0, SEEK_SET) == 0) {
+        *size = 0;
+      }
+    }
     free(res);
     res = NULL;
   }
