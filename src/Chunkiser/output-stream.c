@@ -40,6 +40,15 @@ struct output_stream *out_stream_init(const char *fname, const char *config)
       res->out = &out_raw;
     } else if (type && !strcmp(type, "udp")) {
       res->out = &out_udp;
+    } else if (type && !strcmp(type, "avf")) {
+#ifdef AVF
+      res->out = &out_avf;
+#else
+      free(res);
+      free(cfg_tags);
+
+      return NULL;
+#endif
     }
   }
   free(cfg_tags);
