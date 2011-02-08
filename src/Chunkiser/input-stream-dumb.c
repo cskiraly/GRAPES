@@ -47,7 +47,7 @@ static struct chunkiser_ctx *dumb_open(const char *fname, int *period, const cha
 
     config_value_int(cfg_tags, "chunk_size", &res->chunk_size);
     access_mode = config_value_str(cfg_tags, "mode");
-    if (!strcmp(access_mode, "nonblock")) {
+    if (access_mode && !strcmp(access_mode, "nonblock")) {
       fcntl(res->fds[0], F_SETFL, O_NONBLOCK);
     }
   }
