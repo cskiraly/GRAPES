@@ -29,7 +29,7 @@ static void help(const char *name)
   fprintf(stderr, "\t -r: use RAW output\n");
   fprintf(stderr, "\t -R: use RAW output, removing the libav payload header\n");
   fprintf(stderr, "\t -d: use the dummy chunkiser\n");
-//  fprintf(stderr, "\t -l: \n");
+  fprintf(stderr, "\t -l: loop\n");
   fprintf(stderr, "\t -a: audio-only in the libav ouptut\n");
   fprintf(stderr, "\t -v: video-only in the libav output\n");
   fprintf(stderr, "\t -V: audio/video in the libav output\n");
@@ -52,8 +52,11 @@ static int cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "u:f:rRdlavVUTO:I:")) != -1) {
+  while ((o = getopt(argc, argv, "lu:f:rRdlavVUTO:I:")) != -1) {
     switch(o) {
+      case 'l':
+        in_ptr = addopt(in_opts, in_ptr, "loop", "1");
+        break;
       case 'u':
         in_ptr = addopt(in_opts, in_ptr, "chunkiser", "udp");
         in_ptr = addopt(in_opts, in_ptr, "port1", optarg);
