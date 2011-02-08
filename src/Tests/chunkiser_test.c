@@ -83,15 +83,21 @@ static int cmdline_parse(int argc, char *argv[])
         in_ptr = addopt(in_opts, in_ptr, "chunkiser", "dummy");
         break;
       case 'a':
+        in_ptr = addopt(in_opts, in_ptr, "chunkiser", "avf");
         in_ptr = addopt(in_opts, in_ptr, "media", "audio");
+        out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "avf");
         out_ptr = addopt(out_opts, out_ptr, "media", "audio");
         break;
       case 'v':
+        in_ptr = addopt(in_opts, in_ptr, "chunkiser", "avf");
         in_ptr = addopt(in_opts, in_ptr, "media", "video");
+        out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "avf");
         out_ptr = addopt(out_opts, out_ptr, "media", "video");
         break;
       case 'V':
+        in_ptr = addopt(in_opts, in_ptr, "chunkiser", "avf");
         in_ptr = addopt(in_opts, in_ptr, "media", "av");
+        out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "avf");
         out_ptr = addopt(out_opts, out_ptr, "media", "av");
         break;
       case 'O':
