@@ -50,6 +50,14 @@ struct cloud_helper_context* get_cloud_helper_for(struct nodeID *local);
 int get_from_cloud(struct cloud_helper_context *context, char *key, uint8_t *header_ptr, int header_size);
 
 /**
+ * @brief Returns the timestamp associated to the last GET operation.
+ * Returns the timestamp associated to the last GET operation or NULL.
+ * @param[in] context The contex representing the desired cloud_helper instance.
+ * @return timestamp ot NULL
+ */
+time_t timestamp_cloud(struct cloud_helper_context *context);
+
+/**
  * @brief Put on the cloud the value for a specified key.
  * This function transparently handles the sending routines.
  * @param[in] context The contex representing the desired cloud_helper instance.
@@ -61,12 +69,15 @@ int get_from_cloud(struct cloud_helper_context *context, char *key, uint8_t *hea
 int put_on_cloud(struct cloud_helper_context *context, char *key, uint8_t *buffer_ptr, int buffer_size);
 
 /**
- * @brief Returns the nodeID identifing the cloud
- * This function transparently handles the identification of the cloud node.
+ * @brief Returns the nodeID identifing the cloud for the specified variant.
+ * This function transparently handles the identification of the cloud
+ * node. Thanks to the variant parameter is possible to recover
+ * nodeIDs which differ wrt to nodeid_equal, but are equal wrt to is_cloud_node.
  * @param[in] context The contex representing the desired cloud_helper instance.
+ * @param[in] variant The variant number for this nodeID.
  * @return nodeID identifying the cloud.
  */
-struct nodeID* get_cloud_node(struct cloud_helper_context *context);
+struct nodeID* get_cloud_node(struct cloud_helper_context *context, uint8_t variant);
 
 /**
  * @brief Check if the specified node references the cloud

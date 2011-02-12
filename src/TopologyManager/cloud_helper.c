@@ -82,9 +82,14 @@ int put_on_cloud(struct cloud_helper_context *context, char *key, uint8_t *buffe
   return context->ch->put_on_cloud(context->ch_context, key, buffer_ptr, buffer_size);
 }
 
-struct nodeID* get_cloud_node(struct cloud_helper_context *context)
+struct nodeID* get_cloud_node(struct cloud_helper_context *context, uint8_t variant)
 {
-  return context->ch->get_cloud_node(context->ch_context);
+  return context->ch->get_cloud_node(context->ch_context, variant);
+}
+
+time_t timestamp_cloud(struct cloud_helper_context *context)
+{
+  return context->ch->timestamp_cloud(context->ch_context);
 }
 
 int is_cloud_node(struct cloud_helper_context *context, struct nodeID* node)

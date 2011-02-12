@@ -5,11 +5,11 @@
  *
  *  This is a small test program for the cloud interface
  *  To try the simple test: run it with
- *    ./cloud_test -c "provider=<cloud_provider>,<provider_opts>" [-g key | -p key=value | -n | -e ip:port]
+ *    ./cloud_test -c "provider=<cloud_provider>,<provider_opts>" [-g key | -p key=value | -n variant | -e ip:port]
  *
  *    -g  GET key from cloud
  *    -p  PUT key=value on cloud
- *    -n  print the cloud node
+ *    -n  print the cloud node for the specified variant
  *    -e  check if ip:port references the cloud
  *    -c  set the configuration of the cloud provider
  *
@@ -35,6 +35,7 @@
 
 static const char *config;
 static int operation;
+static int variant;
 static char *key;
 static char *value;
 
@@ -46,7 +47,7 @@ static void cmdline_parse(int argc, char *argv[])
   int o;
   char *temp;
       
-  while ((o = getopt(argc, argv, "c:g:p:ne:")) != -1) {
+  while ((o = getopt(argc, argv, "c:g:p:n:e:")) != -1) {
     switch(o) {
     case 'c':
       config = strdup(optarg);
@@ -69,6 +70,7 @@ static void cmdline_parse(int argc, char *argv[])
         break;
     case 'n':
       operation = GET_CLOUD_NODE;
+      variant = atoi(optarg);
       break;
     case 'e':
       operation = EQ_CLOUD_NODE;
@@ -154,8 +156,11 @@ int main(int argc, char *argv[])
       } else if (err == 0) {
 	printf("Key not present on the cloud\n");
       } else {
+        time_t timestamp;
 	buffer[sizeof(buffer) - 1] = '\0';
 	printf("%s\n", buffer);
+        timestamp = timestamp_cloud(cloud);
+        printf("Timestamp: %s\n", ctime(&timestamp));
       }
     } else if (err == 0){
       printf("No response from cloud\n");
@@ -168,11 +173,11 @@ int main(int argc, char *argv[])
     }
     break;
   case GET_CLOUD_NODE:
-    printf("Cloud node: %s\n", node_addr(get_cloud_node(cloud)));
+    printf("Cloud node: %s\n", node_addr(get_cloud_node(cloud, variant)));
     break;
   case EQ_CLOUD_NODE:
     t = create_node(key, atoi(value));
-    printf("Node %s references cloud? %d\n", node_addr(get_cloud_node(cloud)),
+    printf("Node %s references cloud? %d\n", node_addr(get_cloud_node(cloud, variant)),
 	   is_cloud_node(cloud, t));
     break;
   }

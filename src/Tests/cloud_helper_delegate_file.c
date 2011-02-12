@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <time.h>
 
 #include "net_helper.h"
 
@@ -13,7 +14,8 @@ struct delegate_iface {
   void* (*cloud_helper_init)(struct nodeID *local, const char *config);
   int (*get_from_cloud)(void *context, char *key, uint8_t *header_ptr, int header_size);
   int (*put_on_cloud)(void *context, char *key, uint8_t *buffer_ptr, int buffer_size);
-  struct nodeID* (*get_cloud_node)(void *context);
+  struct nodeID* (*get_cloud_node)(void *context, uint8_t variant);
+  time_t (*timestamp_cloud)(void *context);
   int (*is_cloud_node)(void *context, struct nodeID* node);
   int (*wait4cloud)(void *context, struct timeval *tout);
   int (*recv_from_cloud)(void *context, uint8_t *buffer_ptr, int buffer_size);
@@ -27,6 +29,7 @@ struct mem_offset {
 struct file_cloud_context {
   const char *path;
   sem_t sem;
+  time_t last_timestamp;
   uint8_t *out_buffer[10];
   struct mem_offset out_len[10];
   int out_cnt;
@@ -48,6 +51,7 @@ struct entry {
   char key[100];
   uint8_t value[100];
   int value_len;
+  time_t timestamp;
 };
 
 
@@ -85,7 +89,7 @@ void* getValueForKey(void *context)
       sem_wait(&ctx->cloud->sem);
       memcpy(buffer_ptr, e.value, e.value_len);
       len->end += e.value_len;      
-
+      ctx->cloud->last_timestamp = e.timestamp;
       ctx->cloud->key_error = 0;
       sem_post(&ctx->cloud->sem);
       break;
@@ -122,6 +126,7 @@ void* putValueForKey(void *context){
     if (strcmp(e.key, ctx->key) == 0){
       memcpy(e.value, ctx->value, ctx->value_len);
       e.value_len = ctx->value_len;
+      time(&e.timestamp);
       fseek(fd, -sizeof(e), SEEK_CUR);
       fwrite(&e, sizeof(e), 1, fd);
       found = 1;
@@ -132,6 +137,7 @@ void* putValueForKey(void *context){
     strcpy(e.key, ctx->key);
     memcpy(e.value, ctx->value, ctx->value_len);
     e.value_len = ctx->value_len;    
+    time(&e.timestamp);
     fwrite(&e, sizeof(e), 1, fd);
   }
   fflush(fd);
@@ -224,11 +230,19 @@ static int file_cloud_put_on_cloud(void *context, char *key, uint8_t *buffer_ptr
   return 0;  
 }
 
-struct nodeID* file_cloud_get_cloud_node(void *context)
+struct nodeID* file_cloud_get_cloud_node(void *context, uint8_t variant)
 {
   struct file_cloud_context *ctx;
   ctx = (struct file_cloud_context *)context;
-  return ctx->cloud_node_base;
+  return create_node("0.0.0.0", variant);
+}
+
+time_t file_cloud_timestamp_cloud(void *context)
+{
+  struct file_cloud_context *ctx;
+  ctx = (struct file_cloud_context *)context;
+
+  return ctx->last_timestamp;
 }
 
 int file_cloud_is_cloud_node(void *context, struct nodeID* node)
@@ -301,6 +315,7 @@ struct delegate_iface delegate_impl = {
   .get_from_cloud = &file_cloud_get_from_cloud,
   .put_on_cloud = &file_cloud_put_on_cloud,
   .get_cloud_node = &file_cloud_get_cloud_node,
+  .timestamp_cloud = &file_cloud_timestamp_cloud,
   .is_cloud_node = &file_cloud_is_cloud_node,
   .wait4cloud = file_cloud_wait4cloud,
   .recv_from_cloud = file_cloud_recv_from_cloud
