@@ -37,14 +37,14 @@ static struct cloud_helper_impl_context* delegate_cloud_init(struct nodeID *loca
     printf("error: %s", dlerror());
     return NULL;
   }
-  
+
 
   delegate_impl = (struct delegate_iface *) dlsym(dlib, "delegate_impl");
   if (!delegate_impl) return NULL;
 
   ctx = malloc(sizeof(struct cloud_helper_impl_context));
   ctx->delegate = delegate_impl;
- 
+
   ctx->delegate_context = ctx->delegate->cloud_helper_init(local, config);
   if(!ctx->delegate_context) {
     free(ctx);

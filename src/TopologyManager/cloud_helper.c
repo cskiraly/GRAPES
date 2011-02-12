@@ -20,14 +20,14 @@ static int add_context(struct nodeID *local, struct cloud_helper_context *ctx)
 {
   int i;
   if (ctx_counter >= CLOUD_HELPER_MAX_INSTANCES) return 1;
-  
+
   for (i=0; i<ctx_counter; i++)
     if (nodeid_equal(node_ids[i], local)) return 0;
 
   node_ids[ctx_counter] = local;
   cloud_ctxs[ctx_counter] = ctx;
   ctx_counter++;
-  
+
   return 1;
 }
 
@@ -47,7 +47,7 @@ struct cloud_helper_context* cloud_helper_init(struct nodeID *local, const char 
   if (strcmp(provider, "delegate") == 0){
     ctx->ch = &delegate;
   }
-   
+
  ctx->ch_context = ctx->ch->cloud_helper_init(local, config);
  if(!ctx->ch_context){
    free(ctx);
@@ -68,7 +68,7 @@ struct cloud_helper_context* get_cloud_helper_for(struct nodeID *local){
   int i;
   for (i=0; i<ctx_counter; i++)
     if (node_ids[i] == local) return cloud_ctxs[i];
-  
+
   return NULL;
 }
 
@@ -106,4 +106,3 @@ int recv_from_cloud(struct cloud_helper_context *context, uint8_t *buffer_ptr, i
 {
   return context->ch->recv_from_cloud(context->ch_context, buffer_ptr, buffer_size);
 }
-

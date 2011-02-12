@@ -88,7 +88,7 @@ void* getValueForKey(void *context)
 
       sem_wait(&ctx->cloud->sem);
       memcpy(buffer_ptr, e.value, e.value_len);
-      len->end += e.value_len;      
+      len->end += e.value_len;
       ctx->cloud->last_timestamp = e.timestamp;
       ctx->cloud->key_error = 0;
       sem_post(&ctx->cloud->sem);
@@ -136,7 +136,7 @@ void* putValueForKey(void *context){
   if (!found){
     strcpy(e.key, ctx->key);
     memcpy(e.value, ctx->value, ctx->value_len);
-    e.value_len = ctx->value_len;    
+    e.value_len = ctx->value_len;
     time(&e.timestamp);
     fwrite(&e, sizeof(e), 1, fd);
   }
@@ -169,7 +169,7 @@ static void* file_cloud_helper_init(struct nodeID *local, const char *config)
       if (opt) path = opt;
     }
   }
-  
+
   if (!path) path = "cloud_dump";
 
   ctx = malloc(sizeof(struct file_cloud_context));
@@ -202,7 +202,7 @@ static int file_cloud_get_from_cloud(void *context, char *key, uint8_t *header_p
 }
 
 static int file_cloud_put_on_cloud(void *context, char *key, uint8_t *buffer_ptr, int buffer_size)
-{ 
+{
   struct file_cloud_context *ctx;
   int err;
   struct gpThreadContext *tc;
@@ -227,7 +227,7 @@ static int file_cloud_put_on_cloud(void *context, char *key, uint8_t *buffer_ptr
   pthread_attr_destroy(&attr);
   pthread_join(*thread, &status);
 
-  return 0;  
+  return 0;
 }
 
 struct nodeID* file_cloud_get_cloud_node(void *context, uint8_t variant)
@@ -302,7 +302,7 @@ static int file_cloud_recv_from_cloud(void *context, uint8_t *buffer_ptr, int bu
     sem_post(&ctx->sem);
     return buffer_size;
   } else {
-    memcpy(buffer_ptr,  source_ptr, len);    
+    memcpy(buffer_ptr,  source_ptr, len);
     free(ctx->out_buffer[ctx->out_cnt]);
     ctx->out_cnt--;
     sem_post(&ctx->sem);

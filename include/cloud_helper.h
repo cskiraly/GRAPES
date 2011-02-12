@@ -63,7 +63,7 @@ time_t timestamp_cloud(struct cloud_helper_context *context);
  * @param[in] context The contex representing the desired cloud_helper instance.
  * @param[in] key Key to retrieve.
  * @param[in] buffer_ptr A pointer to the buffer in which to store the retrieved data.
- * @param[in] buffer_size The size of the data buffer 
+ * @param[in] buffer_size The size of the data buffer
  * @return 0 on success, 1 on failure
  */
 int put_on_cloud(struct cloud_helper_context *context, char *key, uint8_t *buffer_ptr, int buffer_size);

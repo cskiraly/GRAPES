@@ -16,7 +16,7 @@
  *    For example, run
  *      ./cloud_test -c "provider=delegate,delegate_lib=libfilecloud.so" -p hello=world
  *      ./cloud_test -c "provider=delegate,delegate_lib=libfilecloud.so" -g hello
- *    
+ *
  *    to test the delegate cloud provider with delegate implementation provided by libfilecloud.so.
  */
 
@@ -46,7 +46,7 @@ static void cmdline_parse(int argc, char *argv[])
 {
   int o;
   char *temp;
-      
+
   while ((o = getopt(argc, argv, "c:g:p:n:e:")) != -1) {
     switch(o) {
     case 'c':
@@ -55,14 +55,14 @@ static void cmdline_parse(int argc, char *argv[])
     case 'p':
       temp = strdup(optarg);
       operation = PUT;
-      
+
       key = strsep(&optarg, "=");
       value = optarg;
 
       if (!value || !key){
-	printf("Expected key=value for option -p");
-	free(temp);
-	exit(-1);
+        printf("Expected key=value for option -p");
+        free(temp);
+        exit(-1);
       }
       break;
       case 'g':
@@ -75,16 +75,16 @@ static void cmdline_parse(int argc, char *argv[])
     case 'e':
       operation = EQ_CLOUD_NODE;
       temp = strdup(optarg);
-      
+
       key = strsep(&optarg, ":");
       value = optarg;
 
 
       if (!value || !key){
-	printf("Expected ip:port for option -e");
-	free(temp);
-	exit(-1);
-      }  
+        printf("Expected ip:port for option -e");
+        free(temp);
+        exit(-1);
+      }
       break;
     default:
         fprintf(stderr, "Error: unknown option %c\n", o);
@@ -151,14 +151,14 @@ int main(int argc, char *argv[])
     if (err > 0) {
       err = recv_from_cloud(cloud, buffer, sizeof(buffer)-1);
       if (err < 0) {
-	printf("Erorr receiving cloud response\n");
-	return 1;
+        printf("Erorr receiving cloud response\n");
+        return 1;
       } else if (err == 0) {
-	printf("Key not present on the cloud\n");
+        printf("Key not present on the cloud\n");
       } else {
         time_t timestamp;
-	buffer[sizeof(buffer) - 1] = '\0';
-	printf("%s\n", buffer);
+        buffer[sizeof(buffer) - 1] = '\0';
+        printf("%s\n", buffer);
         timestamp = timestamp_cloud(cloud);
         printf("Timestamp: %s\n", ctime(&timestamp));
       }
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
       err = recv_from_cloud(cloud, buffer, sizeof(buffer)-1);
       buffer[sizeof(buffer) - 1] = '\0';
       printf("No value for the specified key. Received: %s\n", buffer);
-      return 1;      
+      return 1;
     }
     break;
   case GET_CLOUD_NODE:
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   case EQ_CLOUD_NODE:
     t = create_node(key, atoi(value));
     printf("Node %s references cloud? %d\n", node_addr(get_cloud_node(cloud, variant)),
-	   is_cloud_node(cloud, t));
+           is_cloud_node(cloud, t));
     break;
   }
 
