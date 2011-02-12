@@ -33,7 +33,7 @@ static int srv_port;
 static const char *srv_ip;
 
 static struct peer_attributes {
-  enum peer_state {sleep, awake, tired} state;
+  enum peer_state {psleep, awake, tired} state;
   char colour[20];
   char name[40];
 } my_attr;
@@ -62,7 +62,7 @@ static void cmdline_parse(int argc, char *argv[])
         strcpy(my_attr.colour, optarg);
         break;
       case 'S':
-        my_attr.state = sleep;
+        my_attr.state = psleep;
         break;
       case 'T':
         my_attr.state = tired;
@@ -95,7 +95,7 @@ static struct nodeID *init(void)
 static const char *status_print(enum peer_state s)
 {
   switch (s) {
-    case sleep:
+    case psleep:
       return "sleeping";
     case awake:
       return "awake";
@@ -111,14 +111,14 @@ static void status_update(void)
   struct nodeID *myself;
 
   switch (my_attr.state) {
-    case sleep:
+    case psleep:
       my_attr.state = awake;
       break;
     case awake:
       my_attr.state = tired;
       break;
     case tired:
-      my_attr.state = sleep;
+      my_attr.state = psleep;
       break;
   }
   printf("goin' %s\n", status_print(my_attr.state));
