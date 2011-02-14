@@ -3,6 +3,9 @@
  *
  *  This is free software; see gpl-3.0.txt
  */
+
+/* FIXME: The functions below should use int_coding */
+
 #define AUDIO_PAYLOAD_HEADER_SIZE 1 + 1 + 2 + 2 + 1 // 1 Frame type + 1 channels 2 sample rate + 2 frame size + 1 number of frames
 #define VIDEO_PAYLOAD_HEADER_SIZE 1 + 2 + 2 + 2 + 2 + 1 // 1 Frame type + 2 width + 2 height + 2 frame rate num + 2 frame rate den + 1 number of frames
 #define FRAME_HEADER_SIZE (3 + 4 + 1)	// 3 Frame size + 4 PTS + 1 DeltaTS
