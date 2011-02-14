@@ -34,6 +34,8 @@
 #define MSG_SIG_ACC 6
 //Receive the BufferMap
 #define MSG_SIG_BMOFF 10
+//Receive the Acknoledgment
+#define MSG_SIG_ACK 11
 //Request the BufferMap
 #define MSG_SIG_BMREQ 12
 
@@ -87,6 +89,9 @@ int parseSignaling(uint8_t *buff, int buff_len, struct nodeID **owner_id,
         break;
       case MSG_SIG_BMOFF:
         *sig_type = sig_send_buffermap;
+        break;
+      case MSG_SIG_ACK:
+        *sig_type = sig_ack;
         break;
       case MSG_SIG_BMREQ:
         *sig_type = sig_request_buffermap;
@@ -180,6 +185,11 @@ int sendBufferMap(struct nodeID *to, const struct nodeID *owner,
 {
   return sendSignaling(MSG_SIG_BMOFF, to, (!owner ? localID : owner), bmap,
                        cb_size, trans_id);
+}
+
+int sendAck(struct nodeID *to, struct chunkID_set *cset, uint16_t trans_id)
+{
+    return sendSignaling(MSG_SIG_ACK, to, NULL, cset, 0, trans_id);
 }
 
 int requestBufferMap(struct nodeID *to, const struct nodeID *owner,

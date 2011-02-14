@@ -14,7 +14,7 @@
 #include "chunkidset.h"
 
 enum signaling_type {
-  sig_offer, sig_accept, sig_request, sig_deliver, sig_send_buffermap, sig_request_buffermap
+  sig_offer, sig_accept, sig_request, sig_deliver, sig_send_buffermap, sig_request_buffermap, sig_ack,
 };
 
 /**
@@ -124,5 +124,17 @@ int sendBufferMap(struct nodeID *to, const struct nodeID *owner, struct chunkID_
  * @return 1 Success, <0 on error.
  */
 int requestBufferMap(struct nodeID *to, const struct nodeID *owner, uint16_t trans_id);
+
+/**
+ * @brief Send an Acknoledgement to a Peer.
+ *
+ * Send (our own or some other peer's) BufferMap to a third Peer.
+ *
+ * @param[in] to PeerID.
+ * @param[in] cset array of ChunkIDs. 
+ * @param[in] trans_id transaction number associated with this send.
+ * @return 1 Success, <0 on error.
+ */
+int sendAck(struct nodeID *to, struct chunkID_set *cset, uint16_t trans_id);
 
 #endif //TRADE_SIG_HA_H 
