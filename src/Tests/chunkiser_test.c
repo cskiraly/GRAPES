@@ -19,17 +19,20 @@ static char out_opts[1024];
 static char *out_ptr = out_opts;
 static char in_opts[1024];
 static char *in_ptr = in_opts;
+static int udp_port;
+static int out_udp_port;
 
 static void help(const char *name)
 {
   fprintf(stderr, "Usage: %s [options] <input> <output>\n", name);
   fprintf(stderr, "options: u:f:rRdlavVUT\n");
   fprintf(stderr, "\t -u <port>: use the UDP chunkiser (on <port>) for input\n");
+  fprintf(stderr, "\t -P <port>: use the UDP chunkiser (on <port>) for output\n");
   fprintf(stderr, "\t -f <fmt>: use the <fmt> format for ouptut (libav-based)\n");
   fprintf(stderr, "\t -r: use RAW output\n");
   fprintf(stderr, "\t -R: use RAW output, removing the libav payload header\n");
   fprintf(stderr, "\t -d: use the dummy chunkiser\n");
-//  fprintf(stderr, "\t -l: \n");
+  fprintf(stderr, "\t -l: loop\n");
   fprintf(stderr, "\t -a: audio-only in the libav ouptut\n");
   fprintf(stderr, "\t -v: video-only in the libav output\n");
   fprintf(stderr, "\t -V: audio/video in the libav output\n");
@@ -52,11 +55,28 @@ static int cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "u:f:rRdlavVUTO:I:")) != -1) {
+  while ((o = getopt(argc, argv, "lP:u:f:rRdlavVUTO:I:")) != -1) {
+    char port[8];
+
     switch(o) {
+      case 'l':
+        in_ptr = addopt(in_opts, in_ptr, "loop", "1");
+        break;
+      case 'P':
+        if (out_udp_port == 0) {
+          out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "udp");
+        }
+        sprintf(port, "port%d", out_udp_port);
+        out_udp_port++;
+        out_ptr = addopt(out_opts, out_ptr, port, optarg);
+        break;
       case 'u':
-        in_ptr = addopt(in_opts, in_ptr, "chunkiser", "udp");
-        in_ptr = addopt(in_opts, in_ptr, "port1", optarg);
+        if (udp_port == 0) {
+          in_ptr = addopt(in_opts, in_ptr, "chunkiser", "udp");
+        }
+        sprintf(port, "port%d", udp_port);
+        udp_port++;
+        in_ptr = addopt(in_opts, in_ptr, port, optarg);
         break;
       case 'f':
         out_ptr = addopt(out_opts, out_ptr, "format", optarg);
@@ -80,15 +100,21 @@ static int cmdline_parse(int argc, char *argv[])
         in_ptr = addopt(in_opts, in_ptr, "chunkiser", "dummy");
         break;
       case 'a':
+        in_ptr = addopt(in_opts, in_ptr, "chunkiser", "avf");
         in_ptr = addopt(in_opts, in_ptr, "media", "audio");
+        out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "avf");
         out_ptr = addopt(out_opts, out_ptr, "media", "audio");
         break;
       case 'v':
+        in_ptr = addopt(in_opts, in_ptr, "chunkiser", "avf");
         in_ptr = addopt(in_opts, in_ptr, "media", "video");
+        out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "avf");
         out_ptr = addopt(out_opts, out_ptr, "media", "video");
         break;
       case 'V':
+        in_ptr = addopt(in_opts, in_ptr, "chunkiser", "avf");
         in_ptr = addopt(in_opts, in_ptr, "media", "av");
+        out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "avf");
         out_ptr = addopt(out_opts, out_ptr, "media", "av");
         break;
       case 'O':

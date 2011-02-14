@@ -46,6 +46,16 @@ struct input_stream *input_stream_open(const char *fname, int *period, const cha
     if (type && !strcmp(type, "udp")) {
       res->in = &in_udp;
     }
+    if (type && !strcmp(type, "avf")) {
+#ifdef AVF
+      res->in = &in_avf;
+#else
+      free(res);
+      free(cfg_tags);
+
+      return NULL;
+#endif
+    }
   }
   free(cfg_tags);
 
