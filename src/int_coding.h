@@ -7,6 +7,24 @@
 #include <arpa/inet.h>
 #endif
 
+static inline void sint_cpy(uint8_t *p, int v)
+{
+  uint16_t tmp;
+  
+  tmp = htons(v);
+  memcpy(p, &tmp, 2);
+}
+
+static inline uint16_t sint_rcpy(const uint8_t *p)
+{
+  uint32_t tmp;
+  
+  memcpy(&tmp, p, 2);
+  tmp = ntohs(tmp);
+
+  return tmp;
+}
+
 static inline void int_cpy(uint8_t *p, int v)
 {
   uint32_t tmp;
