@@ -14,7 +14,7 @@
 /**
   * @brief Peer identifier used for scheduling
   */
-typedef struct nodeID *schedPeerID ;
+typedef struct peer *schedPeerID ;
 /**
   * @brief Chunk identifier used for scheduling
   */
