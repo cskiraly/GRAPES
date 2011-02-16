@@ -6,6 +6,7 @@
 #else
 #include <arpa/inet.h>
 #endif
+#include <string.h>
 
 static inline void int_cpy(uint8_t *p, int v)
 {
