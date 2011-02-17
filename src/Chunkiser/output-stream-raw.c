@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "int_coding.h"
 #include "payload.h"
 #include "config.h"
 #include "dechunkiser_iface.h"

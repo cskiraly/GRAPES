@@ -6,8 +6,10 @@
 
 #include <libavformat/avformat.h>
 #include <stdbool.h>
+#include <string.h>
 
 //#include "dbg.h"
+#include "int_coding.h"
 #include "payload.h"
 #include "config.h"
 #include "chunkiser_iface.h"

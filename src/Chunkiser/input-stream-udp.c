@@ -12,7 +12,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <string.h>
 
+#include "int_coding.h"
 #include "payload.h"
 #include "config.h"
 #include "chunkiser_iface.h"
