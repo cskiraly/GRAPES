@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
     c.attributes_size = 0;
 
     dst = create_node(dst_ip, dst_port);
-    sendChunk(dst, &c);
+    sendChunk(dst, &c, 0);
     nodeid_free(dst);
     free(c.data);
   } else {
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
       return -1;
     }
-    res = decodeChunk(&c, buff + 1, res);
+    res = decodeChunk(&c, buff + 1 + 2, res);
     fprintf(stdout, "Decoding: %d\n", res);
     chunk_print(stdout, &c);
     free(c.data);
