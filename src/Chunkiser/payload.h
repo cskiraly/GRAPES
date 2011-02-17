@@ -32,34 +32,34 @@ static inline void audio_payload_header_parse(const uint8_t *data, uint8_t *code
 {
   *codec = data[0];
   *ch = data[1];
-  *sr = sint_rcpy(data + 2);
-  *fs = sint_rcpy(data + 4);
+  *sr = int16_rcpy(data + 2);
+  *fs = int16_rcpy(data + 4);
 }
 
 static inline void video_payload_header_parse(const uint8_t *data, uint8_t *codec, int *width, int *height, int *frame_rate_n, int *frame_rate_d)
 {
   *codec = data[0];
-  *width = sint_rcpy(data + 1);
-  *height = sint_rcpy(data + 3);
-  *frame_rate_n = sint_rcpy(data + 5);
-  *frame_rate_d = sint_rcpy(data + 7);
+  *width = int16_rcpy(data + 1);
+  *height = int16_rcpy(data + 3);
+  *frame_rate_n = int16_rcpy(data + 5);
+  *frame_rate_d = int16_rcpy(data + 7);
 }
 
 static inline void audio_payload_header_write(uint8_t *data, uint8_t codec, unsigned int channels, unsigned int sample_rate, unsigned int frame_size)
 {
   data[0] = codec;
   data[1] = channels;
-  sint_cpy(data + 2, sample_rate);
-  sint_cpy(data + 4, frame_size);
+  int16_cpy(data + 2, sample_rate);
+  int16_cpy(data + 4, frame_size);
 }
 
 static inline void video_payload_header_write(uint8_t *data, uint8_t codec, int width, int height, int num, int den)
 {
   data[0] = codec;
-  sint_cpy(data + 1, width);
-  sint_cpy(data + 3, height);
-  sint_cpy(data + 5, num);
-  sint_cpy(data + 7, den);
+  int16_cpy(data + 1, width);
+  int16_cpy(data + 3, height);
+  int16_cpy(data + 5, num);
+  int16_cpy(data + 7, den);
 }
 
 static inline void frame_header_write(uint8_t *data, int size, int32_t pts, int32_t dts)
@@ -77,12 +77,12 @@ static inline void frame_header_write(uint8_t *data, int size, int32_t pts, int3
 
 static inline void udp_chunk_header_parse(uint8_t *data, int *size, int *stream)
 {
-  *size = sint_rcpy(data);
+  *size = int16_rcpy(data);
   *stream = data[2]; 
 }
 
 static inline void udp_chunk_header_write(uint8_t *data, int size, uint8_t stream)
 {
-  sint_cpy(data, size);
+  int16_cpy(data, size);
   data[2] = stream;
 }

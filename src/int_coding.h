@@ -6,24 +6,7 @@
 #else
 #include <arpa/inet.h>
 #endif
-
-static inline void sint_cpy(uint8_t *p, int v)
-{
-  uint16_t tmp;
-  
-  tmp = htons(v);
-  memcpy(p, &tmp, 2);
-}
-
-static inline uint16_t sint_rcpy(const uint8_t *p)
-{
-  uint32_t tmp;
-  
-  memcpy(&tmp, p, 2);
-  tmp = ntohs(tmp);
-
-  return tmp;
-}
+#include <string.h>
 
 static inline void int_cpy(uint8_t *p, int v)
 {
@@ -31,6 +14,14 @@ static inline void int_cpy(uint8_t *p, int v)
   
   tmp = htonl(v);
   memcpy(p, &tmp, 4);
+}
+
+static inline void int16_cpy(uint8_t *p, uint16_t v)
+{
+  uint16_t tmp;
+
+  tmp = htons(v);
+  memcpy(p, &tmp, 2);
 }
 
 static inline uint32_t int_rcpy(const uint8_t *p)
@@ -42,4 +33,14 @@ static inline uint32_t int_rcpy(const uint8_t *p)
 
   return tmp;
 }
+
+static inline uint16_t int16_rcpy(const uint8_t *p)
+{
+  uint16_t tmp;
+
+  memcpy(&tmp, p, 2);
+  tmp = ntohs(tmp);
+  return tmp;
+}
+
 #endif	/* INT_CODING */
