@@ -11,8 +11,9 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 
+#include "int_coding.h"
 #include "payload.h"
 #include "config.h"
 #include "dechunkiser_iface.h"
