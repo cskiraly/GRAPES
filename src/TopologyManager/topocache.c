@@ -162,7 +162,7 @@ int cache_del(struct peer_cache *c, struct nodeID *neighbour)
 void cache_update(struct peer_cache *c)
 {
   int i;
-  
+
   for (i = 0; i < c->current_size; i++) {
     if (c->max_timestamp && (c->entries[i].timestamp == c->max_timestamp)) {
       int j = i;
@@ -171,10 +171,10 @@ void cache_update(struct peer_cache *c)
         nodeid_free(c->entries[j].id);
         c->entries[j++].id = NULL;
       }
-      c->current_size = i;	/* The cache is ordered by timestamp...
-				   all the other entries wiil be older than
-				   this one, so remove all of them
-				*/
+      c->current_size = i;      /* The cache is ordered by timestamp...
+                                   all the other entries wiil be older than
+                                   this one, so remove all of them
+                                */
     } else {
       c->entries[i].timestamp++;
     }
@@ -198,7 +198,7 @@ struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp)
 
     return NULL;
   }
-  
+
   memset(res->entries, 0, sizeof(struct cache_entry) * n);
   if (metadata_size) {
     res->metadata = malloc(metadata_size * n);
@@ -341,7 +341,7 @@ int entry_dump(uint8_t *b, struct peer_cache *c, int i, size_t max_write_size)
 {
   int res;
   int size = 0;
- 
+
   if (i && (i >= c->cache_size - 1)) {
     return 0;
   }
@@ -425,7 +425,7 @@ struct peer_cache *cache_union(struct peer_cache *c1, struct peer_cache *c2, int
     new_cache->entries[new_cache->current_size++] = c1->entries[n];
     c1->entries[n].id = NULL;
   }
-  
+
   for (n = 0; n < c2->current_size; n++) {
     pos = in_cache(new_cache, &c2->entries[n]);
     if (pos >= 0 && new_cache->entries[pos].timestamp > c2->entries[n].timestamp) {
@@ -472,7 +472,7 @@ int cache_resize (struct peer_cache *c, int size)
 
   return c->current_size;
 }
-  
+
 struct peer_cache *merge_caches(struct peer_cache *c1, struct peer_cache *c2, int newsize, int *source)
 {
   int n1, n2;
@@ -554,4 +554,16 @@ void cache_check(const struct peer_cache *c)
       }
     }
   }
+}
+
+void cache_log(const struct peer_cache *c, const char *name){
+  int i;
+  const char default_name[] = "none";
+  const char *actual_name = (name)? name : default_name;
+  fprintf(stderr, "### dumping cache (%s)\n", actual_name);
+  fprintf(stderr, "\tcache_size=%d, current_size=%d\n", c->cache_size, c->current_size);
+  for (i = 0; i < c->current_size; i++) {
+    fprintf(stderr, "\t%d: %s\n", i, node_addr(c->entries[i].id));
+  }
+  fprintf(stderr, "\n-----------------------------\n");
 }
