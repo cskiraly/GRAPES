@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
+#include <time.h>
 
 #include "cloud_helper.h"
 
@@ -39,8 +40,7 @@ static int variant;
 static char *key;
 static char *value;
 
-static const uint8_t *HEADER = (const uint8_t *) "<header>";
-
+static const uint8_t *HEADER = (const uint8_t *) "<-header->";
 
 static void cmdline_parse(int argc, char *argv[])
 {
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     break;
   case GET:
     printf("Getting from cloud value for key \"%s\": ", key);
-    err = get_from_cloud(cloud, key, HEADER, sizeof(HEADER));
+    err = get_from_cloud(cloud, key, HEADER, strlen(HEADER));
     if (err) {
       printf("Error performing the operation");
       return 1;
@@ -157,8 +157,12 @@ int main(int argc, char *argv[])
         printf("Key not present on the cloud\n");
       } else {
         time_t timestamp;
-        buffer[sizeof(buffer) - 1] = '\0';
-        printf("%s\n", buffer);
+        int i;
+        buffer[err] = '\0';
+        printf("len=%d\n", err, buffer);
+        for (i=0; i<err; i++)
+          printf("%x(%c) ", buffer[i], buffer[i]);
+        printf("\n");
         timestamp = timestamp_cloud(cloud);
         printf("Timestamp: %s\n", ctime(&timestamp));
       }
