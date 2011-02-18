@@ -16,14 +16,16 @@ TESTS = topology_test \
         config_test \
         tman_test \
         topology_test_th \
-	cloud_test
+	cloud_test \
+	cloudcast_topology_test \
+	cloud_topology_monitor
 
 DEPENDENCIES = libfilecloud.so
 
 CPPFLAGS = -I$(BASE)/include
 
-LDFLAGS += -L..
-LDLIBS += -lgrapes
+LDFLAGS += -L.. 
+LDLIBS += -lgrapes -ldl
 #LDFLAGS += -static
 
 all: $(TESTS)
@@ -74,6 +76,15 @@ libfilecloud.so: cloud_helper_delegate_file.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 cloud_helper_delegate_file.o: CFLAGS += -fPIC
+
+cloudcast_topology_test: cloudcast_topology_test.o net_helpers.o libfilecloud.so
+cloudcast_topology_test: ../net_helper$(NH_INCARNATION).o
+cloudcast_topology_test: LDFLAGS += -ldl
+
+cloud_topology_monitor: cloud_topology_monitor.o net_helpers.o libfilecloud.so
+cloud_topology_monitor: ../net_helper$(NH_INCARNATION).o
+cloud_topology_monitor: LDFLAGS += -ldl
+cloud_topology_monitor: CFLAGS += -I../TopologyManager
 
 clean::
 	rm -f $(TESTS)
