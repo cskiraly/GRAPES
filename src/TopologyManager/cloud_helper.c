@@ -1,3 +1,9 @@
+/*
+ *  Copyright (c) 2010 Andrea Zito
+ *
+ *  This is free software; see lgpl-2.1.txt
+ */
+
 #include <stdlib.h>
 #include <string.h>
 

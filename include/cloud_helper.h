@@ -1,3 +1,9 @@
+/*
+ *  Copyright (c) 2010 Andrea Zito
+ *
+ *  This is free software; see lgpl-2.1.txt
+ */
+
 #ifndef CLOUD_HELPER_H
 #define CLOUD_HELPER_H
 
@@ -45,7 +51,7 @@ struct cloud_helper_context* get_cloud_helper_for(struct nodeID *local);
  * @param[in] key Key to retrieve.
  * @param[in] header_ptr A pointer to the header which will be added to the retrieved data. May be NULL
  * @param[in] header_size The length of the header.
- * @return 0 if the request was successfully sent, 1 0therwise
+ * @return 0 if the request was successfully sent, 1 Otherwise
  */
 int get_from_cloud(struct cloud_helper_context *context, char *key, uint8_t *header_ptr, int header_size);
 
