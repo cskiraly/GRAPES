@@ -51,6 +51,11 @@ struct peerset *peerset_init(const char *config)
   return p;
 }
 
+static int peer_cmp(const void *a, const void *b)
+{
+  return nodeid_cmp(((const struct peer *)a)->id, ((const struct peer *)b)->id);
+}
+
 int peerset_add_peer(struct peerset *h, struct nodeID *id)
 {
   struct peer *e;
@@ -74,6 +79,8 @@ int peerset_add_peer(struct peerset *h, struct nodeID *id)
   e->bmap = chunkID_set_init("type=bitmap");
   timerclear(&e->bmap_timestamp);
   e->cb_size = INT_MAX;
+
+  qsort(h->elements, (size_t) h->n_elements, sizeof(h->elements[0]), peer_cmp);
 
   return h->n_elements;
 }
@@ -115,17 +122,18 @@ int peerset_remove_peer(struct peerset *h, const struct nodeID *id){
   return -1;
 }
 
+static int nodeid_peer_cmp(const void *id, const void *peer)
+{
+  return nodeid_cmp( (const struct nodeID *) id, ((const struct peer *) peer)->id);
+}
+
 int peerset_check(const struct peerset *h, const struct nodeID *id)
 {
-  int i;
+  struct peer *p;
 
-  for (i = 0; i < h->n_elements; i++) {
-    if (nodeid_equal(h->elements[i].id, id)) {
-      return i;
-    }
-  }
+  p = bsearch(id, h->elements, (size_t) h->n_elements, sizeof(h->elements[0]), nodeid_peer_cmp);
 
-  return -1;
+  return p ? p - h->elements : -1;
 }
 
 void peerset_clear(struct peerset *h, int size)
