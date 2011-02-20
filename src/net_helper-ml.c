@@ -671,6 +671,11 @@ int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 	return (mlCompareSocketIDs(s1->addr,s2->addr) == 0);
 }
 
+int nodeid_cmp(const struct nodeID *s1, const struct nodeID *s2)
+{
+	return mlCompareSocketIDs(s1->addr,s2->addr);
+}
+
 int nodeid_dump(uint8_t *b, const struct nodeID *s, size_t max_write_size)
 {
   if (max_write_size < SOCKETID_STRING_SIZE) return -1;
