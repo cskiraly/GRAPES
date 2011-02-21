@@ -51,10 +51,15 @@ struct peerset *peerset_init(const char *config)
   return p;
 }
 
+static int peerset_check_insert_pos(const struct peerset *h, const struct nodeID *id);
+
 int peerset_add_peer(struct peerset *h, struct nodeID *id)
 {
   struct peer *e;
-  if (peerset_check(h, id) >= 0) {
+  int pos;
+
+  pos = peerset_check_insert_pos(h, id);
+  if (pos < 0){
     return 0;
   }
 
@@ -68,7 +73,10 @@ int peerset_add_peer(struct peerset *h, struct nodeID *id)
     h->size += DEFAULT_SIZE_INCREMENT;
     h->elements = (struct peer*) res;
   }
-  e = &(h->elements[h->n_elements++]);
+
+  memmove(&h->elements[pos + 1], &h->elements[pos] , ((h->n_elements++) - pos) * sizeof(struct peer));
+
+  e = &(h->elements[pos]);
   e->id = nodeid_dup(id);
   gettimeofday(&e->creation_timestamp,NULL);
   e->bmap = chunkID_set_init("type=bitmap");
@@ -115,14 +123,46 @@ int peerset_remove_peer(struct peerset *h, const struct nodeID *id){
   return -1;
 }
 
+static int nodeid_peer_cmp(const void *id, const void *peer)
+{
+  return nodeid_cmp( (const struct nodeID *) id, ((const struct peer *) peer)->id);
+}
+
 int peerset_check(const struct peerset *h, const struct nodeID *id)
 {
-  int i;
+  struct peer *p;
 
-  for (i = 0; i < h->n_elements; i++) {
-    if (nodeid_equal(h->elements[i].id, id)) {
-      return i;
+  p = bsearch(id, h->elements, (size_t) h->n_elements, sizeof(h->elements[0]), nodeid_peer_cmp);
+
+  return p ? p - h->elements : -1;
+}
+
+static int peerset_check_insert_pos(const struct peerset *h, const struct nodeID *id)
+{
+  int a, b, c, r;
+
+  if (! h->n_elements) {
+    return 0;
+  }
+
+  a = 0;
+  b = c = h->n_elements - 1;
+
+  while ((r = nodeid_peer_cmp(id, &h->elements[b])) != 0) {
+    if (r > 0) {
+      if (b == c) {
+        return b + 1;
+      } else {
+        a = b + 1;
+      }
+    } else {
+      if (b == a) {
+        return b;
+      } else {
+        c = b;
+      }
     }
+    b = (a + c) / 2;
   }
 
   return -1;

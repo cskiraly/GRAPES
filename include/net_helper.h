@@ -36,6 +36,15 @@ struct nodeID *nodeid_dup(struct nodeID *s);
 int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2);
 
 /**
+* @brief Compare two nodes and give some consistent ordering.
+* This ordering  should only be used for keeping lists ordered, it has no other meaning.
+* @param[in] s1 The first nodeID to be compared.
+* @param[in] s2 The second nodeID to be compared.
+* @return -1, 0 or 1, depending on the relation between  s1 and s2.
+*/
+int nodeid_cmp(const struct nodeID *s1, const struct nodeID *s2);
+
+/**
 * @brief Create a new nodeID.
 * Create a new nodeID from a given IP address and port number.
 * @param[in] IPaddr The IP address in string form to be associated to the new nodeID.
