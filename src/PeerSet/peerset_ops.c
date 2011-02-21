@@ -139,20 +139,33 @@ int peerset_check(const struct peerset *h, const struct nodeID *id)
 
 static int peerset_check_insert_pos(const struct peerset *h, const struct nodeID *id)
 {
-  int i;
+  int a, b, c, r;
 
-  for (i = h->n_elements - 1; i >= 0; i--) {
-    int c;
-
-    c = nodeid_peer_cmp(id, &h->elements[i]);
-    if (c > 0) {
-      break;
-    } else if (c == 0) {
-      return -1;
-    }
+  if (! h->n_elements) {
+    return 0;
   }
 
-  return i+1;
+  a = 0;
+  b = c = h->n_elements - 1;
+
+  while ((r = nodeid_peer_cmp(id, &h->elements[b])) != 0) {
+    if (r > 0) {
+      if (b == c) {
+        return b + 1;
+      } else {
+        a = b + 1;
+      }
+    } else {
+      if (b == a) {
+        return b;
+      } else {
+        c = b;
+      }
+    }
+    b = (a + c) / 2;
+  }
+
+  return -1;
 }
 
 void peerset_clear(struct peerset *h, int size)
