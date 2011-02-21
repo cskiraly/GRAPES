@@ -11,6 +11,7 @@ extern struct chunkiser_iface in_avf;
 extern struct chunkiser_iface in_dummy;
 extern struct chunkiser_iface in_dumb;
 extern struct chunkiser_iface in_udp;
+extern struct chunkiser_iface in_ts;
 
 struct input_stream {
   struct chunkiser_ctx *c;
@@ -42,6 +43,9 @@ struct input_stream *input_stream_open(const char *fname, int *period, const cha
     }
     if (type && !strcmp(type, "dumb")) {
       res->in = &in_dumb;
+    }
+    if (type && !strcmp(type, "ts")) {
+      res->in = &in_ts;
     }
     if (type && !strcmp(type, "udp")) {
       res->in = &in_udp;
