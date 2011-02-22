@@ -42,7 +42,7 @@ topology_test: topology_test.o net_helpers.o
 topology_test: ../net_helper$(NH_INCARNATION).o
 
 topology_test_th: topology_test_th.o net_helpers.o
-topology_test_th: ../net_helper.o
+topology_test_th: ../net_helper$(NH_INCARNATION).o
 topology_test_th: CFLAGS += -pthread
 topology_test_th: LDFLAGS += -pthread
 
