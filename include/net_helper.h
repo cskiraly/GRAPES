@@ -1,9 +1,7 @@
 #ifndef NET_HELPER_H
 #define NET_HELPER_H
 
-#if defined(_WIN32)
-#include <winsock2.h>
-#endif
+#include <sys/time.h>
 
 /**
 * @file net_helper.h

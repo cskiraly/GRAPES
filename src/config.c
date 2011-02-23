@@ -99,3 +99,17 @@ int config_value_int(const struct tag *cfg_values, const char *value, int *res)
 
   return 1;
 }
+
+int config_value_double(const struct tag *cfg_values, const char *value, double *res)
+{
+  const char *str_res;
+
+  str_res = config_value_str(cfg_values, value);
+  if (str_res == NULL) {
+    return 0;
+  }
+
+  *res = strtod(str_res, NULL);
+
+  return 1;
+}

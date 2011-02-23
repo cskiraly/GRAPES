@@ -15,8 +15,11 @@ TESTS = topology_test \
         cb_test \
         config_test \
         tman_test \
-        topology_test_th \
-        chunkiser_test \
+
+ifneq ($(ARCH),win32)
+  TESTS += topology_test_th \
+           chunkiser_test
+endif
 
 CPPFLAGS = -I$(BASE)/include
 
