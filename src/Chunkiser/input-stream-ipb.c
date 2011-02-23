@@ -15,6 +15,15 @@
 #include "chunkiser_iface.h"
 
 #define STATIC_BUFF_SIZE 1000 * 1024
+
+struct log_info {
+  int i_frames[16];
+  int p_frames[16];
+  int b_frames[16];
+  int frame_number;
+  FILE *log;
+};
+
 struct chunkiser_ctx {
   AVFormatContext *s;
   int loop;	//loop on input file infinitely
@@ -30,7 +39,30 @@ struct chunkiser_ctx {
   int p_ready;
   int b_ready;
   AVBitStreamFilterContext *bsf[MAX_STREAMS];
+
+  struct log_info chunk_log;
 };
+
+static void chunk_print(FILE *log, int id, int *frames)
+{
+  int i = 0;
+
+  fprintf(log, "Chunk %d:", id);
+  while (frames[i] != -1) {
+    fprintf(log, " %d", frames[i++]);
+  }
+  fprintf(log, "\n");
+  frames[0] = -1;
+}
+
+static void frame_add(int *frames, int frame_id)
+{
+  int i = 0;
+
+  while (frames[i] != -1) i++;
+  frames[i] = frame_id;
+  frames[i + 1] = -1;
+}
 
 static int frame_type(AVPacket *pkt)
 {
@@ -189,6 +221,11 @@ static struct chunkiser_ctx *ipb_open(const char *fname, int *period, const char
   desc->b_chunk_size = 0;
   desc->p_ready = 0;
   desc->b_ready = 0;
+  desc->chunk_log.i_frames[0] = -1;
+  desc->chunk_log.p_frames[0] = -1;
+  desc->chunk_log.b_frames[0] = -1;
+  desc->chunk_log.frame_number = 0;
+  desc->chunk_log.log = fopen("chunk_log.txt", "w");
   cfg_tags = config_parse(config);
   if (cfg_tags) {
     const char *media;
@@ -252,6 +289,7 @@ static void ipb_close(struct chunkiser_ctx *s)
   free(s->i_chunk);
   free(s->p_chunk);
   free(s->b_chunk);
+  fclose(s->chunk_log.log);
   free(s);
 }
 
@@ -292,6 +330,7 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
 
     return NULL;
   }
+  s->chunk_log.frame_number++;
   if (s->bsf[pkt.stream_index]) {
     AVPacket new_pkt= pkt;
     int res;
@@ -324,14 +363,17 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
       fprintf(stderr, "I Frame!\n");
       result = s->i_chunk;
       *size = s->i_chunk_size;
+      if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.i_frames);
       s->i_chunk = NULL;
       s->p_ready = 1;
       s->b_ready = 1;
       if (s->i_chunk == NULL) {
+
         s->i_chunk = malloc(VIDEO_PAYLOAD_HEADER_SIZE);
         s->i_chunk_size = VIDEO_PAYLOAD_HEADER_SIZE;
         video_header_fill(s->i_chunk, s->s->streams[pkt.stream_index]);
       }
+      frame_add(s->chunk_log.i_frames, s->chunk_log.frame_number);
       s->i_chunk_size += pkt.size + FRAME_HEADER_SIZE;
       s->i_chunk = realloc(s->i_chunk, s->i_chunk_size);
       data = s->i_chunk + (s->i_chunk_size - (pkt.size + FRAME_HEADER_SIZE));
@@ -343,12 +385,14 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
         *size = s->p_chunk_size;
         s->p_chunk = NULL;
         s->p_ready = 0;
+        if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.p_frames);
       }
       if (s->p_chunk == NULL) {
         s->p_chunk = malloc(VIDEO_PAYLOAD_HEADER_SIZE);
         s->p_chunk_size = VIDEO_PAYLOAD_HEADER_SIZE;
         video_header_fill(s->p_chunk, s->s->streams[pkt.stream_index]);
       }
+      frame_add(s->chunk_log.p_frames, s->chunk_log.frame_number);
       s->p_chunk_size += pkt.size + FRAME_HEADER_SIZE;
       s->p_chunk = realloc(s->p_chunk, s->p_chunk_size);
       data = s->p_chunk + (s->p_chunk_size - (pkt.size + FRAME_HEADER_SIZE));
@@ -360,12 +404,14 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
         *size = s->b_chunk_size;
         s->b_chunk = NULL;
         s->b_ready = 0;
+        if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.b_frames);
       }
       if (s->b_chunk == NULL) {
         s->b_chunk = malloc(VIDEO_PAYLOAD_HEADER_SIZE);
         s->b_chunk_size = VIDEO_PAYLOAD_HEADER_SIZE;
         video_header_fill(s->b_chunk, s->s->streams[pkt.stream_index]);
       }
+      frame_add(s->chunk_log.b_frames, s->chunk_log.frame_number);
       s->b_chunk_size += pkt.size + FRAME_HEADER_SIZE;
       s->b_chunk = realloc(s->b_chunk, s->b_chunk_size);
       data = s->b_chunk + (s->b_chunk_size - (pkt.size + FRAME_HEADER_SIZE));
