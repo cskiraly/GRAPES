@@ -251,7 +251,7 @@ static struct chunkiser_ctx *ipb_open(const char *fname, int *period, const char
       if (video_streams++ == 0) {
         desc->streams |= 1ULL << i;
       }
-      fprintf(stderr, "Video Frame Rate = %d/%d --- Period: %lld\n",
+      fprintf(stderr, "Video Frame Rate = %d/%d --- Period: %"PRIu64"\n",
               desc->s->streams[i]->r_frame_rate.num,
               desc->s->streams[i]->r_frame_rate.den,
               av_rescale(1000000, desc->s->streams[i]->r_frame_rate.den, desc->s->streams[i]->r_frame_rate.num));
