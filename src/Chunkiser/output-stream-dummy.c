@@ -22,6 +22,7 @@ struct dechunkiser_ctx {
   int last_id;
   int lost;
   int first_id;
+  FILE *f;
 };
 
 static struct dechunkiser_ctx *dummy_open(const char *fname, const char *config)
@@ -33,7 +34,14 @@ static struct dechunkiser_ctx *dummy_open(const char *fname, const char *config)
   if (res == NULL) {
     return NULL;
   }
+  res->f = stdout;
   res->type = chunk_id;
+  if (fname) {
+    res->f = fopen(fname, "w");
+    if (res->f == NULL) {
+      res->f = stdout;
+    }
+  }
   res->last_id = -1;
   cfg_tags = config_parse(config);
   if (cfg_tags) {
@@ -55,7 +63,7 @@ static void dummy_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int si
 {
   switch (o->type) {
     case chunk_id:
-      printf("Chunk %d: size %d\n", id, size);
+      fprintf(o->f, "Chunk %d: size %d\n", id, size);
       break;
     case stats:
       if (o->last_id >= 0) {
@@ -63,9 +71,9 @@ static void dummy_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int si
 
         for (i = 1; i < id - o->last_id; i++) {
           o->lost++;
-          printf("Lost chunk %d\n", o->last_id + i);
+          fprintf(o->f, "Lost chunk %d\n", o->last_id + i);
         }
-        printf("# Lost chunk ratio: %f\n", (double)o->lost / (double)(id - o->first_id));
+        fprintf(o->f, "# Lost chunk ratio: %f\n", (double)o->lost / (double)(id - o->first_id));
       } else {
         o->first_id = id;
       }
