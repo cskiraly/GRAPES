@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/time.h>
 
 #include "chunk.h"
 #include "chunkiser.h"
@@ -21,6 +22,9 @@ static char in_opts[1024];
 static char *in_ptr = in_opts;
 static int udp_port;
 static int out_udp_port;
+
+static int cycle;
+static struct timeval tnext;
 
 static void help(const char *name)
 {
@@ -136,21 +140,52 @@ static int cmdline_parse(int argc, char *argv[])
   return optind - 1;
 }
 
-static void in_wait(const int *fd)
+void tout_init(struct timeval *tv)
 {
-  int my_fd[10];
-  int i = 0;
-  
-  if (fd == NULL) {
-    return;
+  struct timeval tnow;
+
+  gettimeofday(&tnow, NULL);
+  if(timercmp(&tnow, &tnext, <)) {
+    timersub(&tnext, &tnow, tv);
+  } else {
+    *tv = (struct timeval){0, 0};
   }
-  while(fd[i] != -1) {
-    my_fd[i] = fd[i];
-    i++;
+}
+
+static void in_wait(const int *fd, uint64_t ts)
+{
+  int my_fd[10], *pfd;
+  int i = 0;
+  struct timeval tv, *ptv, tadd;
+  static struct timeval tfirst;
+  static uint64_t tsfirst;
+  
+  if (ts == 0) {
+    ptv = NULL;
+  } else {
+    if (tfirst.tv_sec == 0) {
+      gettimeofday(&tfirst, NULL);
+      tsfirst = ts;
+    }
+printf("Sleep %llu\n", ts - tsfirst + cycle);
+    tadd.tv_sec = (ts - tsfirst + cycle) / 1000000;
+    tadd.tv_usec = (ts - tsfirst + cycle) % 1000000;
+    timeradd(&tfirst, &tadd, &tnext);
+    tout_init(&tv);
+    ptv = &tv;
+  }
+  if (fd) {
+    while(fd[i] != -1) {
+      my_fd[i] = fd[i];
+      i++;
+    }
+    pfd = my_fd;
+  } else {
+    pfd = NULL;
   }
   my_fd[i] = -1;
 
-  wait4data(NULL, NULL, my_fd);
+  wait4data(NULL, ptv, pfd);
 }
 
 int main(int argc, char *argv[])
@@ -159,6 +194,7 @@ int main(int argc, char *argv[])
   struct input_stream *input;
   struct output_stream *output;
   const int *in_fds;
+  unsigned long long int ts;
 
   if (argc < 3) {
     help(argv[0]);
@@ -176,6 +212,7 @@ int main(int argc, char *argv[])
     in_fds = input_get_fds(input);
   } else {
     in_fds = NULL;
+    cycle = period;
   }
   output = out_stream_init(argv[2], out_opts);
   if (output == NULL) {
@@ -184,12 +221,13 @@ int main(int argc, char *argv[])
     return -1;
   }
 
+  ts = 1;
   done = 0; id = 0;
   while(!done) {
     int res;
     struct chunk c;
 
-    in_wait(in_fds);
+    in_wait(in_fds, ts);
     c.id = id;
     res = chunkise(input, &c);
     if (res > 0) {
@@ -198,6 +236,7 @@ int main(int argc, char *argv[])
     } else if (res < 0) {
       done = 1;
     }
+    ts = c.timestamp;
     free(c.data);
   }
   input_stream_close(input);
