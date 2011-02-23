@@ -10,6 +10,7 @@
 extern struct dechunkiser_iface out_avf;
 extern struct dechunkiser_iface out_raw;
 extern struct dechunkiser_iface out_udp;
+extern struct dechunkiser_iface out_dummy;
 
 struct output_stream {
   struct dechunkiser_ctx *c;
@@ -40,6 +41,8 @@ struct output_stream *out_stream_init(const char *fname, const char *config)
       res->out = &out_raw;
     } else if (type && !strcmp(type, "udp")) {
       res->out = &out_udp;
+    } else if (type && !strcmp(type, "dummy")) {
+      res->out = &out_dummy;
     } else if (type && !strcmp(type, "avf")) {
 #ifdef AVF
       res->out = &out_avf;
