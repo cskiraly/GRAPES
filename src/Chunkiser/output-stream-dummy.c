@@ -20,6 +20,8 @@ enum output_type {
 struct dechunkiser_ctx {
   enum output_type type;
   int last_id;
+  int lost;
+  int first_id;
 };
 
 static struct dechunkiser_ctx *dummy_open(const char *fname, const char *config)
@@ -60,8 +62,12 @@ static void dummy_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int si
         int i;
 
         for (i = 1; i < id - o->last_id; i++) {
+          o->lost++;
           printf("Lost chunk %d\n", o->last_id + i);
         }
+        printf("# Lost chunk ratio: %f\n", (double)o->lost / (double)(id - o->first_id));
+      } else {
+        o->first_id = id;
       }
       break;
     default:
