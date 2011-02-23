@@ -92,7 +92,7 @@ void input_stream_close(struct input_stream *s)
 
 int chunkise(struct input_stream *s, struct chunk *c)
 {
-  c->data = s->in->chunkise(s->c, c->id, &c->size, &c->timestamp);
+  c->data = s->in->chunkise(s->c, c->id, &c->size, &c->timestamp, &c->attributes, &c->attributes_size);
   if (c->data == NULL) {
     if (c->size < 0) {
       return -1;
