@@ -160,7 +160,7 @@ static void in_wait(const int *fd, uint64_t ts)
   static struct timeval tfirst;
   static uint64_t tsfirst;
   
-  if (ts == 0) {
+  if (ts == (uint64_t)-1) {
     ptv = NULL;
   } else {
     if (tfirst.tv_sec == 0) {
