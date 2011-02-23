@@ -22,6 +22,7 @@ static char in_opts[1024];
 static char *in_ptr = in_opts;
 static int udp_port;
 static int out_udp_port;
+static int timed;
 
 static int cycle;
 static struct timeval tnext;
@@ -59,10 +60,13 @@ static int cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "lP:u:f:rRdlavVUTO:I:")) != -1) {
+  while ((o = getopt(argc, argv, "slP:u:f:rRdlavVUTO:I:")) != -1) {
     char port[8];
 
     switch(o) {
+      case 's':
+        timed = 1;
+        break;
       case 'l':
         in_ptr = addopt(in_opts, in_ptr, "loop", "1");
         break;
@@ -179,6 +183,9 @@ printf("Sleep %llu\n", ts - tsfirst + cycle);
     pfd = my_fd;
   } else {
     pfd = NULL;
+    if (ptv == NULL) {
+      return;
+    }
   }
   my_fd[i] = -1;
 
@@ -218,7 +225,7 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  ts = 1;
+  ts = timed ? 1: (uint64_t)-1;
   done = 0; id = 0;
   while(!done) {
     int res;
@@ -233,7 +240,7 @@ int main(int argc, char *argv[])
     } else if (res < 0) {
       done = 1;
     }
-    ts = c.timestamp;
+    ts = timed ? c.timestamp : (uint64_t)-1;
     free(c.data);
   }
   input_stream_close(input);
