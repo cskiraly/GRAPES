@@ -16,7 +16,7 @@ OBJS = input-stream.o           \
        output-stream-dummy.o 
 
 ifdef FFDIR
-OBJS += input-stream-avf.o output-stream-avf.o
+OBJS += input-stream-avf.o input-stream-ipb.o output-stream-avf.o
 endif
 
 all: libchunkiser.a
