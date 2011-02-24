@@ -82,6 +82,7 @@ static void dummy_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int si
       fprintf(stderr, "Internal error!\n");
       exit(-1);
   }
+  fflush(o->f);
   o->last_id = id;
 }
 
