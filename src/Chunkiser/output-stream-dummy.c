@@ -43,6 +43,7 @@ static struct dechunkiser_ctx *dummy_open(const char *fname, const char *config)
     }
   }
   res->last_id = -1;
+  res->lost = 0;
   cfg_tags = config_parse(config);
   if (cfg_tags) {
     const char *pt;
