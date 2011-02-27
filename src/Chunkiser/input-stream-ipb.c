@@ -13,6 +13,7 @@
 #include "payload.h"
 #include "config.h"
 #include "chunkiser_iface.h"
+#include "chunkiser_attrib.h"
 
 #define STATIC_BUFF_SIZE 1000 * 1024
 
@@ -293,7 +294,7 @@ static void ipb_close(struct chunkiser_ctx *s)
   free(s);
 }
 
-static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts)
+static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts, void **attr, int *attr_size)
 {
   AVPacket pkt;
   AVRational new_tb;
@@ -432,6 +433,34 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
   //dprintf(" TS2=%lu\n",*ts);
   s->last_ts = *ts;
   av_free_packet(&pkt);
+
+  //if (*attr_size) {					//TODO: is this check needed
+  //    fprintf(stderr, "Chunk with attribute?\n");
+  //} else 
+  if (result) {
+    struct chunk_attributes_chunker *ca;
+
+    ca = *attr = malloc(sizeof(*ca));
+    if (ca) {
+      chunk_attributes_chunker_init(ca);
+      *attr_size = sizeof(*ca);
+      switch(frame_type(&pkt)) {
+        case FF_I_TYPE:
+          ca->priority = 1;
+          break;
+        case FF_P_TYPE:
+          ca->priority = 2;
+          break;
+        case FF_B_TYPE:
+          ca->priority = 3;
+          break;
+      }
+    } else {
+      *attr_size = 0;
+    }
+  } else {
+    *attr_size = 0;
+  }
 
   return result;
 }
