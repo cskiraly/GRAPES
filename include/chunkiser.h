@@ -89,9 +89,8 @@ struct output_stream *out_stream_init(const char *fname, const char *config);
  * Write some data (from a chunk's payload) to the A/V stream.
  * 
  * @param out dechunkiser's context.
- * @param id the chunk id.
- * @param data pointer to the chunk's payload.
- * @param size chunk size.
+ * @param c pointer to the chunk structure containing the data to write in the
+ *        A/V stream.
  */
 void chunk_write(struct output_stream *out, const struct chunk *c);
 
