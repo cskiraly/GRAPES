@@ -43,10 +43,23 @@ struct chunkiser_ctx {
   struct log_info chunk_log;
 };
 
-static void chunk_print(FILE *log, int id, int *frames)
+static void chunk_print(FILE *log, int id, int *frames, int type)
 {
   int i = 0;
 
+  switch (type) {
+    case FF_I_TYPE:
+      fprintf(log, "I");
+      break;
+    case FF_P_TYPE:
+      fprintf(log, "P");
+      break;
+    case FF_B_TYPE:
+      fprintf(log, "B");
+      break;
+    default:
+      exit(-1);
+  }
   fprintf(log, "Chunk %d:", id);
   while (frames[i] != -1) {
     fprintf(log, " %d", frames[i++]);
@@ -363,7 +376,7 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
       fprintf(stderr, "I Frame!\n");
       result = s->i_chunk;
       *size = s->i_chunk_size;
-      if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.i_frames);
+      if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.i_frames, FF_I_TYPE);
       s->i_chunk = NULL;
       s->p_ready = 1;
       s->b_ready = 1;
@@ -385,7 +398,7 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
         *size = s->p_chunk_size;
         s->p_chunk = NULL;
         s->p_ready = 0;
-        if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.p_frames);
+        if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.p_frames, FF_P_TYPE);
       }
       if (s->p_chunk == NULL) {
         s->p_chunk = malloc(VIDEO_PAYLOAD_HEADER_SIZE);
@@ -404,7 +417,7 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
         *size = s->b_chunk_size;
         s->b_chunk = NULL;
         s->b_ready = 0;
-        if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.b_frames);
+        if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.b_frames, FF_B_TYPE);
       }
       if (s->b_chunk == NULL) {
         s->b_chunk = malloc(VIDEO_PAYLOAD_HEADER_SIZE);
