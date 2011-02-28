@@ -343,7 +343,6 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
 
     return NULL;
   }
-  s->chunk_log.frame_number++;
   if (s->bsf[pkt.stream_index]) {
     AVPacket new_pkt= pkt;
     int res;
@@ -430,6 +429,7 @@ static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
       data = s->b_chunk + (s->b_chunk_size - (pkt.size + FRAME_HEADER_SIZE));
       break;
   }
+  s->chunk_log.frame_number++;
 
   new_tb.den = s->s->streams[pkt.stream_index]->avg_frame_rate.num;
   new_tb.num = s->s->streams[pkt.stream_index]->avg_frame_rate.den;
