@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -145,6 +146,11 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
     buffer_size -= iov[1].iov_len;
     buffer_ptr += iov[1].iov_len;
     res = sendmsg(from->fd, &msg, 0);
+
+    if (res  < 0){
+      int error = errno;
+      fprintf(stderr,"net-helper: sendmsg failed errno %d: %s\n", error, strerror(error));
+    }
   } while (buffer_size > 0);
 
   return res;
