@@ -9,10 +9,9 @@ ifneq ($(ARCH),win32)
 endif
 COMMON_OBJS = config.o
 
-.PHONY: subdirs $(SUBDIRS)
-.PHONY: libgrapes.a clean
-
 OBJ_LSTS = $(addsuffix /objs.lst, $(SUBDIRS))
+
+.PHONY: $(OBJ_LSTS)
 
 all: libgrapes.a
 
@@ -21,7 +20,6 @@ $(OBJ_LSTS):
 
 libgrapes.a: $(OBJ_LSTS) $(COMMON_OBJS)
 	$(AR) rcs libgrapes.a `cat $(OBJ_LSTS)` $(COMMON_OBJS)
-	rm */*.lst
 
 tests: libgrapes.a
 	$(MAKE) -C Tests
