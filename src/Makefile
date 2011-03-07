@@ -10,6 +10,7 @@ endif
 COMMON_OBJS = config.o
 
 .PHONY: subdirs $(SUBDIRS)
+.PHONY: libgrapes.a clean
 
 OBJ_LSTS = $(addsuffix /objs.lst, $(SUBDIRS))
 
