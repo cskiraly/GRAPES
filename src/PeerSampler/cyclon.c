@@ -107,6 +107,7 @@ static struct peersampler_context* cyclon_init(struct nodeID *myID, const void *
   if (!res) {
     con->sent_entries = con->cache_size / 2;
   }
+  free(cfg_tags);
 
   con->local_cache = cache_init(con->cache_size, metadata_size, 0);
   if (con->local_cache == NULL) {
