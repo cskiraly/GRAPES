@@ -49,7 +49,10 @@ int main(int argc, char *argv[])
   printf("Waiting 5s...\n");
   sleep(5);
   printf("Trying to send a gossiping message...\n");
-  psample_parse_data(context, NULL, 0);
+  res = psample_parse_data(context, NULL, 0);
+  if (res < 0) {
+    fprintf(stderr, "Error sending a gossiping message: %d\n", res);
+  }
 
   return 0;
 }
