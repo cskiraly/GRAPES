@@ -116,6 +116,8 @@ int psample_change_metadata(struct psample_context *tc, const void *metadata, in
   @param metadata pointer to the metadata associated to this peer (will be
          gossiped).
   @param metadata_size size of the metadata associated to this peer.
+  @param config configuration parameter for the peer sampling module (specifying the
+         peer sampling algorithm, the cache size, etc...)
   @return the topology manager context in case of success; NULL in case of error.
 */
 struct psample_context *psample_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config);
