@@ -62,4 +62,12 @@
   The signalling API is divided in @link trade_sig_ha.h <i>high
   abstraction</i> @endlink and @link trade_sig_la.h <i>low
   abstraction</i> @endlink
+  See @link chunk_signaling_test.c chunk_signaling_test.c @endlink for an usage example
+
 */
+
+/** @example chunk_signaling_test.c
+ * 
+ * A test program showing how to use the signalling API.
+ *
+ */
