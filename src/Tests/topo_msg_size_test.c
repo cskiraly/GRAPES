@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
 
     return -1;
   }
+  memset(psample_cfg, 0, sizeof(psample_cfg));
   sprintf(psample_cfg, "cache_size=%d", cache_size);
   context = psample_init(myID, NULL, 0, psample_cfg);
 
