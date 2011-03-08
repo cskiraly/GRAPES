@@ -187,7 +187,7 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
     context->dst = nodeid_dup(context->dst);
     cache_del(context->local_cache, context->dst);
     context->flying_cache = rand_cache(context->local_cache, context->sent_entries - 1);
-    cyclon_query(context->pc, context->flying_cache, context->dst);
+    return cyclon_query(context->pc, context->flying_cache, context->dst);
   }
   cache_check(context->local_cache);
 
