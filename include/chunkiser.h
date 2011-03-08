@@ -4,6 +4,13 @@
  *
  * The chunkisation functions (chunkiser) allow to split an A/V stream in
  * chunks, and to output the chunks payload...
+ * See @link chunkiser_test.c chunkiser_test.c @endlink for an usage example
+ *
+ */
+
+/** @example chunkiser_test.c
+ * 
+ * A test program showing how to use the chunkiser and dechunkiser API.
  *
  */
  
