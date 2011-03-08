@@ -26,7 +26,7 @@
 
    The following Components/Modules can be identified:
 	- a Scheduler
-	- a @link topmanager.h Peer Sampling @endlink mechanism
+	- a @link peersampler.h Peer Sampling @endlink mechanism
         - a @link peerset.h Peer Set @endlink data type
         - a @link chunkbuffer.h Chunk Buffer @endlink
         - a @link chunkidset.h Chunk ID Set @endlink data type
