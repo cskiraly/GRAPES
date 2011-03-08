@@ -15,6 +15,14 @@
  * sequence number (the chunk ID), the chunk buffer's clients
  * (scheduler and output module) can easily check if there are gaps in the
  * list.
+ * See @link cb_test.c cb_test.c @endlink for an usage example
+ *
+ */
+
+/** @example cb_test.c
+ * 
+ * A test program showing how to use the chunk buffer API.
+ *
  */
 
 #define E_CB_OLD -1
