@@ -32,7 +32,7 @@
         - a @link chunkidset.h Chunk ID Set @endlink data type
 	- a @ref trade_sig Module
 	- a @ref trade_msg module (send \& receive chunks)
-	- a @link chunkiser.h "chunkiser", which builds chunks from an input
+	- a @link chunkiser.h "chunkiser"@endlink, which builds chunks from an input
                   media stream, and the corresponding "dechunkiser", which
                   reconstructs the encoded stream based on the received chunks
 

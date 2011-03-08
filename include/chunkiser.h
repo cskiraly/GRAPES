@@ -40,7 +40,7 @@ struct input_stream *input_stream_open(const char *fname, int *period, const cha
  * reading an input stream. Such an array can be directly passed to wait4data()
  * as user_fds
  *
- * @param input_stream the pointer to the chunkiser context
+ * @param s the pointer to the chunkiser context
  * @return the array with the input FDs on success, NULL on error or if
  *         such FDs are not available
  */
