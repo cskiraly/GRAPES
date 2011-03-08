@@ -25,8 +25,8 @@
  *
  */
 
-#define E_CB_OLD -1
-#define E_CB_DUPLICATE -2
+#define E_CB_OLD -1		/**< The chunk is too old */
+#define E_CB_DUPLICATE -2	/**< The chunk is already in the buffer */
 
 /**
  * Structure describing a chunk buffer. This is an opaque type.
