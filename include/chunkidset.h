@@ -6,6 +6,14 @@
  * (chunk ID, priority) couples. Few simple operations for adding chunk IDs
  * in a set, for getting the chunk IDs present in a set, for allocating a
  * set, and for clearing a set are provided.
+ * See @link chunkidset_test.c chunkidset_test.c @endlink for an usage example.
+ *
+ */
+
+/** @example chunkidset_test.c
+ * 
+ * A test program showing how to use the Chunk ID Set API.
+ *
  */
  
 #ifndef CHUNKIDSET_H
