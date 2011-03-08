@@ -10,7 +10,7 @@
 
 /** @example chunk_sending_test.c
  * 
- * A test program showing how to use the chunk encoding and decoding API.
+ * A test program showing how to use the chunk delivery API.
  *
  */
 
