@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
     if (res < 0) {
       fprintf(stderr, "Error adding 127.0.0.1:%d: %d\n", port, res);
     }
+    nodeid_free(knownHost);
   }
   printf("Waiting 5s...\n");
   sleep(5);
@@ -54,6 +55,8 @@ int main(int argc, char *argv[])
   if (res < 0) {
     fprintf(stderr, "Error sending a gossiping message: %d\n", res);
   }
+
+  nodeid_free(myID);
 
   return 0;
 }
