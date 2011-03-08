@@ -13,10 +13,10 @@
 #include "proto.h"
 #include "topo_proto.h"
 
-#define MAX_MSG_SIZE 1500
-
 struct topo_context{
  struct peer_cache *myEntry;
+ uint8_t *pkt;
+ int pkt_size;
 };
 
 static int topo_payload_fill(struct topo_context *context, uint8_t *payload, int size, const struct peer_cache *c, const struct nodeID *snot, int max_peers, int include_me)
@@ -24,7 +24,7 @@ static int topo_payload_fill(struct topo_context *context, uint8_t *payload, int
   int i;
   uint8_t *p = payload;
 
-  if (!max_peers) max_peers = MAX_MSG_SIZE; // just to be sure to dump the whole cache...
+  if (!max_peers) max_peers = 1000; // just to be sure to dump the whole cache...
   p += cache_header_dump(p, c, include_me);
   if (include_me) {
     p += entry_dump(p, context->myEntry, 0, size - (p - payload));
@@ -48,8 +48,7 @@ static int topo_payload_fill(struct topo_context *context, uint8_t *payload, int
 
 int topo_reply(struct topo_context *context, const struct peer_cache *c, const struct peer_cache *local_cache, int protocol, int type, int max_peers, int include_me)
 {
-  uint8_t pkt[MAX_MSG_SIZE];
-  struct topo_header *h = (struct topo_header *)pkt;
+  struct topo_header *h = (struct topo_header *)context->pkt;
   int len, res;
   struct nodeID *dst;
 
@@ -63,23 +62,22 @@ int topo_reply(struct topo_context *context, const struct peer_cache *c, const s
   dst = nodeid(c, 0);
   h->protocol = protocol;
   h->type = type;
-  len = topo_payload_fill(context, pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst, max_peers, include_me);
+  len = topo_payload_fill(context, context->pkt + sizeof(struct topo_header), context->pkt_size - sizeof(struct topo_header), local_cache, dst, max_peers, include_me);
 
-  res = len > 0 ? send_to_peer(nodeid(context->myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
+  res = len > 0 ? send_to_peer(nodeid(context->myEntry, 0), dst, context->pkt, sizeof(struct topo_header) + len) : len;
 
   return res;
 }
 
 int topo_query_peer(struct topo_context *context, const struct peer_cache *local_cache, struct nodeID *dst, int protocol, int type, int max_peers)
 {
-  uint8_t pkt[MAX_MSG_SIZE];
-  struct topo_header *h = (struct topo_header *)pkt;
+  struct topo_header *h = (struct topo_header *)context->pkt;
   int len;
 
   h->protocol = protocol;
   h->type = type;
-  len = topo_payload_fill(context, pkt + sizeof(struct topo_header), MAX_MSG_SIZE - sizeof(struct topo_header), local_cache, dst, max_peers, 1);
-  return len > 0  ? send_to_peer(nodeid(context->myEntry, 0), dst, pkt, sizeof(struct topo_header) + len) : len;
+  len = topo_payload_fill(context, context->pkt + sizeof(struct topo_header), context->pkt_size - sizeof(struct topo_header), local_cache, dst, max_peers, 1);
+  return len > 0  ? send_to_peer(nodeid(context->myEntry, 0), dst, context->pkt, sizeof(struct topo_header) + len) : len;
 }
 
 int topo_proto_metadata_update(struct topo_context *context, const void *meta, int meta_size)
@@ -97,6 +95,13 @@ struct topo_context* topo_proto_init(struct nodeID *s, const void *meta, int met
 
   con = malloc(sizeof(struct topo_context));
   if (!con) return NULL;
+  con->pkt_size = 60 * 1024;
+  con->pkt = malloc(con->pkt_size);
+  if (!con->pkt) {
+    free(con);
+
+    return NULL;
+  }
 
   con->myEntry = cache_init(1, meta_size, 0);
   cache_add(con->myEntry, s, meta, meta_size);
