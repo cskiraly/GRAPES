@@ -24,7 +24,7 @@ static int topo_payload_fill(struct topo_context *context, uint8_t *payload, int
   int i;
   uint8_t *p = payload;
 
-  if (!max_peers) max_peers = 1000; // just to be sure to dump the whole cache...
+  if (!max_peers) max_peers = 1000; // FIXME: just to be sure to dump the whole cache...
   p += cache_header_dump(p, c, include_me);
   if (include_me) {
     p += entry_dump(p, context->myEntry, 0, size - (p - payload));
@@ -95,7 +95,7 @@ struct topo_context* topo_proto_init(struct nodeID *s, const void *meta, int met
 
   con = malloc(sizeof(struct topo_context));
   if (!con) return NULL;
-  con->pkt_size = 60 * 1024;
+  con->pkt_size = 60 * 1024;	// FIXME: Do something smarter, here!
   con->pkt = malloc(con->pkt_size);
   if (!con->pkt) {
     free(con);
