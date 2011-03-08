@@ -513,7 +513,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = doc/grapes.doxy include/peersampler.h include/chunk.h include/chunkbuffer.h include/peerset.h include/scheduler_la.h include/trade_msg_ha.h include/net_helper.h include/tman.h include/trade_msg_la.h include/chunkidset.h include/scheduler_ha.h include/trade_sig_la.h include/trade_sig_ha.h
+INPUT                  = doc/grapes.doxy include/peersampler.h include/chunk.h include/chunkbuffer.h include/peerset.h include/scheduler_la.h include/trade_msg_ha.h include/net_helper.h include/tman.h include/trade_msg_la.h include/chunkidset.h include/scheduler_ha.h include/trade_sig_la.h include/trade_sig_ha.h include/chunkiser.h
 
 #INPUT                  = include/topmanager.h
 
