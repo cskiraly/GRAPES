@@ -15,6 +15,7 @@ TESTS = topology_test \
         cb_test \
         config_test \
         tman_test \
+        topo_msg_size_test \
 
 ifneq ($(ARCH),win32)
   TESTS += topology_test_th \
@@ -34,6 +35,8 @@ include $(BASE)/src/utils.mak
 ifeq ($(ARCH),win32)
 LDLIBS += -lws2_32
 endif
+
+topo_msg_size_test: ../net_helper$(NH_INCARNATION).o
 
 topology_test_attr: topology_test_attr.o net_helpers.o
 topology_test_attr: ../net_helper$(NH_INCARNATION).o
