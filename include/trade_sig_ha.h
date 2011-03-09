@@ -13,6 +13,11 @@
 #include "net_helper.h"
 #include "chunkidset.h"
 
+/** Types of signalling message
+  *
+  * This enum is returned by parseSignaling, and describes the kind of
+  * signalling message that has been parsed.
+  */
 enum signaling_type {
   sig_offer, sig_accept, sig_request, sig_deliver, sig_send_buffermap, sig_request_buffermap, sig_ack,
 };
