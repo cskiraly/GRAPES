@@ -24,7 +24,7 @@
 */
 typedef struct chunkID_set ChunkIDSet;
 
-#define CHUNKID_INVALID (uint32_t)-1
+#define CHUNKID_INVALID (uint32_t)-1	/**< Trying to get a chunk ID from an empty set */
 
  /**
   * @brief Allocate a chunk ID set.
@@ -119,8 +119,24 @@ void chunkID_set_clear(struct chunkID_set *h, int size);
   */
 void chunkID_set_free(struct chunkID_set *h);
 
+ /**
+  * @brief Get the smallest chunk ID from a set
+  * 
+  * Return the ID of the earliest chunk from the the set.
+  *
+  * @param h a pointer to the set
+  * @return the chunk ID in case of success, or CHUNKID_INVALID on error
+  */
 uint32_t chunkID_set_get_earliest(const struct chunkID_set *h);
 
+ /**
+  * @brief Get the largest chunk ID from a set
+  * 
+  * Return the ID of the latest chunk from the the set.
+  *
+  * @param h a pointer to the set
+  * @return the chunk ID in case of success, or CHUNKID_INVALID on error
+  */
 uint32_t chunkID_set_get_latest(const struct chunkID_set *h);
 
 #endif	/* CHUNKIDSET_H */
