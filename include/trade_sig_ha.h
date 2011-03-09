@@ -22,8 +22,8 @@ enum signaling_type {
  *
  * Initialize the node identifier of the peer
  *
- * @param[in] current node indentifier.
- * @return 1 on success, <0 on error.
+ * @param[in] myID current node indentifier.
+ * @return 1 on success, < 0 on error.
  */
 int chunkSignalingInit(struct nodeID *myID);
 
@@ -32,7 +32,7 @@ int chunkSignalingInit(struct nodeID *myID);
  *
  * Parse an incoming signaling message provided in the buffer, giving the information of the message received.
  *
- * @param[in] buffer containing the incoming message.
+ * @param[in] buff containing the incoming message.
  * @param[in] buff_len length of the buffer.
  * @param[out] owner_id identifier of the node on which refer the message just received.
  * @param[out] cset array of chunkIDs.
