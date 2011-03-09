@@ -20,7 +20,7 @@
  * @brief Parse an incoming chunk message, providing the chunk structure and transaction ID.
  * @return 1 on success, <0 on error.
  *
- * @param[in] buffer containing the incoming message.
+ * @param[in] buff containing the incoming message.
  * @param[in] buff_len length of the buffer.
  * @param[out] c the chunk filled with data (an already allocated chunk structure must be passed!).
  * @param[out] transid the transaction ID.
