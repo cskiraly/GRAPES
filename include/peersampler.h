@@ -6,13 +6,29 @@
  * @brief Peer Sampler interface.
  *
  * This is the Peer Sampler interface. See @link topology_test.c
- * topology_test.c @endlink for an usage example
+ * topology_test.c @endlink for a simple usage example, 
+ * @link topology_test_th.c topology_test_th.c @endlink for an
+ * example using multiple threads, and @link topology_test_attr.c
+ * topology_test_attr.c @endlink for an example with metadata.
  *
  */
 
 /** @example topology_test.c
  * 
- * A test program showing how to use the Peer Sampler API.
+ * A simple example showing how to use the Peer Sampler API.
+ *
+ */
+
+/** @example topology_test_th.c
+ * 
+ * An example showing how to use the Peer Sampler API with multiple threads.
+ *
+ */
+
+/** @example topology_test_attr.c
+ * 
+ * An example showing how to use the Peer Sampler API with peers' attributes
+ * (metadata).
  *
  */
 
