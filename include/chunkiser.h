@@ -4,6 +4,13 @@
  *
  * The chunkisation functions (chunkiser) allow to split an A/V stream in
  * chunks, and to output the chunks payload...
+ * See @link chunkiser_test.c chunkiser_test.c @endlink for an usage example
+ *
+ */
+
+/** @example chunkiser_test.c
+ * 
+ * A test program showing how to use the chunkiser and dechunkiser API.
  *
  */
  
@@ -40,7 +47,7 @@ struct input_stream *input_stream_open(const char *fname, int *period, const cha
  * reading an input stream. Such an array can be directly passed to wait4data()
  * as user_fds
  *
- * @param input_stream the pointer to the chunkiser context
+ * @param s the pointer to the chunkiser context
  * @return the array with the input FDs on success, NULL on error or if
  *         such FDs are not available
  */
@@ -89,9 +96,8 @@ struct output_stream *out_stream_init(const char *fname, const char *config);
  * Write some data (from a chunk's payload) to the A/V stream.
  * 
  * @param out dechunkiser's context.
- * @param id the chunk id.
- * @param data pointer to the chunk's payload.
- * @param size chunk size.
+ * @param c pointer to the chunk structure containing the data to write in the
+ *        A/V stream.
  */
 void chunk_write(struct output_stream *out, const struct chunk *c);
 
