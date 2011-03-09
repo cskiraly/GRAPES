@@ -1,3 +1,5 @@
+.PHONY: src/libgrapes.a clean
+
 src/libgrapes.a:
 	$(MAKE) -C src
 
