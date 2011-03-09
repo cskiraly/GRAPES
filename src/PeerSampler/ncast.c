@@ -20,9 +20,11 @@
 #include "config.h"
 #include "grapes_msg_types.h"
 
-#define BOOTSTRAP_CYCLES 5
 #define DEFAULT_CACHE_SIZE 10
 #define DEFAULT_MAX_TIMESTAMP 5
+#define DEFAULT_BOOTSTRAP_CYCLES 5
+#define DEFAULT_BOOTSTRAP_PERIOD 2*1000*1000
+#define DEFAULT_PERIOD 10*1000*1000
 
 struct peersampler_context{
   uint64_t currtime;
@@ -30,6 +32,7 @@ struct peersampler_context{
   struct peer_cache *local_cache;
   bool bootstrap;
   int bootstrap_period;
+  int bootstrap_cycles;
   int period;
   int counter;
   struct ncast_proto_context *tc;
@@ -52,8 +55,6 @@ static struct peersampler_context* ncast_context_init(void)
 
   //Initialize context with default values
   con->bootstrap = true;
-  con->bootstrap_period = 2000000;
-  con->period = 10000000;
   con->currtime = gettime();
   con->r = NULL;
 
@@ -92,6 +93,18 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, const void *m
   res = config_value_int(cfg_tags, "max_timestamp", &max_timestamp);
   if (!res) {
     max_timestamp = DEFAULT_MAX_TIMESTAMP;
+  }
+  res = config_value_int(cfg_tags, "period", &context->period);
+  if (!res) {
+    context->period = DEFAULT_PERIOD;
+  }
+  res = config_value_int(cfg_tags, "bootstrap_period", &context->bootstrap_period);
+  if (!res) {
+    context->bootstrap_period = DEFAULT_BOOTSTRAP_PERIOD;
+  }
+  res = config_value_int(cfg_tags, "bootstrap_cycles", &context->bootstrap_cycles);
+  if (!res) {
+    context->bootstrap_cycles = DEFAULT_BOOTSTRAP_CYCLES;
   }
   free(cfg_tags);
   
@@ -143,7 +156,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     }
 
     context->counter++;
-    if (context->counter == BOOTSTRAP_CYCLES) context->bootstrap = false;
+    if (context->counter == context->bootstrap_cycles) context->bootstrap = false;
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == NCAST_QUERY) {
