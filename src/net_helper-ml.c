@@ -363,7 +363,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int verbosity = DCLOG_ERROR;
 
 	int bucketsize = 80000; /* this allows a burst of 80000 Bytes [Bytes] */
-	int rate = 1250000; /* 10Mbit/s [bits/s]*/
+	int rate = 10000000; /* 10Mbit/s [bits/s]*/
 	int queuesize = 1000000; /* up to 1MB of data will be stored in the shaper transmission queue [Bytes]*/
 	int RTXqueuesize = 1000000; /* up to 1 MB of data will be stored in the shaper retransmission queue [Bytes] */
 	double RTXholtdingtime = 1.0; /* [seconds] */
