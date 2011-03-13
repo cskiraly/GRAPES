@@ -361,6 +361,12 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int publish_interval = 60;
 	int verbosity = DCLOG_ERROR;
 
+	int bucketsize = 100; /* this allows a burst of 100kB */
+	int rate = 0; /* disabled by default */
+	int queuesize = 100; /* up to 100kB of data will be stored in the shaper queue, i.e., 0.8s at 1mbps */
+	int RTXqueuesize = 125; /* about 1.6 sec for 1mbps video */
+	double RTXholtdingtime = 1.0;
+
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN); // workaround for a known issue in libevent2 with SIGPIPE on TPC connections
 #endif
@@ -387,6 +393,12 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 
 	config_value_int(cfg_tags, "verbosity", &verbosity);
 
+	config_value_int(cfg_tags, "bucketsize", &bucketsize);
+	config_value_int(cfg_tags, "rate", &rate);
+	config_value_int(cfg_tags, "queuesize", &queuesize);
+	config_value_int(cfg_tags, "RTXqueuesize", &RTXqueuesize);
+	config_value_double(cfg_tags, "RTXholtdingtime", &RTXholtdingtime);
+
 	me = malloc(sizeof(nodeID));
 	if (me == NULL) {
 		return NULL;
@@ -410,6 +422,8 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	}
 
 	mlSetVerbosity(verbosity);
+
+	mlSetRateLimiterParams(bucketsize, rate, queuesize, RTXqueuesize, RTXholtdingtime);
 
 #ifdef MONL
 {
