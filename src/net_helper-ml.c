@@ -359,6 +359,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int stun_port = 3478;
 	const char *repo_address = "79.120.193.115:9832";
 	int publish_interval = 60;
+	int verbosity = DCLOG_ERROR;
 
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN); // workaround for a known issue in libevent2 with SIGPIPE on TPC connections
@@ -383,6 +384,8 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	}
 	
 	config_value_int(cfg_tags, "publish_interval", &publish_interval);
+
+	config_value_int(cfg_tags, "verbosity", &verbosity);
 
 	me = malloc(sizeof(nodeID));
 	if (me == NULL) {
@@ -412,7 +415,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	eventbase = base;
 
 	// Initialize logging
-	grapesInitLog(DCLOG_WARNING, NULL, NULL);
+	grapesInitLog(verbosity, NULL, NULL);
 
 	repInit("");
 	repoclient = repOpen(repo_address, publish_interval);	//repository.napa-wine.eu
