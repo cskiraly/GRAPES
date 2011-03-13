@@ -25,11 +25,11 @@
 
 #ifdef MONL
 #include "mon.h"
-#include "grapes_log.h"
 #include "repoclient.h"
-#include "grapes.h"
 #endif
 
+#include "napa.h"
+#include "napa_log.h"
 
 /**
  * libevent pointer
@@ -432,7 +432,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	eventbase = base;
 
 	// Initialize logging
-	grapesInitLog(verbosity, NULL, NULL);
+	napaInitLog(verbosity, NULL, NULL);
 
 	repInit("");
 	repoclient = repOpen(repo_address, publish_interval);	//repository.napa-wine.eu
