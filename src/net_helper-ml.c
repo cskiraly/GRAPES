@@ -5,7 +5,9 @@
  */
 
 #include <event2/event.h>
+#ifndef WIN32
 #include <arpa/inet.h>
+#endif
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -358,7 +360,9 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	const char *repo_address = "79.120.193.115:9832";
 	int publish_interval = 60;
 
+#ifndef WIN32
 	signal(SIGPIPE, SIG_IGN); // workaround for a known issue in libevent2 with SIGPIPE on TPC connections
+#endif
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
 
@@ -622,7 +626,7 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 const char *node_ip(const struct nodeID *s) {
 	static char ip[64];
 	int len;
-	char *start, *end;
+	const char *start, *end;
 	const char *tmp = node_addr(s);
 	start = strstr(tmp, "-") + 1;
 	end = strstr(start, ":");
@@ -632,7 +636,6 @@ const char *node_ip(const struct nodeID *s) {
 
 	return (const char *)ip;
 }
-
 
 // TODO: check why closing the connection is annoying for the ML
 void nodeid_free(struct nodeID *n) {
