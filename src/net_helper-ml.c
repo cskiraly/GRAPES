@@ -5,7 +5,9 @@
  */
 
 #include <event2/event.h>
+#ifndef _WIN32
 #include <arpa/inet.h>
+#endif
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,11 +25,11 @@
 
 #ifdef MONL
 #include "mon.h"
-#include "grapes_log.h"
 #include "repoclient.h"
-#include "grapes.h"
 #endif
 
+#include "napa.h"
+#include "napa_log.h"
 
 /**
  * libevent pointer
@@ -355,10 +357,20 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	const char *res;
 	const char *stun_server = "stun.ekiga.net";
 	int stun_port = 3478;
-	const char *repo_address = "79.120.193.115:9832";
+	const char *repo_address = NULL;
 	int publish_interval = 60;
 
+	int verbosity = DCLOG_ERROR;
+
+	int bucketsize = 80000; /* this allows a burst of 80000 Bytes [Bytes] */
+	int rate = 10000000; /* 10Mbit/s [bits/s]*/
+	int queuesize = 1000000; /* up to 1MB of data will be stored in the shaper transmission queue [Bytes]*/
+	int RTXqueuesize = 1000000; /* up to 1 MB of data will be stored in the shaper retransmission queue [Bytes] */
+	double RTXholtdingtime = 1.0; /* [seconds] */
+
+#ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN); // workaround for a known issue in libevent2 with SIGPIPE on TPC connections
+#endif
 	base = event_base_new();
 	lookup_array = calloc(lookup_max,sizeof(struct nodeID *));
 
@@ -379,6 +391,14 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	}
 	
 	config_value_int(cfg_tags, "publish_interval", &publish_interval);
+
+	config_value_int(cfg_tags, "verbosity", &verbosity);
+
+	config_value_int(cfg_tags, "bucketsize", &bucketsize);
+	config_value_int(cfg_tags, "rate", &rate);
+	config_value_int(cfg_tags, "queuesize", &queuesize);
+	config_value_int(cfg_tags, "RTXqueuesize", &RTXqueuesize);
+	config_value_double(cfg_tags, "RTXholtdingtime", &RTXholtdingtime);
 
 	me = malloc(sizeof(nodeID));
 	if (me == NULL) {
@@ -402,17 +422,22 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 		return NULL;
 	}
 
+	mlSetVerbosity(verbosity);
+
+	mlSetRateLimiterParams(bucketsize, rate, queuesize, RTXqueuesize, RTXholtdingtime);
+
 #ifdef MONL
 {
 	void *repoclient;
 	eventbase = base;
 
 	// Initialize logging
-	grapesInitLog(DCLOG_WARNING, NULL, NULL);
+	napaInitLog(verbosity, NULL, NULL);
 
 	repInit("");
 	repoclient = repOpen(repo_address, publish_interval);	//repository.napa-wine.eu
-	if (repoclient == NULL) fatal("Unable to initialize repoclient");
+	// NULL is inow valid for disabled repo 
+	// if (repoclient == NULL) fatal("Unable to initialize repoclient");
 	monInit(base, repoclient);
 }
 #endif
@@ -622,7 +647,7 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 const char *node_ip(const struct nodeID *s) {
 	static char ip[64];
 	int len;
-	char *start, *end;
+	const char *start, *end;
 	const char *tmp = node_addr(s);
 	start = strstr(tmp, "-") + 1;
 	end = strstr(start, ":");
@@ -632,7 +657,6 @@ const char *node_ip(const struct nodeID *s) {
 
 	return (const char *)ip;
 }
-
 
 // TODO: check why closing the connection is annoying for the ML
 void nodeid_free(struct nodeID *n) {
