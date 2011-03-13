@@ -359,12 +359,13 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int stun_port = 3478;
 	const char *repo_address = NULL;
 	int publish_interval = 60;
+
 	int verbosity = DCLOG_ERROR;
 
-	int bucketsize = 100; /* this allows a burst of 100kB */
-	int rate = 0; /* disabled by default */
-	int queuesize = 100; /* up to 100kB of data will be stored in the shaper queue, i.e., 0.8s at 1mbps */
-	int RTXqueuesize = 125; /* about 1.6 sec for 1mbps video */
+	int bucketsize = 80; /* this allows a burst of 80kB */
+	int rate = 1220; /* 10Mbit/s */
+	int queuesize = 1000; /* up to 1000kB of data will be stored in the shaper transmission queue */
+	int RTXqueuesize = 1000; /* up to 1000kB of data will be stored in the shaper retransmission queue */
 	double RTXholtdingtime = 1.0;
 
 #ifndef WIN32
