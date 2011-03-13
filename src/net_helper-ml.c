@@ -5,7 +5,7 @@
  */
 
 #include <event2/event.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <arpa/inet.h>
 #endif
 #include <unistd.h>
@@ -368,7 +368,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int RTXqueuesize = 1000000; /* up to 1 MB of data will be stored in the shaper retransmission queue [Bytes] */
 	double RTXholtdingtime = 1.0; /* [seconds] */
 
-#ifndef WIN32
+#ifndef _WIN32
 	signal(SIGPIPE, SIG_IGN); // workaround for a known issue in libevent2 with SIGPIPE on TPC connections
 #endif
 	base = event_base_new();
