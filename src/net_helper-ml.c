@@ -362,11 +362,11 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 
 	int verbosity = DCLOG_ERROR;
 
-	int bucketsize = 80; /* this allows a burst of 80kB */
-	int rate = 1220; /* 10Mbit/s */
-	int queuesize = 1000; /* up to 1000kB of data will be stored in the shaper transmission queue */
-	int RTXqueuesize = 1000; /* up to 1000kB of data will be stored in the shaper retransmission queue */
-	double RTXholtdingtime = 1.0;
+	int bucketsize = 80000; /* this allows a burst of 80000 Bytes [Bytes] */
+	int rate = 1250000; /* 10Mbit/s [bits/s]*/
+	int queuesize = 1000000; /* up to 1MB of data will be stored in the shaper transmission queue [Bytes]*/
+	int RTXqueuesize = 1000000; /* up to 1 MB of data will be stored in the shaper retransmission queue [Bytes] */
+	double RTXholtdingtime = 1.0; /* [seconds] */
 
 #ifndef WIN32
 	signal(SIGPIPE, SIG_IGN); // workaround for a known issue in libevent2 with SIGPIPE on TPC connections
