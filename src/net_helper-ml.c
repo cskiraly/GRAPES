@@ -43,6 +43,8 @@ struct event_base *base;
 
 #define FDSSIZE 16
 
+static bool connect_on_know = false;	//whether to try to connect as soon as we get to know a nodeID
+
 static int sIdx = 0;
 static int rIdxML = 0;	//reveive from ML to this buffer position
 static int rIdxUp = 0;	//hand up to layer above at this buffer position
@@ -109,7 +111,9 @@ static struct nodeID *new_node(socketID_handle peer) {
 
 	res->refcnt = 1;
 
-	res->connID = mlOpenConnection(peer, &connReady_cb, NULL, params);
+	if (connect_on_know) {
+		res->connID = mlOpenConnection(peer, &connReady_cb, NULL, params);
+	}
 
 	return res;
 }
