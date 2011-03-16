@@ -59,7 +59,7 @@ int sendChunk(struct nodeID *to, const struct chunk *c, uint16_t transid)
   buff[0] = MSG_TYPE_CHUNK;
   int16_cpy(buff + 1, transid);
   res = encodeChunk(c, buff + 1 + sizeof(transid), buff_len);
-  send_to_peer(localID, to, buff, buff_len + 1 + sizeof(transid));
+  send_to_peer(localID, to, buff, buff_len + 1);
   free(buff);
 
   return EXIT_SUCCESS;
