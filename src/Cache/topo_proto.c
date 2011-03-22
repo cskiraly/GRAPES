@@ -35,8 +35,8 @@ static int topo_payload_fill(struct topo_context *context, uint8_t *payload, int
       int res;
       res = entry_dump(p, c, i, size - (p - payload));
       if (res < 0) {
-        fprintf(stderr, "too many entries, sending only %d!\n", (include_me ? 1 : 0) + i);
-        return p - payload;
+        fprintf(stderr, "too many entries!\n");
+        return -1;
       }
       p += res;
       --max_peers;
