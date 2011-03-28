@@ -583,12 +583,6 @@ void* request_handler(void *data)
 static void deallocate_context(struct libs3_cloud_context *ctx)
 {
   if (!ctx) return;
-  if (ctx->s3_bucket_context.accessKeyId)
-    free(ctx->s3_bucket_context.accessKeyId);
-  if (ctx->s3_bucket_context.secretAccessKey)
-    free(ctx->s3_bucket_context.secretAccessKey);
-  if (ctx->s3_bucket_context.bucketName)
-    free(ctx->s3_bucket_context.bucketName);
 
   /* TODO: we should use a more specialized function instead of the
      standard free. But since the cloud_helper do not take into
