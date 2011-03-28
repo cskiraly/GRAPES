@@ -18,13 +18,14 @@ TESTS = topology_test \
         topology_test_th \
 	cloud_test \
 	cloudcast_topology_test \
-	cloud_topology_monitor
+	cloud_topology_monitor \
+	test_queue
 
 DEPENDENCIES = libfilecloud.so
 
 CPPFLAGS = -I$(BASE)/include
 
-LDFLAGS += -L.. 
+LDFLAGS += -L..
 LDLIBS += -lgrapes -ldl
 #LDFLAGS += -static
 
@@ -85,6 +86,10 @@ cloud_topology_monitor: cloud_topology_monitor.o net_helpers.o libfilecloud.so
 cloud_topology_monitor: ../net_helper$(NH_INCARNATION).o
 cloud_topology_monitor: LDFLAGS += -ldl
 cloud_topology_monitor: CFLAGS += -I../TopologyManager
+
+
+test_queue: test_queue.o
+test_queue: CFLAGS += -I../Utils
 
 clean::
 	rm -f $(TESTS)
