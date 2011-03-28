@@ -86,7 +86,7 @@ static void loop(struct context *con)
   int cnt = 0;
 
   printf("Initializing the cloud...\n");
-  put_on_cloud(con->cloud_context, CLOUD_VIEW_KEY, NULL, 0);
+  put_on_cloud(con->cloud_context, CLOUD_VIEW_KEY, NULL, 0, 0);
 
 
   while (!done) {
@@ -103,7 +103,7 @@ static void loop(struct context *con)
 
     t1 = tout;
     sleep(5);
-    err = get_from_cloud(con->cloud_context, CLOUD_VIEW_KEY, NULL, 0);
+    err = get_from_cloud(con->cloud_context, CLOUD_VIEW_KEY, NULL, 0, 0);
     news = wait4cloud(con->cloud_context, &t1);
     if (news > 0) {
       len = recv_from_cloud(con->cloud_context, buff, BUFFSIZE);

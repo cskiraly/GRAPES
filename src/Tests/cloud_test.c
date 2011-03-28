@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
   switch(operation) {
   case PUT:
     printf("Putting on cloud value \"%s\" for key \"%s\"\n", value, key);
-    err = put_on_cloud(cloud, key, value, strlen(value));
+    err = put_on_cloud(cloud, key, value, strlen(value), 0);
     if (err) {
       printf("Error performing the operation");
       return 1;
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     break;
   case GET:
     printf("Getting from cloud value for key \"%s\": ", key);
-    err = get_from_cloud(cloud, key, HEADER, strlen(HEADER));
+    err = get_from_cloud(cloud, key, HEADER, strlen(HEADER), 0);
     if (err) {
       printf("Error performing the operation");
       return 1;
@@ -153,13 +153,11 @@ int main(int argc, char *argv[])
       if (err < 0) {
         printf("Erorr receiving cloud response\n");
         return 1;
-      } else if (err == 0) {
-        printf("Key not present on the cloud\n");
       } else {
         time_t timestamp;
         int i;
         buffer[err] = '\0';
-        printf("len=%d\n", err, buffer);
+        printf("len=%d\n", err);
         for (i=0; i<err; i++)
           printf("%x(%c) ", buffer[i], buffer[i]);
         printf("\n");

@@ -15,8 +15,10 @@
 
 struct delegate_iface {
   void* (*cloud_helper_init)(struct nodeID *local, const char *config);
-  int (*get_from_cloud)(void *context, char *key, uint8_t *header_ptr, int header_size);
-  int (*put_on_cloud)(void *context, char *key, uint8_t *buffer_ptr, int buffer_size);
+  int (*get_from_cloud)(void *context, const char *key, uint8_t *header_ptr,
+                        int header_size, int free_header);
+  int (*put_on_cloud)(void *context, const char *key, uint8_t *buffer_ptr,
+                      int buffer_size, int free_buffer);
   struct nodeID* (*get_cloud_node)(void *context, uint8_t variant);
   time_t (*timestamp_cloud)(void *context);
   int (*is_cloud_node)(void *context, struct nodeID* node);
@@ -182,7 +184,9 @@ static void* file_cloud_helper_init(struct nodeID *local, const char *config)
   return ctx;
 }
 
-static int file_cloud_get_from_cloud(void *context, char *key, uint8_t *header_ptr, int header_size)
+static int file_cloud_get_from_cloud(void *context, const char *key,
+                                     uint8_t *header_ptr, int header_size,
+                                     int free_header)
 {
   struct file_cloud_context *ctx;
   int err;
@@ -203,7 +207,9 @@ static int file_cloud_get_from_cloud(void *context, char *key, uint8_t *header_p
   return 0;
 }
 
-static int file_cloud_put_on_cloud(void *context, char *key, uint8_t *buffer_ptr, int buffer_size)
+static int file_cloud_put_on_cloud(void *context, const char *key,
+                                   uint8_t *buffer_ptr, int buffer_size,
+                                   int free_buffer)
 {
   struct file_cloud_context *ctx;
   struct gpThreadContext *tc;
