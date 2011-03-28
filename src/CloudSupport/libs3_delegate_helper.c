@@ -36,10 +36,10 @@
  ***********************************************************************/
 struct delegate_iface {
   void* (*cloud_helper_init)(struct nodeID *local, const char *config);
-  int (*get_from_cloud)(void *context, char *key, uint8_t *header_ptr,
-                        int header_size);
-  int (*put_on_cloud)(void *context, char *key, uint8_t *buffer_ptr,
-                      int buffer_size);
+  int (*get_from_cloud)(void *context, const char *key, uint8_t *header_ptr,
+                        int header_size, int free_header);
+  int (*put_on_cloud)(void *context, const char *key, uint8_t *buffer_ptr,
+                      int buffer_size, int free_buffer);
   struct nodeID* (*get_cloud_node)(void *context, uint8_t variant);
   time_t (*timestamp_cloud)(void *context);
   int (*is_cloud_node)(void *context, struct nodeID* node);
@@ -60,6 +60,7 @@ typedef struct libs3_request {
      For PUT this is the pointer to the actual data */
   uint8_t *data;
   int data_length;
+  int free_data;
 } libs3_request_t;
 
 typedef struct libs3_get_response {
@@ -169,6 +170,15 @@ struct libs3_request_context {
   S3Status status;
 };
 
+static void free_request(libs3_request_t *req)
+{
+  if (!req) return;
+
+  free(req->key);
+  if (req->free_data > 0) free(req->data);
+
+  free(req);
+}
 
 static void add_request(struct libs3_cloud_context *ctx, libs3_request_t *req)
 {
@@ -539,9 +549,7 @@ static int request_handler_process_requests(struct libs3_cloud_context *ctx)
                 "libs3_delegate_helper: failed to perform operation\n");
       }
 
-      /* TODO: to free or not to free? */
-      if (req->data) free(req->data);
-      free(req);
+      free_request(req);
     }
   } while(req != NULL);
 
@@ -749,8 +757,8 @@ void* cloud_helper_init(struct nodeID *local, const char *config)
   return ctx;
 }
 
-int get_from_cloud(void *context, char *key, uint8_t *header_ptr,
-                   int header_size)
+int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
+                   int header_size, int free_header)
 {
   struct libs3_cloud_context *ctx;
   libs3_request_t *request;
@@ -764,14 +772,15 @@ int get_from_cloud(void *context, char *key, uint8_t *header_ptr,
   request->key = strdup(key);
   request->data = header_ptr;
   request->data_length = header_size;
+  request->free_data = free_header;
 
   add_request(ctx, request);
 
   return 0;
 }
 
-  int put_on_cloud(void *context, char *key, uint8_t *buffer_ptr,
-                      int buffer_size)
+  int put_on_cloud(void *context, const char *key, uint8_t *buffer_ptr,
+                   int buffer_size, int free_buffer)
   {
   struct libs3_cloud_context *ctx;
   libs3_request_t *request;
@@ -785,9 +794,14 @@ int get_from_cloud(void *context, char *key, uint8_t *header_ptr,
   request->key = strdup(key);
   request->data = buffer_ptr;
   request->data_length = buffer_size;
+  request->free_data = free_buffer;
 
-  if (ctx->blocking_put_request)
-    return request_handler_process_put_request(ctx, request);
+  if (ctx->blocking_put_request) {
+    int res;
+    res = request_handler_process_put_request(ctx, request);
+    free_request(request);
+    return res;
+  }
   else
     add_request(ctx, request);
 

@@ -19,10 +19,11 @@ struct cloud_helper_context {
 };
 
 static int ctx_counter = 0;
-static struct nodeID* node_ids[CLOUD_HELPER_MAX_INSTANCES];
+static const struct nodeID* node_ids[CLOUD_HELPER_MAX_INSTANCES];
 static struct cloud_helper_context* cloud_ctxs[CLOUD_HELPER_MAX_INSTANCES];
 
-static int add_context(struct nodeID *local, struct cloud_helper_context *ctx)
+static int add_context(const struct nodeID *local,
+                       struct cloud_helper_context *ctx)
 {
   int i;
   if (ctx_counter >= CLOUD_HELPER_MAX_INSTANCES) return 1;
@@ -37,7 +38,8 @@ static int add_context(struct nodeID *local, struct cloud_helper_context *ctx)
   return 1;
 }
 
-struct cloud_helper_context* cloud_helper_init(struct nodeID *local, const char *config)
+struct cloud_helper_context* cloud_helper_init(struct nodeID *local,
+                                               const char *config)
 {
   struct cloud_helper_context *ctx;
   struct tag *cfg_tags;
@@ -70,7 +72,7 @@ struct cloud_helper_context* cloud_helper_init(struct nodeID *local, const char 
  return ctx;
 }
 
-struct cloud_helper_context* get_cloud_helper_for(struct nodeID *local){
+struct cloud_helper_context* get_cloud_helper_for(const struct nodeID *local){
   int i;
   for (i=0; i<ctx_counter; i++)
     if (node_ids[i] == local) return cloud_ctxs[i];
@@ -78,17 +80,22 @@ struct cloud_helper_context* get_cloud_helper_for(struct nodeID *local){
   return NULL;
 }
 
-int get_from_cloud(struct cloud_helper_context *context, char *key, uint8_t *header_ptr, int header_size)
+int get_from_cloud(struct cloud_helper_context *context, const char *key,
+                   uint8_t *header_ptr, int header_size, int free_header)
 {
-  return context->ch->get_from_cloud(context->ch_context, key, header_ptr, header_size);
+  return context->ch->get_from_cloud(context->ch_context, key, header_ptr,
+                                     header_size, free_header);
 }
 
-int put_on_cloud(struct cloud_helper_context *context, char *key, uint8_t *buffer_ptr, int buffer_size)
+int put_on_cloud(struct cloud_helper_context *context, const char *key,
+                 uint8_t *buffer_ptr, int buffer_size, int free_buffer)
 {
-  return context->ch->put_on_cloud(context->ch_context, key, buffer_ptr, buffer_size);
+  return context->ch->put_on_cloud(context->ch_context, key, buffer_ptr,
+                                   buffer_size, free_buffer);
 }
 
-struct nodeID* get_cloud_node(struct cloud_helper_context *context, uint8_t variant)
+struct nodeID* get_cloud_node(struct cloud_helper_context *context,
+                              uint8_t variant)
 {
   return context->ch->get_cloud_node(context->ch_context, variant);
 }
@@ -108,7 +115,9 @@ int wait4cloud(struct cloud_helper_context *context, struct timeval *tout)
   return context->ch->wait4cloud(context->ch_context, tout);
 }
 
-int recv_from_cloud(struct cloud_helper_context *context, uint8_t *buffer_ptr, int buffer_size)
+int recv_from_cloud(struct cloud_helper_context *context, uint8_t *buffer_ptr,
+                    int buffer_size)
 {
-  return context->ch->recv_from_cloud(context->ch_context, buffer_ptr, buffer_size);
+  return context->ch->recv_from_cloud(context->ch_context, buffer_ptr,
+                                      buffer_size);
 }

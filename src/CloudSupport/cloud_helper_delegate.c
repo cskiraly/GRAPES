@@ -14,12 +14,21 @@
 
 struct delegate_iface {
   void* (*cloud_helper_init)(struct nodeID *local, const char *config);
-  int (*get_from_cloud)(void *context, char *key, uint8_t *header_ptr, int header_size);
-  int (*put_on_cloud)(void *context, char *key, uint8_t *buffer_ptr, int buffer_size);
+
+  int (*get_from_cloud)(void *context, const char *key, uint8_t *header_ptr,
+                        int header_size, int free_header);
+
+  int (*put_on_cloud)(void *context, const char *key, uint8_t *buffer_ptr,
+                      int buffer_size, int free_buffer);
+
   struct nodeID* (*get_cloud_node)(void *context, uint8_t variant);
+
   time_t (*timestamp_cloud)(void *context);
+
   int (*is_cloud_node)(void *context, struct nodeID* node);
+
   int (*wait4cloud)(void *context, struct timeval *tout);
+
   int (*recv_from_cloud)(void *context, uint8_t *buffer_ptr, int buffer_size);
 };
 
@@ -28,7 +37,8 @@ struct cloud_helper_impl_context {
   void *delegate_context;
 };
 
-static struct cloud_helper_impl_context* delegate_cloud_init(struct nodeID *local, const char *config)
+static struct cloud_helper_impl_context*
+delegate_cloud_init(struct nodeID *local, const char *config)
 {
   struct cloud_helper_impl_context *ctx;
   struct tag *cfg_tags;
@@ -60,39 +70,55 @@ static struct cloud_helper_impl_context* delegate_cloud_init(struct nodeID *loca
   return ctx;
 }
 
-static int delegate_cloud_get_from_cloud(struct cloud_helper_impl_context *context, char *key, uint8_t *header_ptr, int header_size)
+static int
+delegate_cloud_get_from_cloud(struct cloud_helper_impl_context *context,
+                              const char *key, uint8_t *header_ptr,
+                              int header_size, int free_header)
 {
-  return context->delegate->get_from_cloud(context->delegate_context, key, header_ptr, header_size);
+  return context->delegate->get_from_cloud(context->delegate_context, key,
+                                           header_ptr, header_size,
+                                           free_header);
 }
 
-static int delegate_cloud_put_on_cloud(struct cloud_helper_impl_context *context, char *key, uint8_t *buffer_ptr, int buffer_size)
+static int
+delegate_cloud_put_on_cloud(struct cloud_helper_impl_context *context,
+                            const char *key, uint8_t *buffer_ptr,
+                            int buffer_size, int free_buffer)
 {
-  return context->delegate->put_on_cloud(context->delegate_context, key, buffer_ptr, buffer_size);
+  return context->delegate->put_on_cloud(context->delegate_context, key,
+                                         buffer_ptr, buffer_size, free_buffer);
 }
-
-static struct nodeID* delegate_cloud_get_cloud_node(struct cloud_helper_impl_context *context, uint8_t variant)
+static struct nodeID*
+delegate_cloud_get_cloud_node(struct cloud_helper_impl_context *context,
+                              uint8_t variant)
 {
   return context->delegate->get_cloud_node(context->delegate_context, variant);
 }
 
-static time_t delegate_timestamp_cloud(struct cloud_helper_impl_context *context)
+static time_t
+delegate_timestamp_cloud(struct cloud_helper_impl_context *context)
 {
   return context->delegate->timestamp_cloud(context->delegate_context);
 }
 
-int delegate_is_cloud_node(struct cloud_helper_impl_context *context, struct nodeID* node)
+int delegate_is_cloud_node(struct cloud_helper_impl_context *context,
+                           struct nodeID* node)
 {
   return context->delegate->is_cloud_node(context->delegate_context, node);
 }
 
-static int delegate_cloud_wait4cloud(struct cloud_helper_impl_context *context, struct timeval *tout)
+static int delegate_cloud_wait4cloud(struct cloud_helper_impl_context *context,
+                                     struct timeval *tout)
 {
   return context->delegate->wait4cloud(context->delegate_context, tout);
 }
 
-static int delegate_cloud_recv_from_cloud(struct cloud_helper_impl_context *context, uint8_t *buffer_ptr, int buffer_size)
+static int
+delegate_cloud_recv_from_cloud(struct cloud_helper_impl_context *context,
+                               uint8_t *buffer_ptr, int buffer_size)
 {
-  return context->delegate->recv_from_cloud(context->delegate_context, buffer_ptr, buffer_size);
+  return context->delegate->recv_from_cloud(context->delegate_context,
+                                            buffer_ptr, buffer_size);
 }
 
 struct cloud_helper_iface delegate = {

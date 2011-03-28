@@ -123,7 +123,7 @@ int cloudcast_reply_cloud(struct cloudcast_proto_context *context, struct peer_c
   len = cloudcast_payload_fill(context, headerless_pkt, MAX_MSG_SIZE - sizeof(cloud_header), cloud_cache, 0, 1);
 
   if (len > 0)
-    res = put_on_cloud(context->cloud_context, CLOUD_VIEW_KEY, headerless_pkt, len);
+    res = put_on_cloud(context->cloud_context, CLOUD_VIEW_KEY, headerless_pkt, len, 0);
   else
     res = 0;
   return res;
@@ -131,7 +131,7 @@ int cloudcast_reply_cloud(struct cloudcast_proto_context *context, struct peer_c
 
 int cloudcast_query_cloud(struct cloudcast_proto_context *context)
 {
-  return get_from_cloud(context->cloud_context, CLOUD_VIEW_KEY, (uint8_t *)&cloud_header, sizeof(cloud_header));
+  return get_from_cloud(context->cloud_context, CLOUD_VIEW_KEY, (uint8_t *)&cloud_header, sizeof(cloud_header), 0);
 }
 
 struct peer_cache * cloudcast_cloud_default_reply(struct peer_cache *template, struct nodeID *cloud_entry)
