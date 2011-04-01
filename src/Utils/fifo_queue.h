@@ -14,8 +14,8 @@ void fifo_queue_destroy(fifo_queue_p queue, void (*free_ptr)(void *ptr));
 /* Return the current actual size of the queue (nr of elements contained) */
 int fifo_queue_size(fifo_queue_p queue);
 
-/* Add the specified element to the tail of the queue. Return 1 on
-   succes, 0 on error */
+/* Add the specified element to the tail of the queue. Return 0 on
+   succes, 1 on error */
 int fifo_queue_add(fifo_queue_p queue, void *element);
 
 /* Return the head of the queue or NULL on error */
