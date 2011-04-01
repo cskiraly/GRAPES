@@ -17,8 +17,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <pthread.h>
-#include <semaphore.h>
 #include <string.h>
 #include <sys/time.h>
 
@@ -26,7 +24,7 @@
 
 #include "net_helper.h"
 #include "cloud_helper_iface.h"
-#include "fifo_queue.h"
+#include "request_handler.h"
 #include "config.h"
 
 #define CLOUD_NODE_ADDR "0.0.0.0"
@@ -46,33 +44,6 @@ struct delegate_iface {
   int (*wait4cloud)(void *context, struct timeval *tout);
   int (*recv_from_cloud)(void *context, uint8_t *buffer_ptr, int buffer_size);
 };
-
-/***********************************************************************
- * Requests/Response pool data structures
- ***********************************************************************/
-enum operation_t {PUT=0, GET=1};
-
-typedef struct libs3_request {
-  enum operation_t op;
-  char *key;
-
-  /* For GET operations this point to the header.
-     For PUT this is the pointer to the actual data */
-  uint8_t *data;
-  int data_length;
-  int free_data;
-} libs3_request_t;
-
-typedef struct libs3_get_response {
-  S3Status status;
-  uint8_t *data;
-  uint8_t *current_byte;
-
-  int data_length;
-  int read_bytes;
-  time_t last_timestamp;
-} libs3_get_response_t;
-
 
 /***********************************************************************
  * libs3 data structures
@@ -130,30 +101,42 @@ static S3GetObjectHandler libs3_get_object_handler =
 
 /* libs3 cloud context definition */
 struct libs3_cloud_context {
-  /* libs3 information */
+  struct req_handler_ctx *req_handler;
   S3BucketContext s3_bucket_context;
   int blocking_put_request;
-
-  /* request/response management */
-  pthread_mutex_t req_queue_lock;
-  fifo_queue_p req_queue;
-
-  pthread_mutex_t rsp_queue_sync_mutex;
-  pthread_cond_t rsp_queue_sync_cond;
-  pthread_mutex_t rsp_queue_lock;
-  fifo_queue_p rsp_queue;
-
   time_t last_rsp_timestamp;
-
-  /* thread management */
-  pthread_attr_t req_handler_thread_attr;
-  pthread_cond_t req_handler_sync_cond;
-  pthread_mutex_t req_handler_sync_mutex;
-  pthread_t req_handler_thread;
 };
 
-struct libs3_request_context {
-  struct libs3_cloud_context *cloud_ctx;
+/***********************************************************************
+ * Requests/Response pool data structures
+ ***********************************************************************/
+enum operation_t {PUT=0, GET=1};
+struct libs3_request {
+  enum operation_t op;
+  char *key;
+
+  /* For GET operations this point to the header.
+     For PUT this is the pointer to the actual data */
+  uint8_t *data;
+  int data_length;
+  int free_data;
+
+  struct libs3_cloud_context *ctx;
+};
+typedef struct libs3_request libs3_request_t;
+
+struct libs3_get_response {
+  S3Status status;
+  uint8_t *data;
+  uint8_t *current_byte;
+
+  int data_length;
+  int read_bytes;
+  time_t last_timestamp;
+};
+typedef struct libs3_get_response libs3_get_response_t;
+
+struct libs3_callback_context {
   libs3_request_t *current_req;
 
   /* point to the current byte to read/write */
@@ -170,102 +153,18 @@ struct libs3_request_context {
   S3Status status;
 };
 
-static void free_request(libs3_request_t *req)
+
+static void free_request(void *req_ptr)
 {
-  if (!req) return;
+  libs3_request_t *req;
+  if (!req_ptr) return;
+
+  req = (libs3_request_t *) req_ptr;
 
   free(req->key);
   if (req->free_data > 0) free(req->data);
 
   free(req);
-}
-
-static void add_request(struct libs3_cloud_context *ctx, libs3_request_t *req)
-{
-  /* add the request to the pool */
-  pthread_mutex_lock(&ctx->req_queue_lock);
-  fifo_queue_add(ctx->req_queue, req);
-  pthread_mutex_unlock(&ctx->req_queue_lock);
-
-  /* notify request handler thread */
-  pthread_mutex_lock(&ctx->req_handler_sync_mutex);
-  pthread_cond_signal(&ctx->req_handler_sync_cond);
-  pthread_mutex_unlock(&ctx->req_handler_sync_mutex);
-}
-
-
-static libs3_get_response_t* get_response(struct libs3_cloud_context *ctx)
-{
-  if (fifo_queue_size(ctx->rsp_queue) > 0) {
-    libs3_get_response_t *rsp;
-
-    pthread_mutex_lock(&ctx->rsp_queue_lock);
-    rsp = fifo_queue_get_head(ctx->rsp_queue);
-    pthread_mutex_unlock(&ctx->rsp_queue_lock);
-    return rsp;
-  }
-
-  return NULL;
-}
-
-static libs3_get_response_t* wait4response(struct libs3_cloud_context *ctx,
-                                           struct timeval *tout)
-{
-  if (fifo_queue_size(ctx->rsp_queue) == 0) {
-    /* if there's no data ready to process, let's wait */
-    struct timespec timeout;
-    struct timeval abs_tout;
-    int err;
-
-    gettimeofday(&abs_tout, NULL);
-    abs_tout.tv_sec += tout->tv_sec;
-    abs_tout.tv_usec += tout->tv_usec;
-
-    timeout.tv_sec = abs_tout.tv_sec + (abs_tout.tv_usec / 1000000);
-    timeout.tv_nsec = abs_tout.tv_usec % 1000000;
-
-
-    pthread_mutex_lock(&ctx->rsp_queue_sync_mutex);
-    /* make sure that no data came in the meanwhile */
-    if (fifo_queue_size(ctx->rsp_queue) == 0) {
-      err = pthread_cond_timedwait(&ctx->rsp_queue_sync_cond,
-                                   &ctx->rsp_queue_sync_mutex,
-                                   &timeout);
-    }
-    pthread_mutex_unlock(&ctx->rsp_queue_sync_mutex);
-  }
-
-  return get_response(ctx);
-}
-
- static void add_response(struct libs3_cloud_context *ctx,
-                          libs3_get_response_t *rsp)
-{
-  /* add the response to the pool */
-  pthread_mutex_lock(&ctx->rsp_queue_lock);
-  fifo_queue_add(ctx->rsp_queue, rsp);
-  pthread_mutex_unlock(&ctx->rsp_queue_lock);
-
-  /* notify wait4response there's a response in the queue */
-  pthread_mutex_lock(&ctx->rsp_queue_sync_mutex);
-  pthread_cond_signal(&ctx->rsp_queue_sync_cond);
-
-  fflush(stderr);
-  pthread_mutex_unlock(&ctx->rsp_queue_sync_mutex);
-}
-
-static void pop_response(struct libs3_cloud_context *ctx)
-{
-  libs3_get_response_t *rsp;
-
-  pthread_mutex_lock(&ctx->rsp_queue_lock);
-  rsp = fifo_queue_remove_head(ctx->rsp_queue);
-  pthread_mutex_unlock(&ctx->rsp_queue_lock);
-
-  if (rsp) {
-    if (rsp->data) free(rsp->data);
-    free(rsp);
-  }
 }
 
 /************************************************************************
@@ -275,8 +174,8 @@ static S3Status
 libs3_response_properties_callback(const S3ResponseProperties *properties,
                                    void *context)
 {
-  struct libs3_request_context *req_ctx;
-  req_ctx = (struct libs3_request_context *) context;
+  struct libs3_callback_context *req_ctx;
+  req_ctx = (struct libs3_callback_context *) context;
 
   if (properties->lastModified > 0) {
     req_ctx->last_timestamp = (time_t) properties->lastModified;
@@ -319,10 +218,12 @@ static void
 libs3_response_complete_callback(S3Status status, const S3ErrorDetails *error,
                                  void *context)
 {
-  struct libs3_request_context *req_ctx;
-  req_ctx = (struct libs3_request_context *) context;
+  struct libs3_callback_context *req_ctx;
+  req_ctx = (struct libs3_callback_context *) context;
 
+  fprintf(stderr, "COMPLETE: %d\n", req_ctx->status);
   req_ctx->status = status;
+  fprintf(stderr, "COMPLETE: %d\n", req_ctx->status);
   if (status != S3StatusOK) {
     if (error) {
       if (error->message) {
@@ -341,19 +242,23 @@ static int
 libs3_put_object_data_callback(int bufferSize, char *buffer,
                                void *context)
 {
-  struct libs3_request_context *req_ctx;
+  struct libs3_callback_context *req_ctx;
   int towrite;
-  req_ctx = (struct libs3_request_context *) context;
+  fprintf(stderr, "FUCK I'M HERE AND I'M OK >> buffer=%d, status=%d, buffer=%p\n", bufferSize, req_ctx->status, buffer);
+  req_ctx = (struct libs3_callback_context *) context;
 
   towrite = req_ctx->current_req->data_length - req_ctx->bytes;
 
-  if (towrite == 0) return 0;
+  req_ctx->status = S3StatusOK;
+
+  if (towrite == 0)
+    return 0;
 
   towrite = (towrite > bufferSize)? bufferSize : towrite;
 
   memcpy(buffer, req_ctx->start_ptr, towrite);
   req_ctx->bytes += towrite;
-
+  fprintf(stderr, "FUCK I'M HERE AND I'M OK >> towrite=%d, buffer=%d, status=%d\n", towrite, bufferSize, req_ctx->status);
   return towrite;
 }
 
@@ -362,8 +267,8 @@ static S3Status
 libs3_get_object_data_callback(int bufferSize, const char *buffer,
                                void *context)
 {
-  struct libs3_request_context *req_ctx;
-  req_ctx = (struct libs3_request_context *) context;
+  struct libs3_callback_context *req_ctx;
+  req_ctx = (struct libs3_callback_context *) context;
 
   /* The buffer should have been prepared by the properties callback.
      If not, it means that s3 didn't report the content length */
@@ -423,157 +328,110 @@ int should_retry(int *counter, int times)
 }
 
 
-static int
-request_handler_process_put_request(struct libs3_cloud_context *ctx,
-                                    libs3_request_t *req)
+static int process_put_request(void *req_data, void **rsp_data)
 {
-  struct libs3_request_context *req_ctx;
+  libs3_request_t *req;
+  struct libs3_callback_context *cbk_ctx;
   int retries_left;
+  int status;
+
+  req = (libs3_request_t *) req_data;
+
   should_retry(&retries_left, 3);
 
-  req_ctx = malloc(sizeof(struct libs3_request_context));
-  if (!req_ctx) return 1;
+  /* put operation never have response */
+  *rsp_data = NULL;
 
-  req_ctx->current_req = req;
-  req_ctx->cloud_ctx = ctx;
-  req_ctx->status = S3StatusInternalError;
-  req_ctx->start_ptr = req->data;
-  req_ctx->bytes = 0;
-  req_ctx->buffer = NULL;
-  req_ctx->buffer_size = 0;
+  cbk_ctx = malloc(sizeof(struct libs3_callback_context));
+  if (!cbk_ctx) return -1;
+
+  cbk_ctx->current_req = req;
+  cbk_ctx->status = S3StatusInternalError;
+  cbk_ctx->start_ptr = req->data;
+  cbk_ctx->bytes = 0;
+  cbk_ctx->buffer = NULL;
+  cbk_ctx->buffer_size = 0;
 
   do {
-    S3_put_object(&ctx->s3_bucket_context, /* bucket info */
+    S3_put_object(&req->ctx->s3_bucket_context, /* bucket info */
                   req->key,                /* key to insert */
                   req->data_length,        /* length of data  */
                   NULL,                     /* use standard properties */
                   NULL,                    /* do a blocking call... */
                   &libs3_put_object_handler,/* ...using these callback...*/
-                  req_ctx);                /* ...with this data for context */
+                  cbk_ctx);                /* ...with this data for context */
 
+    fprintf(stderr, "prima del while: %d\n", cbk_ctx->status);
     /* if we get an error related to a temporary network state retry */
-  } while(S3_status_is_retryable(req_ctx->status) &&
+  } while(S3_status_is_retryable(cbk_ctx->status) &&
           should_retry(&retries_left, 0));
 
-  return (req_ctx->status == S3StatusOK) ? 0 : 1;
+  status = (cbk_ctx->status == S3StatusOK) ? 0 : -1;
+
+  free(cbk_ctx);
+
+  return status;
 }
 
-static int
-request_handler_process_get_request(struct libs3_cloud_context *ctx,
-                                    libs3_request_t *req)
+static int process_get_request(void *req_data, void **rsp_data)
 {
-  struct libs3_request_context *req_ctx;
+  libs3_request_t *req;
+  struct libs3_callback_context *cbk_ctx;
   struct libs3_get_response *rsp;
   int retries_left;
+  int status;
+
+  req = (libs3_request_t *) req_data;
+
   should_retry(&retries_left, 3);
 
-  req_ctx = malloc(sizeof(struct libs3_request_context));
-  if (!req_ctx) return 1;
+  /* Initilize s3 callback data */
+  cbk_ctx = malloc(sizeof(struct libs3_callback_context));
+  if (!cbk_ctx) return -1;
+  cbk_ctx->current_req = req;
+  cbk_ctx->status = S3StatusInternalError;
+  cbk_ctx->start_ptr = NULL;
+  cbk_ctx->bytes = 0;
+  cbk_ctx->buffer = NULL;
+  cbk_ctx->buffer_size = 0;
 
-  req_ctx->current_req = req;
-  req_ctx->cloud_ctx = ctx;
-  req_ctx->status = S3StatusInternalError;
-  req_ctx->start_ptr = NULL;
-  req_ctx->bytes = 0;
-  req_ctx->buffer = NULL;
-  req_ctx->buffer_size = 0;
 
   do {
-    S3_get_object(&ctx->s3_bucket_context, /* bucket info */
+    S3_get_object(&req->ctx->s3_bucket_context, /* bucket info */
                   req->key,                /* key to retrieve */
                   NULL,                    /* do not use conditions */
                   0,                       /* start from byte 0... */
                   0,                       /* ...and read all bytes */
                   NULL,                    /* do a blocking call... */
                   &libs3_get_object_handler,/* ...using these callback...*/
-                  req_ctx);                /* ...with this data for context */
+                  cbk_ctx);                /* ...with this data for context */
 
     /* if we get an error related to a temporary network state retry */
-  } while(S3_status_is_retryable(req_ctx->status) &&
+  } while(S3_status_is_retryable(cbk_ctx->status) &&
           should_retry(&retries_left, 0));
 
 
   rsp = malloc(sizeof(struct libs3_get_response));
   if (!rsp) {
-    if (req_ctx->buffer) free(req_ctx->buffer);
-    free(req_ctx);
-    return 1;
+    if (cbk_ctx->buffer) free(cbk_ctx->buffer);
+    free(cbk_ctx);
+    return -1;
   }
 
-  rsp->status = req_ctx->status;
-  if (req_ctx->status == S3StatusOK) {
-    rsp->data = req_ctx->buffer;
+  *rsp_data = rsp;
+  rsp->status = cbk_ctx->status;
+  if (cbk_ctx->status == S3StatusOK) {
+    rsp->data = cbk_ctx->buffer;
     rsp->current_byte = rsp->data;
-    rsp->data_length = req_ctx->bytes + req->data_length;
+    rsp->data_length = cbk_ctx->bytes + req->data_length;
     rsp->read_bytes = 0;
-    rsp->last_timestamp = req_ctx->last_timestamp;
+    rsp->last_timestamp = cbk_ctx->last_timestamp;
   }
-  add_response(ctx, rsp);
 
-  return (req_ctx->status == S3StatusOK) ? 0 : 1;
-}
+  status = (cbk_ctx->status == S3StatusOK) ? 0 : -1;
+  free(cbk_ctx);
 
-static int request_handler_process_requests(struct libs3_cloud_context *ctx)
-{
-  libs3_request_t *req;
-  int req_number;
-
-  req_number = 0;
-  do {
-    pthread_mutex_lock(&ctx->req_queue_lock);
-    req = fifo_queue_remove_head(ctx->req_queue);
-    pthread_mutex_unlock(&ctx->req_queue_lock);
-
-    if (req) {
-      int status;
-
-      req_number++;
-
-      switch (req->op) {
-      case PUT:
-        status = request_handler_process_put_request(ctx, req);
-        break;
-      case GET:
-        status = request_handler_process_get_request(ctx, req);
-        break;
-      default:
-        /* WTF: should not be here! */
-        fprintf(stderr,
-                "libs3_delegate_helper: operation type not supported!\n");
-
-        status = 0;
-      }
-
-      if (status == 1) {
-        fprintf(stderr,
-                "libs3_delegate_helper: failed to perform operation\n");
-      }
-
-      free_request(req);
-    }
-  } while(req != NULL);
-
-  return req_number;
-}
-
-void* request_handler(void *data)
-{
-  struct libs3_cloud_context *ctx;
-
-  ctx = (struct libs3_cloud_context *) data;
-  do{
-    /* wait for main thread to signal there's some work to do */
-    pthread_mutex_lock(&ctx->req_handler_sync_mutex);
-
-    /* make sure not to block if there's already something to handle */
-    if (fifo_queue_size(ctx->req_queue) == 0) {
-      pthread_cond_wait(&ctx->req_handler_sync_cond,
-                        &ctx->req_handler_sync_mutex);
-    }
-    request_handler_process_requests(ctx);
-
-    pthread_mutex_unlock(&ctx->req_handler_sync_mutex);
-  } while(1); /* grapes TopologyManager don't support termination */
+  return status;
 }
 
 
@@ -583,27 +441,6 @@ void* request_handler(void *data)
 static void deallocate_context(struct libs3_cloud_context *ctx)
 {
   if (!ctx) return;
-
-  /* TODO: we should use a more specialized function instead of the
-     standard free. But since the cloud_helper do not take into
-     account deallocation the queue will always be empty when we
-     enter this function */
-  if (ctx->req_queue) fifo_queue_destroy(ctx->req_queue, NULL);
-  if (ctx->rsp_queue) fifo_queue_destroy(ctx->rsp_queue, NULL);
-
-  /* destroy mutexs, conds, threads, ...
-     This should be safe as no mutex has already been locked and both
-     mutex_destroy/cond_destroy check fail with EINVAL if the
-     specified object is not initialized */
-  pthread_mutex_destroy(&ctx->req_queue_lock);
-  pthread_mutex_destroy(&ctx->rsp_queue_lock);
-  pthread_mutex_destroy(&ctx->req_handler_sync_mutex);
-  pthread_mutex_destroy(&ctx->rsp_queue_sync_mutex);
-
-  pthread_cond_destroy(&ctx->rsp_queue_sync_cond);
-  pthread_cond_destroy(&ctx->req_handler_sync_cond);
-
-  pthread_attr_destroy(&ctx->req_handler_thread_attr);
 
   free(ctx);
   return;
@@ -615,7 +452,6 @@ void* cloud_helper_init(struct nodeID *local, const char *config)
   struct libs3_cloud_context *ctx;
   struct tag *cfg_tags;
   const char *arg;
-  int err;
 
   ctx = malloc(sizeof(struct libs3_cloud_context));
   memset(ctx, 0, sizeof(struct libs3_cloud_context));
@@ -652,11 +488,13 @@ void* cloud_helper_init(struct nodeID *local, const char *config)
   }
   ctx->s3_bucket_context.bucketName = strdup(arg);
 
-  ctx->s3_bucket_context.protocol = S3ProtocolHTTP;
+  ctx->s3_bucket_context.protocol = S3ProtocolHTTPS;
   arg = config_value_str(cfg_tags, "s3_protocol");
   if (arg) {
     if (strcmp(arg, "https") == 0) {
       ctx->s3_bucket_context.protocol = S3ProtocolHTTPS;
+    } else if (strcmp(arg, "http") == 0) {
+      ctx->s3_bucket_context.protocol = S3ProtocolHTTP;
     }
   }
 
@@ -664,88 +502,29 @@ void* cloud_helper_init(struct nodeID *local, const char *config)
 
 
   /* Parse optional parameters */
-  ctx->blocking_put_request = 0;
+  ctx->blocking_put_request = 1;
   arg = config_value_str(cfg_tags, "s3_blocking_put");
   if (arg) {
     if (strcmp(arg, "1") == 0)
       ctx->blocking_put_request = 1;
+    else if (strcmp(arg, "0") == 0)
+      ctx->blocking_put_request = 0;
   }
 
   /* Initialize data structures */
   if (S3_initialize("libs3_delegate_helper", S3_INIT_ALL) != S3StatusOK) {
+    fprintf(stderr,
+            "libs3_delegate_helper: error inizializing libs3\n");
     deallocate_context(ctx);
-    return 0;
+    return NULL;
   }
 
-  ctx->req_queue = fifo_queue_create(10);
-  if (!ctx->req_queue) {
+  ctx->req_handler = req_handler_init();
+  if (!ctx->req_handler) {
+    fprintf(stderr,
+            "libs3_delegate_helper: error initializing request handler\n");
     deallocate_context(ctx);
-    return 0;
-  }
-
-  ctx->rsp_queue = fifo_queue_create(10);
-  if (!ctx->rsp_queue) {
-    deallocate_context(ctx);
-    return 0;
-  }
-
-
-  err = pthread_mutex_init(&ctx->req_queue_lock, NULL);
-  if (err) {
-    deallocate_context(ctx);
-    return 0;
-  }
-
-  err = pthread_mutex_init(&ctx->rsp_queue_lock, NULL);
-  if (err) {
-    deallocate_context(ctx);
-    return 0;
-  }
-
-  err = pthread_mutex_init(&ctx->rsp_queue_sync_mutex, NULL);
-  if (err) {
-    deallocate_context(ctx);
-    return 0;
-  }
-
-  err = pthread_cond_init (&ctx->rsp_queue_sync_cond, NULL);
-  if (err) {
-    deallocate_context(ctx);
-    return 0;
-  }
-
-  err = pthread_mutex_init(&ctx->req_handler_sync_mutex, NULL);
-  if (err) {
-    deallocate_context(ctx);
-    return 0;
-  }
-
-  err = pthread_cond_init (&ctx->req_handler_sync_cond, NULL);
-  if (err) {
-    deallocate_context(ctx);
-    return 0;
-  }
-
-  err = pthread_attr_init(&ctx->req_handler_thread_attr);
-  if (err) {
-    deallocate_context(ctx);
-    return 0;
-  }
-
-  err = pthread_attr_setdetachstate(&ctx->req_handler_thread_attr,
-                                    PTHREAD_CREATE_JOINABLE);
-  if (err) {
-    deallocate_context(ctx);
-    return 0;
-  }
-
-  err = pthread_create(&ctx->req_handler_thread,
-                       &ctx->req_handler_thread_attr,
-                       &request_handler,
-                       (void *)ctx);
-  if (err) {
-    deallocate_context(ctx);
-    return 0;
+    return NULL;
   }
 
   return ctx;
@@ -767,15 +546,19 @@ int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
   request->data = header_ptr;
   request->data_length = header_size;
   request->free_data = free_header;
+  request->ctx = ctx;
 
-  add_request(ctx, request);
+  req_handler_add_request(ctx->req_handler,
+                          &process_get_request,
+                          request,
+                          &free_request);
 
   return 0;
 }
 
-  int put_on_cloud(void *context, const char *key, uint8_t *buffer_ptr,
-                   int buffer_size, int free_buffer)
-  {
+int put_on_cloud(void *context, const char *key, uint8_t *buffer_ptr,
+                 int buffer_size, int free_buffer)
+{
   struct libs3_cloud_context *ctx;
   libs3_request_t *request;
 
@@ -789,18 +572,20 @@ int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
   request->data = buffer_ptr;
   request->data_length = buffer_size;
   request->free_data = free_buffer;
+  request->ctx = ctx;
 
   if (ctx->blocking_put_request) {
     int res;
-    res = request_handler_process_put_request(ctx, request);
+    void *rsp;
+    res = process_put_request(request, &rsp);
     free_request(request);
     return res;
   }
-  else
-    add_request(ctx, request);
-
-  return 0;
+  else {
+    return req_handler_add_request(ctx->req_handler, &process_put_request,
+                                   request, &free_request);
   }
+}
 
 struct nodeID* get_cloud_node(void *context, uint8_t variant)
 {
@@ -827,7 +612,7 @@ int wait4cloud(void *context, struct timeval *tout)
 
   ctx = (struct libs3_cloud_context *) context;
 
-  rsp = wait4response(ctx, tout);
+  rsp = (libs3_get_response_t*)req_handler_wait4response(ctx->req_handler, tout);
 
   if (rsp) {
     if (rsp->status == S3StatusOK) {
@@ -835,7 +620,7 @@ int wait4cloud(void *context, struct timeval *tout)
       return 1;
     } else {
       /* there was some error with the request */
-      pop_response(ctx);
+      req_handler_remove_response(ctx->req_handler);
       return -1;
     }
   } else {
@@ -851,11 +636,11 @@ int recv_from_cloud(void *context, uint8_t *buffer_ptr, int buffer_size)
 
   ctx = (struct libs3_cloud_context *) context;
 
-  rsp = get_response(ctx);
+  rsp = (libs3_get_response_t *) req_handler_get_response(ctx->req_handler);
   if (!rsp) return -1;
 
   if (rsp->read_bytes == rsp->data_length){
-    pop_response(ctx);
+    req_handler_remove_response(ctx->req_handler);
     return 0;
   }
 
