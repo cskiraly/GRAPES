@@ -435,6 +435,7 @@ int recv_from_cloud(void *context, uint8_t *buffer_ptr, int buffer_size)
 {
   struct mysql_cloud_context *ctx;
   mysql_get_response_t *rsp;
+  int remaining;
   int toread;
 
   ctx = (struct mysql_cloud_context *) context;
@@ -442,17 +443,17 @@ int recv_from_cloud(void *context, uint8_t *buffer_ptr, int buffer_size)
   rsp = (mysql_get_response_t *) req_handler_get_response(ctx->req_handler);
   if (!rsp) return -1;
 
-  if (rsp->read_bytes == rsp->data_length){
-    free_response(rsp);
-    req_handler_remove_response(ctx->req_handler);
-    return 0;
-  }
-
-  toread = (rsp->data_length <= buffer_size)? rsp->data_length : buffer_size;
+  remaining = rsp->data_length - rsp->read_bytes;
+  toread = (remaining <= buffer_size)? remaining : buffer_size;
 
   memcpy(buffer_ptr, rsp->current_byte, toread);
   rsp->current_byte += toread;
   rsp->read_bytes += toread;
+
+  if (rsp->read_bytes == rsp->data_length){
+    free_response(rsp);
+    req_handler_remove_response(ctx->req_handler);
+  }
 
   return toread;
 }
