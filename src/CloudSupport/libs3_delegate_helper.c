@@ -167,6 +167,12 @@ static void free_request(void *req_ptr)
   free(req);
 }
 
+static void free_response(libs3_get_response_t *rsp) {
+  if (rsp->data) free(rsp->data);
+
+  free(rsp);
+}
+
 /************************************************************************
  * libs3 callback implementation
  ************************************************************************/
@@ -621,6 +627,7 @@ int wait4cloud(void *context, struct timeval *tout)
     } else {
       /* there was some error with the request */
       req_handler_remove_response(ctx->req_handler);
+      free_response(rsp);
       return -1;
     }
   } else {
@@ -649,6 +656,7 @@ int recv_from_cloud(void *context, uint8_t *buffer_ptr, int buffer_size)
 
   if (rsp->read_bytes == rsp->data_length){
     req_handler_remove_response(ctx->req_handler);
+    free_response(rsp);
   }
 
   return toread;
