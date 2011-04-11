@@ -6,13 +6,29 @@
  * @brief Peer Sampler interface.
  *
  * This is the Peer Sampler interface. See @link topology_test.c
- * topology_test.c @endlink for an usage example
+ * topology_test.c @endlink for a simple usage example, 
+ * @link topology_test_th.c topology_test_th.c @endlink for an
+ * example using multiple threads, and @link topology_test_attr.c
+ * topology_test_attr.c @endlink for an example with metadata.
  *
  */
 
 /** @example topology_test.c
  * 
- * A test program showing how to use the Peer Sampler API.
+ * A simple example showing how to use the Peer Sampler API.
+ *
+ */
+
+/** @example topology_test_th.c
+ * 
+ * An example showing how to use the Peer Sampler API with multiple threads.
+ *
+ */
+
+/** @example topology_test_attr.c
+ * 
+ * An example showing how to use the Peer Sampler API with peers' attributes
+ * (metadata).
  *
  */
 
@@ -92,7 +108,7 @@ int psample_shrink_cache(struct psample_context *tc, int n);
          cache.
   @return 0 in case of success; -1 in case of error.
 */
-int psample_remove_peer(struct psample_context *tc, struct nodeID *neighbour);
+int psample_remove_peer(struct psample_context *tc, const struct nodeID *neighbour);
 
 /**
   @brief Change the metadata.
@@ -107,7 +123,7 @@ int psample_remove_peer(struct psample_context *tc, struct nodeID *neighbour);
          be the same as for the other peers).
   @return 0 in case of success; -1 in case of error.
 */
-int psample_change_metadata(struct psample_context *tc, void *metadata, int metadata_size);
+int psample_change_metadata(struct psample_context *tc, const void *metadata, int metadata_size);
 
 /**
   @brief Initialise the Peer Sampler.
@@ -116,9 +132,11 @@ int psample_change_metadata(struct psample_context *tc, void *metadata, int meta
   @param metadata pointer to the metadata associated to this peer (will be
          gossiped).
   @param metadata_size size of the metadata associated to this peer.
+  @param config configuration parameter for the peer sampling module (specifying the
+         peer sampling algorithm, the cache size, etc...)
   @return the topology manager context in case of success; NULL in case of error.
 */
-struct psample_context *psample_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config);
+struct psample_context *psample_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config);
 
 /**
   @brief Insert a known peer in the cache.
@@ -134,7 +152,7 @@ struct psample_context *psample_init(struct nodeID *myID, void *metadata, int me
          be the same as for the other peers).
   @return 0 in case of success; -1 in case of error.
 */
-int psample_add_peer(struct psample_context *tc, struct nodeID *neighbour, void *metadata, int metadata_size);
+int psample_add_peer(struct psample_context *tc, struct nodeID *neighbour, const void *metadata, int metadata_size);
 
 /**
   @brief Pass a received packet to the Peer Sampler.

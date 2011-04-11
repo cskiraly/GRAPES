@@ -15,11 +15,16 @@ TESTS = topology_test \
         cb_test \
         config_test \
         tman_test \
-        topology_test_th \
+        topo_msg_size_test \
 	cloud_test \
 	cloudcast_topology_test \
 	cloud_topology_monitor \
 	test_queue
+
+ifneq ($(ARCH),win32)
+  TESTS += topology_test_th \
+           chunkiser_test
+endif
 
 DEPENDENCIES = libfilecloud.so
 
@@ -36,6 +41,8 @@ include $(BASE)/src/utils.mak
 ifeq ($(ARCH),win32)
 LDLIBS += -lws2_32
 endif
+
+topo_msg_size_test: ../net_helper$(NH_INCARNATION).o
 
 topology_test_attr: topology_test_attr.o net_helpers.o
 topology_test_attr: ../net_helper$(NH_INCARNATION).o
@@ -65,6 +72,17 @@ chunk_signaling_test: ../net_helper$(NH_INCARNATION).o
 tman_test: tman_test.o topology.o peer.o net_helpers.o
 tman_test: ../net_helper$(NH_INCARNATION).o
 
+chunkiser_test: chunkiser_test.o
+chunkiser_test: ../net_helper$(NH_INCARNATION).o
+ifdef FFDIR
+chunkiser_test: CFLAGS += -pthread
+chunkiser_test: LDFLAGS += -pthread -L$(FFDIR)/libavutil -L$(FFDIR)/libavcore -L$(FFDIR)/libavcodec -L$(FFDIR)/libavformat
+chunkiser_test: LDLIBS += -lm -lavformat -lavcodec -lavutil
+chunkiser_test: LDLIBS += $(call ld-option, -lavcore)
+chunkiser_test: LDLIBS += $(call ld-option, -lz)
+chunkiser_test: LDLIBS += $(call ld-option, -lbz2)
+endif
+
 cloud_test: cloud_test.o net_helpers.o libfilecloud.so
 cloud_test: ../net_helper$(NH_INCARNATION).o
 cloud_test: LDFLAGS += -ldl
@@ -85,8 +103,6 @@ cloudcast_topology_test: LDFLAGS += -ldl
 cloud_topology_monitor: cloud_topology_monitor.o net_helpers.o libfilecloud.so
 cloud_topology_monitor: ../net_helper$(NH_INCARNATION).o
 cloud_topology_monitor: LDFLAGS += -ldl
-cloud_topology_monitor: CFLAGS += -I../TopologyManager
-
 
 test_queue: test_queue.o
 test_queue: CFLAGS += -I../Utils

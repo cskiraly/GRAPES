@@ -14,15 +14,17 @@
 
 #include "net_helper.h"
 #include "peersampler_iface.h"
-#include "topocache.h"
-#include "ncast_proto.h"
-#include "proto.h"
+#include "../Cache/topocache.h"
+#include "../Cache/ncast_proto.h"
+#include "../Cache/proto.h"
 #include "config.h"
 #include "grapes_msg_types.h"
 
-#define BOOTSTRAP_CYCLES 5
 #define DEFAULT_CACHE_SIZE 10
 #define DEFAULT_MAX_TIMESTAMP 5
+#define DEFAULT_BOOTSTRAP_CYCLES 5
+#define DEFAULT_BOOTSTRAP_PERIOD 2*1000*1000
+#define DEFAULT_PERIOD 10*1000*1000
 
 struct peersampler_context{
   uint64_t currtime;
@@ -30,9 +32,11 @@ struct peersampler_context{
   struct peer_cache *local_cache;
   bool bootstrap;
   int bootstrap_period;
+  int bootstrap_cycles;
   int period;
   int counter;
   struct ncast_proto_context *tc;
+  const struct nodeID **r;
 };
 
 static uint64_t gettime(void)
@@ -44,15 +48,15 @@ static uint64_t gettime(void)
   return tv.tv_usec + tv.tv_sec * 1000000ull;
 }
 
-static struct peersampler_context* ncast_context_init(void){
+static struct peersampler_context* ncast_context_init(void)
+{
   struct peersampler_context* con;
   con = (struct peersampler_context*) calloc(1,sizeof(struct peersampler_context));
 
   //Initialize context with default values
   con->bootstrap = true;
-  con->bootstrap_period = 2000000;
-  con->period = 10000000;
   con->currtime = gettime();
+  con->r = NULL;
 
   return con;
 }
@@ -72,7 +76,7 @@ static int time_to_send(struct peersampler_context *context)
 /*
  * Exported Functions!
  */
-static struct peersampler_context* ncast_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+static struct peersampler_context* ncast_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
 {
   struct tag *cfg_tags;
   struct peersampler_context *context;
@@ -89,6 +93,18 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, void *metadat
   res = config_value_int(cfg_tags, "max_timestamp", &max_timestamp);
   if (!res) {
     max_timestamp = DEFAULT_MAX_TIMESTAMP;
+  }
+  res = config_value_int(cfg_tags, "period", &context->period);
+  if (!res) {
+    context->period = DEFAULT_PERIOD;
+  }
+  res = config_value_int(cfg_tags, "bootstrap_period", &context->bootstrap_period);
+  if (!res) {
+    context->bootstrap_period = DEFAULT_BOOTSTRAP_PERIOD;
+  }
+  res = config_value_int(cfg_tags, "bootstrap_cycles", &context->bootstrap_cycles);
+  if (!res) {
+    context->bootstrap_cycles = DEFAULT_BOOTSTRAP_CYCLES;
   }
   free(cfg_tags);
   
@@ -108,7 +124,7 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, void *metadat
   return context;
 }
 
-static int ncast_change_metadata(struct peersampler_context *context, void *metadata, int metadata_size)
+static int ncast_change_metadata(struct peersampler_context *context, const void *metadata, int metadata_size)
 {
   if (ncast_proto_metadata_update(context->tc, metadata, metadata_size) <= 0) {
     return -1;
@@ -117,7 +133,7 @@ static int ncast_change_metadata(struct peersampler_context *context, void *meta
   return 1;
 }
 
-static int ncast_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, void *metadata, int metadata_size)
+static int ncast_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, const void *metadata, int metadata_size)
 {
   if (cache_add(context->local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
@@ -140,7 +156,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     }
 
     context->counter++;
-    if (context->counter == BOOTSTRAP_CYCLES) context->bootstrap = false;
+    if (context->counter == context->bootstrap_cycles) context->bootstrap = false;
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == NCAST_QUERY) {
@@ -156,7 +172,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
 
   if (time_to_send(context)) {
     cache_update(context->local_cache);
-    ncast_query(context->tc, context->local_cache);
+    return ncast_query(context->tc, context->local_cache);
   }
 
   return 0;
@@ -164,19 +180,17 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
 
 static const struct nodeID **ncast_get_neighbourhood(struct peersampler_context *context, int *n)
 {
-  static struct nodeID **r;
-
-  r = realloc(r, context->cache_size * sizeof(struct nodeID *));
-  if (r == NULL) {
+  context->r = realloc(context->r, context->cache_size * sizeof(struct nodeID *));
+  if (context->r == NULL) {
     return NULL;
   }
 
   for (*n = 0; nodeid(context->local_cache, *n) && (*n < context->cache_size); (*n)++) {
-    r[*n] = nodeid(context->local_cache, *n);
+    context->r[*n] = nodeid(context->local_cache, *n);
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
 
-  return (const struct nodeID **)r;
+  return context->r;
 }
 
 static const void *ncast_get_metadata(struct peersampler_context *context, int *metadata_size)
@@ -201,7 +215,7 @@ static int ncast_shrink_neighbourhood(struct peersampler_context *context, int n
   return context->cache_size;
 }
 
-static int ncast_remove_neighbour(struct peersampler_context *context, struct nodeID *neighbour)
+static int ncast_remove_neighbour(struct peersampler_context *context, const struct nodeID *neighbour)
 {
   return cache_del(context->local_cache, neighbour);
 }

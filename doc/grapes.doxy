@@ -26,12 +26,15 @@
 
    The following Components/Modules can be identified:
 	- a Scheduler
-	- a @link topmanager.h Peer Sampling @endlink mechanism
+	- a @link peersampler.h Peer Sampling @endlink mechanism
         - a @link peerset.h Peer Set @endlink data type
         - a @link chunkbuffer.h Chunk Buffer @endlink
         - a @link chunkidset.h Chunk ID Set @endlink data type
 	- a @ref trade_sig Module
 	- a @ref trade_msg module (send \& receive chunks)
+	- a @link chunkiser.h "chunkiser"@endlink, which builds chunks from an input
+                  media stream, and the corresponding "dechunkiser", which
+                  reconstructs the encoded stream based on the received chunks
 
    Each module is separated into a sub-directory within the source tree,
    is described by a well-defined interface, and can have different
@@ -59,4 +62,12 @@
   The signalling API is divided in @link trade_sig_ha.h <i>high
   abstraction</i> @endlink and @link trade_sig_la.h <i>low
   abstraction</i> @endlink
+  See @link chunk_signaling_test.c chunk_signaling_test.c @endlink for an usage example
+
 */
+
+/** @example chunk_signaling_test.c
+ * 
+ * A test program showing how to use the signalling API.
+ *
+ */

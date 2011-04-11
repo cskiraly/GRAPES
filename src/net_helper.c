@@ -27,7 +27,12 @@ int wait4data(const struct nodeID *s, struct timeval *tout, int *user_fds)
   int i, res, max_fd;
 
   FD_ZERO(&fds);
-  max_fd = s->fd;
+  if (s) {
+    max_fd = s->fd;
+    FD_SET(s->fd, &fds);
+  } else {
+    max_fd = -1;
+  }
   if (user_fds) {
     for (i = 0; user_fds[i] != -1; i++) {
       FD_SET(user_fds[i], &fds);
@@ -36,12 +41,11 @@ int wait4data(const struct nodeID *s, struct timeval *tout, int *user_fds)
       }
     }
   }
-  FD_SET(s->fd, &fds);
   res = select(max_fd + 1, &fds, NULL, NULL, tout);
   if (res <= 0) {
     return res;
   }
-  if (FD_ISSET(s->fd, &fds)) {
+  if (s && FD_ISSET(s->fd, &fds)) {
     return 1;
   }
 

@@ -12,9 +12,9 @@
 #include <string.h>
 
 #include "net_helper.h"
-#include "blist_cache.h"
-#include "blist_proto.h"
-#include "proto.h"
+#include "../Cache/blist_cache.h"
+#include "../Cache/blist_proto.h"
+#include "../Cache/proto.h"
 #include "grapes_msg_types.h"
 #include "config.h"
 #include "topman_iface.h"

@@ -16,4 +16,4 @@ struct topo_header {
 #define CLOUDCAST_REPLY 0x08
 #define CLOUDCAST_CLOUD 0x09
 
-#endif	/* PROTO */
+#endif  /* PROTO */

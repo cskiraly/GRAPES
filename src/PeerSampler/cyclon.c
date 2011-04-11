@@ -14,10 +14,9 @@
 
 #include "net_helper.h"
 #include "peersampler_iface.h"
-#include "topocache.h"
-#include "topo_proto.h"
-#include "cyclon_proto.h"
-#include "proto.h"
+#include "../Cache/topocache.h"
+#include "../Cache/cyclon_proto.h"
+#include "../Cache/proto.h"
 #include "config.h"
 #include "grapes_msg_types.h"
 
@@ -35,8 +34,8 @@ struct peersampler_context{
   struct peer_cache *flying_cache;
   struct nodeID *dst;
 
-
- struct cyclon_proto_context *pc;
+  struct cyclon_proto_context *pc;
+  const struct nodeID **r;
 };
 
 
@@ -49,7 +48,8 @@ static uint64_t gettime(void)
   return tv.tv_usec + tv.tv_sec * 1000000ull;
 }
 
-static struct peersampler_context* cyclon_context_init(void){
+static struct peersampler_context* cyclon_context_init(void)
+{
   struct peersampler_context* con;
   con = (struct peersampler_context*) calloc(1,sizeof(struct peersampler_context));
 
@@ -89,7 +89,7 @@ static void cache_add_cache(struct peer_cache *dst, const struct peer_cache *add
 /*
  * Public Functions!
  */
-static struct peersampler_context* cyclon_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+static struct peersampler_context* cyclon_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
 {
   struct tag *cfg_tags;
   struct peersampler_context *con;
@@ -107,6 +107,7 @@ static struct peersampler_context* cyclon_init(struct nodeID *myID, void *metada
   if (!res) {
     con->sent_entries = con->cache_size / 2;
   }
+  free(cfg_tags);
 
   con->local_cache = cache_init(con->cache_size, metadata_size, 0);
   if (con->local_cache == NULL) {
@@ -124,7 +125,7 @@ static struct peersampler_context* cyclon_init(struct nodeID *myID, void *metada
   return con;
 }
 
-static int cyclon_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, void *metadata, int metadata_size)
+static int cyclon_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, const void *metadata, int metadata_size)
 {
   if (!context->flying_cache) {
     context->flying_cache = rand_cache(context->local_cache, context->sent_entries - 1);
@@ -187,7 +188,7 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
     context->dst = nodeid_dup(context->dst);
     cache_del(context->local_cache, context->dst);
     context->flying_cache = rand_cache(context->local_cache, context->sent_entries - 1);
-    cyclon_query(context->pc, context->flying_cache, context->dst);
+    return cyclon_query(context->pc, context->flying_cache, context->dst);
   }
   cache_check(context->local_cache);
 
@@ -196,30 +197,28 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
 
 static const struct nodeID **cyclon_get_neighbourhood(struct peersampler_context *context, int *n)
 {
-  static struct nodeID **r;
-
-  r = realloc(r, context->cache_size * sizeof(struct nodeID *));
-  if (r == NULL) {
+  context->r = realloc(context->r, context->cache_size * sizeof(struct nodeID *));
+  if (context->r == NULL) {
     return NULL;
   }
 
   for (*n = 0; nodeid(context->local_cache, *n) && (*n < context->cache_size); (*n)++) {
-    r[*n] = nodeid(context->local_cache, *n);
+    context->r[*n] = nodeid(context->local_cache, *n);
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
   if (context->flying_cache) {
     int i;
 
     for (i = 0; nodeid(context->flying_cache, i) && (*n < context->cache_size); (*n)++, i++) {
-      r[*n] = nodeid(context->flying_cache, i);
+      context->r[*n] = nodeid(context->flying_cache, i);
     }
   }
   if (context->dst && (*n < context->cache_size)) {
-    r[*n] = context->dst;
+    context->r[*n] = context->dst;
     (*n)++;
   }
 
-  return (const struct nodeID **)r;
+  return context->r;
 }
 
 static const void *cyclon_get_metadata(struct peersampler_context *context, int *metadata_size)
@@ -244,12 +243,12 @@ static int cyclon_shrink_neighbourhood(struct peersampler_context *context, int 
   return context->cache_size;
 }
 
-static int cyclon_remove_neighbour(struct peersampler_context *context, struct nodeID *neighbour)
+static int cyclon_remove_neighbour(struct peersampler_context *context, const struct nodeID *neighbour)
 {
   return cache_del(context->local_cache, neighbour);
 }
 
-static int cyclon_change_metadata(struct peersampler_context *context, void *metadata, int metadata_size)
+static int cyclon_change_metadata(struct peersampler_context *context, const void *metadata, int metadata_size)
 {
   return cyclon_proto_change_metadata(context->pc, metadata, metadata_size);
 }

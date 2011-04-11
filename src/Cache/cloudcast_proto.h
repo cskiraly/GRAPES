@@ -6,7 +6,7 @@
 
 struct cloudcast_proto_context;
 
-struct cloudcast_proto_context* cloudcast_proto_init(struct nodeID *s, void *meta, int meta_size);
+struct cloudcast_proto_context* cloudcast_proto_init(struct nodeID *s, const void *meta, int meta_size);
 
 
 int cloudcast_reply_peer(struct cloudcast_proto_context *context, const struct peer_cache *c, struct peer_cache *local_cache);
@@ -19,11 +19,11 @@ struct peer_cache * cloudcast_cloud_default_reply(struct peer_cache *template, s
 int cloudcast_query_cloud(struct cloudcast_proto_context *context);
 time_t cloudcast_timestamp_cloud(struct cloudcast_proto_context *context);
 
-int cloudcast_proto_change_metadata(struct cloudcast_proto_context *context, void *metadata, int metadata_size);
+int cloudcast_proto_change_metadata(struct cloudcast_proto_context *context, const void *metadata, int metadata_size);
 
 struct nodeID** cloudcast_get_cloud_nodes(struct cloudcast_proto_context *context, uint8_t number);
 
 struct nodeID* cloudcast_get_cloud_node(struct cloudcast_proto_context *context);
 
 int cloudcast_is_cloud_node(struct cloudcast_proto_context *context, struct nodeID* node);
-#endif	/* CLOUDCAST_PROTO */
+#endif  /* CLOUDCAST_PROTO */

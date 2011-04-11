@@ -28,7 +28,7 @@ struct cloudcast_proto_context {
   struct cloud_helper_context *cloud_context;
 };
 
-struct cloudcast_proto_context* cloudcast_proto_init(struct nodeID *s, void *meta, int meta_size)
+struct cloudcast_proto_context* cloudcast_proto_init(struct nodeID *s, const void *meta, int meta_size)
 {
   struct cloudcast_proto_context *con;
   con = malloc(sizeof(struct cloudcast_proto_context));
@@ -149,7 +149,7 @@ time_t cloudcast_timestamp_cloud(struct cloudcast_proto_context *context)
   return timestamp_cloud(context->cloud_context);
 }
 
-int cloudcast_proto_change_metadata(struct cloudcast_proto_context *context, void *metadata, int metadata_size)
+int cloudcast_proto_change_metadata(struct cloudcast_proto_context *context, const void *metadata, int metadata_size)
 {
   if (topo_proto_metadata_update(context->topo_context, metadata, metadata_size) <= 0) {
     return -1;

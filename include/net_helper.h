@@ -1,9 +1,7 @@
 #ifndef NET_HELPER_H
 #define NET_HELPER_H
 
-#if defined(_WIN32)
-#include <winsock2.h>
-#endif
+#include <sys/time.h>
 
 /**
 * @file net_helper.h
@@ -22,6 +20,7 @@ struct nodeID;
 
 /**
 * @brief Duplicate a nodeID.
+*
 * This function provides a duplicate of the given nodeID.
 * @param[in] s A pointer to the nodeID to be duplicated.
 * @return A pointer to the duplicate of the argument nodeID.
@@ -30,6 +29,7 @@ struct nodeID *nodeid_dup(struct nodeID *s);
 
 /**
 * @brief Test if two nodes are identical.
+*
 * Test if two nodeIDs can be considered identical (where the definition of identity is implementation dependent).
 * @param[in] s1 The first nodeID to be compared.
 * @param[in] s2 The second nodeID to be compared.
@@ -39,6 +39,7 @@ int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2);
 
 /**
 * @brief Create a new nodeID.
+*
 * Create a new nodeID from a given IP address and port number.
 * @param[in] IPaddr The IP address in string form to be associated to the new nodeID.
 * @param[in] port The port to be associated to the new nodeID.
@@ -48,6 +49,7 @@ struct nodeID *create_node(const char *IPaddr, int port);
 
 /**
 * @brief Delete a nodeID.
+*
 * Delete a nodeID and free the allocated resources.
 * @param[in] s A pointer to the nodeID to be deleted.
 */
@@ -55,6 +57,7 @@ void nodeid_free(struct nodeID *s);
 
 /**
 * @brief Initialize all needed internal parameters.
+*
 * Initialize the parameters for the networking facilities and create a nodeID representing the caller.
 * @param[in] IPaddr The IP in string form to be associated to the caller.
 * @param[in] port The port to be associated to the caller.
@@ -64,14 +67,19 @@ void nodeid_free(struct nodeID *s);
 struct nodeID *net_helper_init(const char *IPaddr, int port,const char *config);
 
 /**
-* @brief Map net_helper's ML callback to the given message type.
-* To be used if ML support is needed. Register the common net_hepler callback for a msg_type.
-* @param[in] mesType The MSG_TYPE of the message the caller is interested in.
+* @brief Prepare to receive messages of the specified type.
+*
+* Depending on the networking protocols and technologies used by the net
+* helper, the application might need to declare the types of messages it's
+* interested in. This function allows to specify which messages should be
+* received (messages of different types might be silently discarded).
+* @param[in] msgtype The MSG_TYPE of the message the caller is interested in.
 */
-void bind_msg_type (uint8_t msgtype);
+void bind_msg_type(uint8_t msgtype);
 
 /**
 * @brief Send data to a remote peer.
+*
 * This function provides a transparently handles the sending routines.
 * @param[in] from A pointer to the nodeID representing the caller.
 * @param[in] to A pointer to the nodeID representing the remote peer.
@@ -83,6 +91,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 
 /**
 * @brief Receive data from a remote peer.
+*
 * This function transparently handles the receiving routines.
 * @param[in] local A pointer to the nodeID representing the caller.
 * @param[out] remote The address to a pointer that has to be set to a new nodeID representing the sender peer.
@@ -95,6 +104,7 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 
 /**
 * @brief Check for newly arrived data.
+*
 * Check if some data arrived for a given nodeID. It sets a timeout to return at most after a given time.
 * @param[in] n A pointer to the nodeID representing the caller.
 * @param[in] tout A pointer to a timer to be used to set the waiting timeout.
@@ -105,6 +115,7 @@ int wait4data(const struct nodeID *n, struct timeval *tout, int *user_fds);
 
 /**
 * @brief Give a string representation of a nodeID.
+*
 * Give a string representation of a nodeID.
 * @param[in] s A pointer to the nodeID to be printed.
 * @return A string representing the nodeID.
@@ -113,6 +124,7 @@ const char *node_addr(const struct nodeID *s);
 
 /**
 * @brief Create a nodeID structure from a serialized object.
+*
 * Read from a properly filled byte array (@see #nodeid_dump) and build a new nodeID from its serialized representation in the buffer.
 * @param[in] b A pointer to the byte array containing the data to be used.
 * @param[in] len The number of bytes to be read from the buffer to build the new nodeID.
@@ -122,6 +134,7 @@ struct nodeID *nodeid_undump(const uint8_t *b, int *len);
 
 /**
 * @brief Serialize a nodeID in a byte array.
+*
 * Serialize a nodeID in a byte array.
 * @param[in] b A pointer to the byte array that will contain the nodeID serialization.
 * @param[in] s A pointer to the nodeID to be serialized.
@@ -132,6 +145,7 @@ int nodeid_dump(uint8_t *b, const struct nodeID *s, size_t max_write_size);
 
 /**
 * @brief Give a string representation of the public IP belonging to the nodeID.
+*
 * Serialize the public IP address of a given node and return it.
 * @param[in] s A pointer to the nodeID.
 * @return the publicly accessible IP address of the node.

@@ -14,9 +14,9 @@
 
 #include "net_helper.h"
 #include "peersampler_iface.h"
-#include "topocache.h"
-#include "cloudcast_proto.h"
-#include "proto.h"
+#include "../Cache/topocache.h"
+#include "../Cache/cloudcast_proto.h"
+#include "../Cache/proto.h"
 #include "config.h"
 #include "grapes_msg_types.h"
 
@@ -107,7 +107,7 @@ static int cache_add_resize(struct peer_cache *dst, struct nodeID *n, const int 
 /*
  * Public Functions!
  */
-static struct peersampler_context* cloudcast_init(struct nodeID *myID, void *metadata, int metadata_size, const char *config)
+static struct peersampler_context* cloudcast_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
 {
   struct tag *cfg_tags;
   struct peersampler_context *con;
@@ -148,7 +148,7 @@ static struct peersampler_context* cloudcast_init(struct nodeID *myID, void *met
   return con;
 }
 
-static int cloudcast_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, void *metadata, int metadata_size)
+static int cloudcast_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, const void *metadata, int metadata_size)
 {
   if (!context->flying_cache) {
     context->flying_cache = rand_cache(context->local_cache, context->sent_entries - 1);
@@ -365,12 +365,12 @@ static int cloudcast_shrink_neighbourhood(struct peersampler_context *context, i
   return context->cache_size;
 }
 
-static int cloudcast_remove_neighbour(struct peersampler_context *context, struct nodeID *neighbour)
+static int cloudcast_remove_neighbour(struct peersampler_context *context, const struct nodeID *neighbour)
 {
   return cache_del(context->local_cache, neighbour);
 }
 
-static int cloudcast_change_metadata(struct peersampler_context *context, void *metadata, int metadata_size)
+static int cloudcast_change_metadata(struct peersampler_context *context, const void *metadata, int metadata_size)
 {
   return cloudcast_proto_change_metadata(context->proto_context, metadata, metadata_size);
 }
