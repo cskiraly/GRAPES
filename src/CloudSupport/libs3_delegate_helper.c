@@ -647,6 +647,13 @@ int recv_from_cloud(void *context, uint8_t *buffer_ptr, int buffer_size)
   rsp = (libs3_get_response_t *) req_handler_get_response(ctx->req_handler);
   if (!rsp) return -1;
 
+  /* If do not have further data just remove the request */
+  if (rsp->read_bytes == rsp->data_length) {
+    req_handler_remove_response(ctx->req_handler);
+    free_response(rsp);
+    return 0;
+  }
+
   remaining = rsp->data_length - rsp->read_bytes;
   toread = (remaining <= buffer_size)? remaining : buffer_size;
 
@@ -654,7 +661,9 @@ int recv_from_cloud(void *context, uint8_t *buffer_ptr, int buffer_size)
   rsp->current_byte += toread;
   rsp->read_bytes += toread;
 
-  if (rsp->read_bytes == rsp->data_length){
+  /* remove the response only if the read bytes are less the the allocated
+     buuffer otherwise the client can't know when a single response finished */
+  if (rsp->read_bytes == rsp->data_length && rsp->read_bytes < buffer_size){
     req_handler_remove_response(ctx->req_handler);
     free_response(rsp);
   }

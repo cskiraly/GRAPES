@@ -131,6 +131,8 @@ int wait4cloud(struct cloud_helper_context *context, struct timeval *tout);
 /**
  * @brief Receive data from the cloud.
  * This function transparently handles the receving routines.
+ * If the read bytes number is less than the buffer size or equal 0 than the
+ * current response has been completely read.
  * @param[out] buffer_ptr A pointer to the buffer in which to store the retrieved data.
  * @param[out] buffer_size The size of the data buffer
  * @return The number of received bytes or -1 if some error occurred.
