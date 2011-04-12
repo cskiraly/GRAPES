@@ -4,12 +4,20 @@
  *  This is free software; see lgpl-2.1.txt
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <semaphore.h>
+#include <stdbool.h>
 
 #include "cloud_helper.h"
 #include "cloud_helper_iface.h"
+
+#include "../Utils/fifo_queue.h"
+
 #include "config.h"
+
+#define CLOUD_HELPER_INITAIL_INSTANCES 2
 
 extern struct cloud_helper_iface delegate;
 
@@ -18,24 +26,71 @@ struct cloud_helper_context {
   struct cloud_helper_impl_context *ch_context;
 };
 
-static int ctx_counter = 0;
-static const struct nodeID* node_ids[CLOUD_HELPER_MAX_INSTANCES];
-static struct cloud_helper_context* cloud_ctxs[CLOUD_HELPER_MAX_INSTANCES];
+struct ctx_map_entry {
+  const struct nodeID *node;
+  struct cloud_helper_context *cloud_ctx;
+};
+
+static struct fifo_queue *ctx_map = NULL;
+static sem_t *ctx_mutex = NULL;
+
 
 static int add_context(const struct nodeID *local,
                        struct cloud_helper_context *ctx)
 {
   int i;
-  if (ctx_counter >= CLOUD_HELPER_MAX_INSTANCES) return 1;
+  struct ctx_map_entry *entry;
 
-  for (i=0; i<ctx_counter; i++)
-    if (nodeid_equal(node_ids[i], local)) return 0;
+  /* TODO: this could be problematic
+   * Check the mutex and if this is the first execution initialize it
+   */
+  if (ctx_mutex == NULL) {
+    ctx_mutex = malloc(sizeof(sem_t));
+    if (!ctx_mutex) {
+      fprintf(stderr, "cloud_helper: Cannot create context map mutex\n");
+      return 1;
+    }
+    sem_init(ctx_mutex, 0, 1);
+  }
 
-  node_ids[ctx_counter] = local;
-  cloud_ctxs[ctx_counter] = ctx;
-  ctx_counter++;
+  sem_wait(ctx_mutex);
 
-  return 1;
+  /* Checks whether the queue is already initialized */
+  if (ctx_map == NULL) {
+    ctx_map = fifo_queue_create(CLOUD_HELPER_INITAIL_INSTANCES);
+    if (!ctx_map) {
+      sem_post(ctx_mutex);
+      return 1;
+    }
+  }
+
+  /* Check if the node is already present in the ctx_map */
+  for (i=0; i<fifo_queue_size(ctx_map); i++) {
+    entry = fifo_queue_get(ctx_map, i);
+    if (nodeid_equal(entry->node, local)) {
+      sem_post(ctx_mutex);
+      return 1;
+    }
+  }
+
+  /* Add the new entry to the ctx_map */
+  entry = malloc(sizeof(struct ctx_map_entry));
+  if (!entry) {
+    sem_post(ctx_mutex);
+    return 1;
+  }
+
+  entry->node = local;
+  entry->cloud_ctx = ctx;
+
+  if (fifo_queue_add(ctx_map, entry) != 0) {
+    free (entry);
+    sem_post(ctx_mutex);
+    return 1;
+  }
+
+  sem_post(ctx_mutex);
+  return 0;
 }
 
 struct cloud_helper_context* cloud_helper_init(struct nodeID *local,
@@ -62,7 +117,7 @@ struct cloud_helper_context* cloud_helper_init(struct nodeID *local,
    return NULL;
  }
 
- if (!add_context(local, ctx)){
+ if (add_context(local, ctx) != 0){
    //TODO: a better deallocation process is needed
    free(ctx->ch_context);
    free(ctx);
@@ -73,11 +128,20 @@ struct cloud_helper_context* cloud_helper_init(struct nodeID *local,
 }
 
 struct cloud_helper_context* get_cloud_helper_for(const struct nodeID *local){
+  struct cloud_helper_context *ctx;
+  struct ctx_map_entry *entry;
   int i;
-  for (i=0; i<ctx_counter; i++)
-    if (node_ids[i] == local) return cloud_ctxs[i];
 
-  return NULL;
+  if (ctx_mutex == NULL) return NULL;
+
+  ctx = NULL;
+  sem_wait(ctx_mutex);
+  for (i=0; i<fifo_queue_size(ctx_map); i++) {
+    entry = fifo_queue_get(ctx_map, i);
+    if (nodeid_equal(entry->node, local)) ctx = entry->cloud_ctx;
+  }
+  sem_post(ctx_mutex);
+  return ctx;
 }
 
 int get_from_cloud(struct cloud_helper_context *context, const char *key,
