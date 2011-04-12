@@ -155,11 +155,13 @@ int wait4any_polling(struct nodeID *n, struct cloud_helper_context *cloud, struc
 
   timeout = *tout;
   if (step_tout == NULL) {
+    /* If step time not specified use a standard value of 100 milliseconds */
     step_time = malloc(sizeof(struct timeval));
     step_time->tv_sec = 0;
     step_time->tv_usec = 100000;
   } else {
-    *step_time = *step_tout;
+    /* Otherwise use the specified value */
+    step_time = step_tout;
   }
 
   turn = DATA_SOURCE_NET;
