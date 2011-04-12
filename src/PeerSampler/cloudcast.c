@@ -57,6 +57,10 @@ static uint64_t gettime(void)
 static struct peersampler_context* cloudcast_context_init(void){
   struct peersampler_context* con;
   con = (struct peersampler_context*) calloc(1,sizeof(struct peersampler_context));
+  if (!con) {
+    fprintf(stderr, "cloudcast: Error! could not create context. ENOMEM\n");
+    return NULL;
+  }
   memset(con, 0, sizeof(struct peersampler_context));
 
   //Initialize context with default values
@@ -134,6 +138,7 @@ static struct peersampler_context* cloudcast_init(struct nodeID *myID, const voi
 
   con->local_cache = cache_init(con->cache_size, metadata_size, 0);
   if (con->local_cache == NULL) {
+    fprintf(stderr, "cloudcast: Error initializing local cache\n");
     free(con);
     return NULL;
   }

@@ -33,16 +33,21 @@ struct cloudcast_proto_context* cloudcast_proto_init(struct nodeID *s, const voi
   struct cloudcast_proto_context *con;
   con = malloc(sizeof(struct cloudcast_proto_context));
 
-  if (!con) return NULL;
+  if (!con) {
+    fprintf(stderr, "cloudcast_proto: Error initializing context. ENOMEM\n");
+    return NULL;
+  }
 
   con->topo_context = topo_proto_init(s, meta, meta_size);
   if (!con->topo_context){
+    fprintf(stderr, "cloudcast_proto: Error initializing topo_proto.\n");
     free(con);
     return NULL;
   }
 
   con->cloud_context = get_cloud_helper_for(s);
   if (!con->cloud_context) {
+    fprintf(stderr, "cloudcast_proto: Error retrieving cloud_helper for current node\n");
     free(con);
     return NULL;
   }
