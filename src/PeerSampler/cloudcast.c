@@ -41,6 +41,7 @@ struct peersampler_context{
   struct nodeID *dst;
 
   struct cloudcast_proto_context *proto_context;
+  struct nodeID **r;
 };
 
 
@@ -63,7 +64,7 @@ static struct peersampler_context* cloudcast_context_init(void){
   con->bootstrap_period = 2000000;
   con->period = 10000000;
   con->currtime = gettime();
-
+  con->r = NULL;
   con->cloud_contact_treshold = DEFAULT_CLOUD_CONTACT_TRESHOLD;
 
   return con;
@@ -298,15 +299,13 @@ static int cloudcast_parse_data(struct peersampler_context *context, const uint8
 
 static const struct nodeID **cloudcast_get_neighbourhood(struct peersampler_context *context, int *n)
 {
-  static struct nodeID **r;
-
-  r = realloc(r, context->cache_size * sizeof(struct nodeID *));
-  if (r == NULL) {
+  context->r = realloc(context->r, context->cache_size * sizeof(struct nodeID *));
+  if (context->r == NULL) {
     return NULL;
   }
 
   for (*n = 0; nodeid(context->local_cache, *n) && (*n < context->cache_size); (*n)++) {
-    r[*n] = nodeid(context->local_cache, *n);
+    context->r[*n] = nodeid(context->local_cache, *n);
     //fprintf(stderr, "Checking table[%d]\n", *n);
   }
   if (context->flying_cache) {
@@ -315,13 +314,13 @@ static const struct nodeID **cloudcast_get_neighbourhood(struct peersampler_cont
     for (i = 0; nodeid(context->flying_cache, i) && (*n < context->cache_size); (*n)++, i++) {
       dup = 0;
       for (j = 0; j<*n; j++){
-        if (nodeid_equal(r[j], nodeid(context->flying_cache, i))){
+        if (nodeid_equal(context->r[j], nodeid(context->flying_cache, i))){
           dup = 1;
           continue;
         }
       }
       if (dup) (*n)--;
-      else r[*n] = nodeid(context->flying_cache, i);
+      else context->r[*n] = nodeid(context->flying_cache, i);
     }
   }
 
@@ -329,18 +328,18 @@ static const struct nodeID **cloudcast_get_neighbourhood(struct peersampler_cont
     int j,dup;
     dup = 0;
     for (j = 0; j<*n; j++){
-      if (nodeid_equal(r[j], context->dst)){
+      if (nodeid_equal(context->r[j], context->dst)){
         dup = 1;
         continue;
       }
     }
     if (!dup){
-      r[*n] = context->dst;
+      context->r[*n] = context->dst;
       (*n)++;
     }
   }
 
-  return (const struct nodeID **)r;
+  return (const struct nodeID **)context->r;
 }
 
 static const void *cloudcast_get_metadata(struct peersampler_context *context, int *metadata_size)
