@@ -126,6 +126,15 @@ int get_from_cloud(struct cloud_helper_context *context, const char *key,
                                      header_size, free_header);
 }
 
+int get_from_cloud_default(struct cloud_helper_context *context, const char *key,
+                           uint8_t *header_ptr, int header_size, int free_header,
+                           uint8_t *defval_ptr, int defval_size, int free_defval)
+{
+  return context->ch->get_from_cloud_default(context->ch_context, key, header_ptr,
+                                             header_size, free_header, defval_ptr,
+                                             defval_size, free_defval);
+}
+
 int put_on_cloud(struct cloud_helper_context *context, const char *key,
                  uint8_t *buffer_ptr, int buffer_size, int free_buffer)
 {

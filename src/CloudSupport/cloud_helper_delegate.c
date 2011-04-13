@@ -18,6 +18,10 @@ struct delegate_iface {
   int (*get_from_cloud)(void *context, const char *key, uint8_t *header_ptr,
                         int header_size, int free_header);
 
+  int (*get_from_cloud_default)(void *context, const char *key,
+                                uint8_t *header_ptr, int header_size, int free_header,
+                                uint8_t *defval_ptr, int defval_size, int free_defval);
+
   int (*put_on_cloud)(void *context, const char *key, uint8_t *buffer_ptr,
                       int buffer_size, int free_buffer);
 
@@ -81,6 +85,19 @@ delegate_cloud_get_from_cloud(struct cloud_helper_impl_context *context,
 }
 
 static int
+delegate_cloud_get_from_cloud_default(struct cloud_helper_impl_context *context,
+                                      const char *key, uint8_t *header_ptr,
+                                      int header_size, int free_header,
+                                      uint8_t *defval_ptr, int defval_size,
+                                      int free_defval)
+{
+  return context->delegate->get_from_cloud_default(context->delegate_context,
+                                                   key, header_ptr, header_size,
+                                                   free_header, defval_ptr,
+                                                   defval_size, free_defval);
+}
+
+static int
 delegate_cloud_put_on_cloud(struct cloud_helper_impl_context *context,
                             const char *key, uint8_t *buffer_ptr,
                             int buffer_size, int free_buffer)
@@ -124,6 +141,7 @@ delegate_cloud_recv_from_cloud(struct cloud_helper_impl_context *context,
 struct cloud_helper_iface delegate = {
   .cloud_helper_init = delegate_cloud_init,
   .get_from_cloud = delegate_cloud_get_from_cloud,
+  .get_from_cloud_default = delegate_cloud_get_from_cloud_default,
   .put_on_cloud = delegate_cloud_put_on_cloud,
   .get_cloud_node = delegate_cloud_get_cloud_node,
   .timestamp_cloud = delegate_timestamp_cloud,

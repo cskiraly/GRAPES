@@ -68,6 +68,31 @@ int get_from_cloud(struct cloud_helper_context *context, const char *key,
                    uint8_t *header_ptr, int header_size, int free_header);
 
 /**
+ * @brief Get the value for key or return default value
+ * This function send a request to the cloud for the value associated to the
+ * specified key. Use the wait4cloud to listen for the answer and
+ * revc_from_cloud to read the response.
+ *
+ * If the specified key isn't present on the cloud, return the default value
+ * @param[in] context The contex representing the desired cloud_helper
+ *                    instance.
+ * @param[in] key Key to retrieve.
+ * @param[in] header_ptr A pointer to the header which will be added to the
+ *                       retrieved data. May be NULL
+ * @param[in] header_size The length of the header.
+ * @param[in] free_header A positive value result in buffer_ptr being freed
+ *                        on request completion
+ * @param[in] defval_ptr A pointer to the default value to use if key is missing
+ * @param[in] defval_size The length of the default value
+ * @param[in] free_defvar A positive value result in defval_ptr being freed on
+                          request comletion
+ * @return 0 if the request was successfully sent, 1 Otherwise
+ */
+int get_from_cloud_default(struct cloud_helper_context *context, const char *key,
+                           uint8_t *header_ptr, int header_size, int free_header,
+                           uint8_t *defval_ptr, int defval_size, int free_defval);
+
+/**
  * @brief Returns the timestamp associated to the last GET operation.
  * Returns the timestamp associated to the last GET operation or NULL.
  * @param[in] context The contex representing the desired cloud_helper

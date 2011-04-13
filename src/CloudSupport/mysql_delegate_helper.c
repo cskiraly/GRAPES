@@ -37,6 +37,9 @@ struct delegate_iface {
   void* (*cloud_helper_init)(struct nodeID *local, const char *config);
   int (*get_from_cloud)(void *context, const char *key, uint8_t *header_ptr,
                         int header_size, int free_header);
+  int (*get_from_cloud_default)(void *context, const char *key,
+                                uint8_t *header_ptr, int header_size, int free_header,
+                                uint8_t *defval_ptr, int defval_size, int free_defval);
   int (*put_on_cloud)(void *context, const char *key, uint8_t *buffer_ptr,
                       int buffer_size, int free_buffer);
   struct nodeID* (*get_cloud_node)(void *context, uint8_t variant);
@@ -66,6 +69,9 @@ struct mysql_request {
   int data_length;
   int free_data;
 
+  uint8_t *default_value;
+  int default_value_length;
+  int free_default_value;
   struct mysql_cloud_context *helper_ctx;
 };
 typedef struct mysql_request mysql_request_t;
@@ -148,6 +154,9 @@ static void free_request(void *req_ptr)
   req = (mysql_request_t *) req_ptr;
   if (req->free_data) free(req->data);
 
+  if (req->free_default_value > 0)
+    free(req->default_value);
+
   free(req);
   return;
 }
@@ -220,6 +229,24 @@ int process_get_operation(void *req_data, void **rsp_data)
       ts_str[field_len[1]] = '\0';
       rsp->last_timestamp = strtol(ts_str, NULL, 10);
       rsp->status = SUCCESS;
+    } else {
+      /* Since there was no value for the specified key. If the caller specified a
+         default value, use that */
+      if (req->default_value) {
+        /* reserve space for value and header */
+        rsp->data_length = req->default_value_length + req->data_length;
+        rsp->data = calloc(rsp->data_length, sizeof(char));
+        rsp->current_byte = rsp->data;
+
+        if (req->data_length > 0)
+          memcpy(rsp->data, req->data, req->data_length);
+
+        memcpy(rsp->data + req->data_length,
+               req->default_value, req->default_value_length);
+
+        rsp->last_timestamp = 0;
+        rsp->status = SUCCESS;
+      }
     }
     mysql_free_result(result);
   }
@@ -339,8 +366,9 @@ void* cloud_helper_init(struct nodeID *local, const char *config)
   return ctx;
 }
 
-int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
-                   int header_size, int free_header)
+int get_from_cloud_default(void *context, const char *key,
+                           uint8_t *header_ptr, int header_size, int free_header,
+                           uint8_t *defval_ptr, int defval_size, int free_defval)
 {
   struct mysql_cloud_context *ctx;
   mysql_request_t *request;
@@ -356,6 +384,9 @@ int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
   request->data = header_ptr;
   request->data_length = header_size;
   request->free_data = free_header;
+  request->default_value = defval_ptr;
+  request->default_value_length = defval_size;
+  request->free_default_value = free_defval;
   request->helper_ctx = ctx;
 
   err = req_handler_add_request(ctx->req_handler, &process_get_operation,
@@ -363,6 +394,13 @@ int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
   if (err) free_request(request);
 
   return err;
+}
+
+int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
+                   int header_size, int free_header)
+{
+  return get_from_cloud_default(context, key, header_ptr, header_size,
+                                free_header, NULL, 0, 0);
 }
 
 
@@ -383,7 +421,9 @@ int put_on_cloud(void *context, const char *key, uint8_t *buffer_ptr,
   request->data = buffer_ptr;
   request->data_length = buffer_size;
   request->free_data = free_buffer;
-
+  request->default_value = NULL;
+  request->default_value_length = 0;
+  request->free_default_value = 0;
   res = process_put_operation(ctx, request);
   free_request(request);
   return res;
@@ -472,6 +512,7 @@ int recv_from_cloud(void *context, uint8_t *buffer_ptr, int buffer_size)
 struct delegate_iface delegate_impl = {
   .cloud_helper_init = &cloud_helper_init,
   .get_from_cloud = &get_from_cloud,
+  .get_from_cloud_default = &get_from_cloud_default,
   .put_on_cloud = &put_on_cloud,
   .get_cloud_node = &get_cloud_node,
   .timestamp_cloud = &timestamp_cloud,
