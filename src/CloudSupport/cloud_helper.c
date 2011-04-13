@@ -32,8 +32,6 @@ struct ctx_map_entry {
 };
 
 static struct fifo_queue *ctx_map = NULL;
-static sem_t *ctx_mutex = NULL;
-
 
 static int add_context(const struct nodeID *local,
                        struct cloud_helper_context *ctx)
@@ -41,25 +39,10 @@ static int add_context(const struct nodeID *local,
   int i;
   struct ctx_map_entry *entry;
 
-  /* TODO: this could be problematic
-   * Check the mutex and if this is the first execution initialize it
-   */
-  if (ctx_mutex == NULL) {
-    ctx_mutex = malloc(sizeof(sem_t));
-    if (!ctx_mutex) {
-      fprintf(stderr, "cloud_helper: Cannot create context map mutex\n");
-      return 1;
-    }
-    sem_init(ctx_mutex, 0, 1);
-  }
-
-  sem_wait(ctx_mutex);
-
   /* Checks whether the queue is already initialized */
   if (ctx_map == NULL) {
     ctx_map = fifo_queue_create(CLOUD_HELPER_INITAIL_INSTANCES);
     if (!ctx_map) {
-      sem_post(ctx_mutex);
       return 1;
     }
   }
@@ -68,7 +51,6 @@ static int add_context(const struct nodeID *local,
   for (i=0; i<fifo_queue_size(ctx_map); i++) {
     entry = fifo_queue_get(ctx_map, i);
     if (nodeid_equal(entry->node, local)) {
-      sem_post(ctx_mutex);
       return 1;
     }
   }
@@ -76,7 +58,6 @@ static int add_context(const struct nodeID *local,
   /* Add the new entry to the ctx_map */
   entry = malloc(sizeof(struct ctx_map_entry));
   if (!entry) {
-    sem_post(ctx_mutex);
     return 1;
   }
 
@@ -85,11 +66,9 @@ static int add_context(const struct nodeID *local,
 
   if (fifo_queue_add(ctx_map, entry) != 0) {
     free (entry);
-    sem_post(ctx_mutex);
     return 1;
   }
 
-  sem_post(ctx_mutex);
   return 0;
 }
 
@@ -132,15 +111,11 @@ struct cloud_helper_context* get_cloud_helper_for(const struct nodeID *local){
   struct ctx_map_entry *entry;
   int i;
 
-  if (ctx_mutex == NULL) return NULL;
-
   ctx = NULL;
-  sem_wait(ctx_mutex);
   for (i=0; i<fifo_queue_size(ctx_map); i++) {
     entry = fifo_queue_get(ctx_map, i);
     if (nodeid_equal(entry->node, local)) ctx = entry->cloud_ctx;
   }
-  sem_post(ctx_mutex);
   return ctx;
 }
 

@@ -19,6 +19,9 @@
  *
  * A clean interface throught which all the cloud communication procedure needed by SOM funcions
  * are handled.
+ *
+ * If thread are used, the caller must ensured that calls to cloud_helper_init
+ * and get_cloud_helper_for are synchronized.
  */
 
 /**
@@ -29,8 +32,9 @@ struct cloud_helper_contex;
 /**
  * @brief Initialize all needed internal parameters.
  * Initialize the parameters for the cloud facilities and create a context
- * representing the cloud.
- * Only one instance of net_helper is allowed for a specific nodeID.
+ * representing the cloud. Only one instance of net_helper is allowed for a
+ * specific nodeID.
+ *
  * @param[in] local NodeID associated with this instance of cloud_helper.
  * @param[in] config Cloud specific configuration options.
  */
