@@ -40,7 +40,7 @@ static int variant;
 static char *key;
 static char *value;
 
-static const uint8_t *HEADER = (const uint8_t *) "<-header->";
+static uint8_t *HEADER = (const uint8_t *) "<-header->";
 
 static void cmdline_parse(int argc, char *argv[])
 {
