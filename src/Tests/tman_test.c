@@ -129,30 +129,32 @@ static void loop(struct nodeID *s)
     } else
       topoParseData(NULL, 0);
     if (++cnt % 1 == 0) {
-    	const uint8_t *mdata;
-    	const struct nodeID **neighbours;
-    	int n, i, msize;
-    	mdata = topoGetMetadata(&msize);
-    	neighbours = topoGetNeighbourhood(&n);
-    	fprintf(stderr, "\tMy metadata = %d\nIteration # %d -- Cache size now is : %d -- I have %d neighbours:\n",my_metadata,cnt,now,n);
-    	for (i = 0; i < n; i++) {
-    		const int *d;
-    		d = (const int*)((mdata+i*msize));
-    		fprintf(stderr, "\t%d: %s -- %d\n", i, node_addr(neighbours[i]), *d);
-    	}
+        const uint8_t *mdata;
+        const struct nodeID **neighbours;
+        char addr[256];
+        int n, i, msize;
+        mdata = topoGetMetadata(&msize);
+        neighbours = topoGetNeighbourhood(&n);
+        fprintf(stderr, "\tMy metadata = %d\nIteration # %d -- Cache size now is : %d -- I have %d neighbours:\n",my_metadata,cnt,now,n);
+        for (i = 0; i < n; i++) {
+                const int *d;
+                d = (const int*)((mdata+i*msize));
+                node_addr(neighbours[i], addr, 256);
+                fprintf(stderr, "\t%d: %s -- %d\n", i, addr, *d);
+        }
     }
     if (cnt % 20 == 0) {
-    	change_metadata(s);
+        change_metadata(s);
     }
 //    if (cnt % 13 == 0) {
-//    	more = ((double)rand() / (double)RAND_MAX)*10;
-//    	now = topoGrowNeighbourhood(more);
-//    	printf("Growing : +%d -- Cache size now is : %d\n", more,now);
+//      more = ((double)rand() / (double)RAND_MAX)*10;
+//      now = topoGrowNeighbourhood(more);
+//      printf("Growing : +%d -- Cache size now is : %d\n", more,now);
 //    }
 //    if (cnt % 10 == 0) {
-//    	less = ((double)rand() / (double)RAND_MAX)*10;
-//    	now = topoShrinkNeighbourhood(less);
-//    	printf("Shrinking : -%d -- Cache size now is : %d\n", less,now);
+//      less = ((double)rand() / (double)RAND_MAX)*10;
+//      now = topoShrinkNeighbourhood(less);
+//      printf("Shrinking : -%d -- Cache size now is : %d\n", less,now);
 //    }
   }
 
