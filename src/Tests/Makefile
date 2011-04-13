@@ -26,8 +26,6 @@ ifneq ($(ARCH),win32)
            chunkiser_test
 endif
 
-DEPENDENCIES = libfilecloud.so
-
 CPPFLAGS = -I$(BASE)/include
 
 LDFLAGS += -L..
@@ -83,24 +81,15 @@ chunkiser_test: LDLIBS += $(call ld-option, -lz)
 chunkiser_test: LDLIBS += $(call ld-option, -lbz2)
 endif
 
-cloud_test: cloud_test.o net_helpers.o libfilecloud.so
+cloud_test: cloud_test.o net_helpers.o
 cloud_test: ../net_helper$(NH_INCARNATION).o
 cloud_test: LDFLAGS += -ldl
 
-
-libfilecloud.so: net_helpers.o
-libfilecloud.so: ../net_helper$(NH_INCARNATION).o
-libfilecloud.so: CFLAGS += -shared -pthread
-libfilecloud.so: cloud_helper_delegate_file.o
-	$(CC) $(CFLAGS) -o $@ $^
-
-cloud_helper_delegate_file.o: CFLAGS += -fPIC
-
-cloudcast_topology_test: cloudcast_topology_test.o net_helpers.o libfilecloud.so
+cloudcast_topology_test: cloudcast_topology_test.o net_helpers.o
 cloudcast_topology_test: ../net_helper$(NH_INCARNATION).o
 cloudcast_topology_test: LDFLAGS += -ldl
 
-cloud_topology_monitor: cloud_topology_monitor.o net_helpers.o libfilecloud.so
+cloud_topology_monitor: cloud_topology_monitor.o net_helpers.o
 cloud_topology_monitor: ../net_helper$(NH_INCARNATION).o
 cloud_topology_monitor: LDFLAGS += -ldl
 
