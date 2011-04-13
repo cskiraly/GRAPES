@@ -59,7 +59,6 @@ struct cloudcast_proto_context* cloudcast_proto_init(struct nodeID *s, const voi
   con->myEntry = cache_init(1, meta_size, 0);
   tmp = cache_init(0, meta_size, 0);
   con->def_cloudcache_len = cloudcast_payload_fill(con, con->def_cloudcache, sizeof(con->def_cloudcache), tmp, 0, 0);
-  fprintf(stderr, "cachelen: %d\n", con->def_cloudcache_len);
   cache_free(tmp);
   cache_add(con->myEntry, s, meta, meta_size);
 
