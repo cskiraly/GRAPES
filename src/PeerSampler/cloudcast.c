@@ -2,6 +2,12 @@
  *  Copyright (c) 2010 Andrea Zito
  *
  *  This is free software; see lgpl-2.1.txt
+ *
+ * Implementation of the Cloudcast peer sampling protocol.
+ *
+ * If thread are used calls to psample_init which result in calls to
+ * cloudcast_init must be syncronized with calls to cloud_helper_init
+ * and get_cloud_helper_for.
  */
 
 #include <sys/time.h>
