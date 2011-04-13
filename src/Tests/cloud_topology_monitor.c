@@ -1,3 +1,4 @@
+
 /*
  *  Copyright (c) 2011 Andrea Zito
  *
@@ -99,6 +100,7 @@ static void loop(struct context *con)
     struct peer_cache *remote_cache;
     time_t timestamp, now;
     char timestamp_str[26];
+    char addr[256];
 
 
     t1 = tout;
@@ -118,8 +120,10 @@ static void loop(struct context *con)
       timestamp_str[24] = '\0';
       now = time(NULL);
       printf("--------------------------------------\nCache (%s, last contact %d sec ago):\n", timestamp_str, (int)(now - timestamp));
-      for (i=0; nodeid(remote_cache, i); i++)
-        printf("\t%d: %s\n", i, node_addr(nodeid(remote_cache,i)));
+      for (i=0; nodeid(remote_cache, i); i++) {
+        node_addr(nodeid(remote_cache,i), addr, 256);
+        printf("\t%d: %s\n", i, addr);
+      }
       if (fprefix) {
         FILE *f;
         char fname[64];
@@ -127,8 +131,10 @@ static void loop(struct context *con)
         sprintf(fname, "%s.txt", fprefix);
         f = fopen(fname, "w");
         if (f) fprintf(f, "#Cache:");
-        for (i=0; nodeid(remote_cache, i); i++)
-          if (f) fprintf(f, "\t%d\t%s\n", i, node_addr(nodeid(remote_cache, i)));
+        for (i=0; nodeid(remote_cache, i); i++) {
+          node_addr(nodeid(remote_cache, i), addr, 256);
+          if (f) fprintf(f, "\t%d\t%s\n", i, addr);
+        }
         fclose(f);
       }
     } else if (news < 0) {

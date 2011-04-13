@@ -40,7 +40,7 @@ static int variant;
 static char *key;
 static char *value;
 
-static uint8_t *HEADER = (const uint8_t *) "<-header->";
+static const uint8_t *HEADER = (const uint8_t *) "<-header->";
 
 static void cmdline_parse(int argc, char *argv[])
 {
@@ -120,6 +120,7 @@ int main(int argc, char *argv[])
 {
   struct cloud_helper_context *cloud;
   char buffer[100];
+  char addr[256];
   int err;
   struct nodeID *t;
   struct timeval tout = {10, 0};
@@ -141,7 +142,8 @@ int main(int argc, char *argv[])
     break;
   case GET:
     printf("Getting from cloud value for key \"%s\": ", key);
-    err = get_from_cloud(cloud, key, HEADER, strlen(HEADER), 0);
+    memcpy(buffer, HEADER, strlen(HEADER));
+    err = get_from_cloud(cloud, key, buffer, strlen(HEADER), 0);
     if (err) {
       printf("Error performing the operation");
       return 1;
@@ -175,11 +177,13 @@ int main(int argc, char *argv[])
     }
     break;
   case GET_CLOUD_NODE:
-    printf("Cloud node: %s\n", node_addr(get_cloud_node(cloud, variant)));
+    node_addr(get_cloud_node(cloud, variant), addr, 256);
+    printf("Cloud node: %s\n", addr);
     break;
   case EQ_CLOUD_NODE:
     t = create_node(key, atoi(value));
-    printf("Node %s references cloud? %d\n", node_addr(get_cloud_node(cloud, variant)),
+    node_addr(get_cloud_node(cloud, variant), addr, 256);
+    printf("Node %s references cloud? %d\n", addr,
            is_cloud_node(cloud, t));
     break;
   }

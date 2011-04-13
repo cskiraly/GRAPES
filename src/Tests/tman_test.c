@@ -39,13 +39,13 @@ static const char *srv_ip;
 tmanRankingFunction funct = NULL;
 
 int testRanker (const void *tin, const void *p1in, const void *p2in) {
-	const int *tt, *pp1, *pp2;
+        const int *tt, *pp1, *pp2;
 
       tt = ((const int *)(tin));
       pp1 = ((const int *)(p1in));
       pp2 = ((const int *)(p2in));
 
-	return (abs(*tt-*pp1) == abs(*tt-*pp2))?0:(abs(*tt-*pp1) < abs(*tt-*pp2))?1:2;
+        return (abs(*tt-*pp1) == abs(*tt-*pp2))?0:(abs(*tt-*pp1) < abs(*tt-*pp2))?1:2;
 }
 
 static void cmdline_parse(int argc, char *argv[])
@@ -73,8 +73,8 @@ static void cmdline_parse(int argc, char *argv[])
     }
   }
   if (srv_port) {
-	  srand(srv_port);
-	  srv_metadata = 1 + ((double)rand() / (double)RAND_MAX)*1000;
+          srand(srv_port);
+          srv_metadata = 1 + ((double)rand() / (double)RAND_MAX)*1000;
   }
   srand(port);
   my_metadata = 1 + ((double)rand() / (double)RAND_MAX)*1000;
@@ -83,10 +83,10 @@ static void cmdline_parse(int argc, char *argv[])
 
 static void change_metadata (struct nodeID *id) {
 
-	my_metadata = 1 + ((double)rand() / (double)RAND_MAX)*1000;
-	fprintf(stderr,"\tMy metadata ARE CHANGED = %d\n",my_metadata);
+        my_metadata = 1 + ((double)rand() / (double)RAND_MAX)*1000;
+        fprintf(stderr,"\tMy metadata ARE CHANGED = %d\n",my_metadata);
 
-	tmanChangeMetadata(&my_metadata, sizeof(my_metadata));
+        tmanChangeMetadata(&my_metadata, sizeof(my_metadata));
 }
 
 static struct nodeID *init()
@@ -111,7 +111,7 @@ static void loop(struct nodeID *s)
 #define BUFFSIZE 1524
   static uint8_t buff[BUFFSIZE];
   int cnt = 0;
-  
+
   topoParseData(NULL, 0);
   while (!done) {
     int len;
@@ -129,30 +129,32 @@ static void loop(struct nodeID *s)
     } else
       topoParseData(NULL, 0);
     if (++cnt % 1 == 0) {
-    	const uint8_t *mdata;
-    	const struct nodeID **neighbours;
-    	int n, i, msize;
-    	mdata = topoGetMetadata(&msize);
-    	neighbours = topoGetNeighbourhood(&n);
-    	fprintf(stderr, "\tMy metadata = %d\nIteration # %d -- Cache size now is : %d -- I have %d neighbours:\n",my_metadata,cnt,now,n);
-    	for (i = 0; i < n; i++) {
-    		const int *d;
-    		d = (const int*)((mdata+i*msize));
-    		fprintf(stderr, "\t%d: %s -- %d\n", i, node_addr(neighbours[i]), *d);
-    	}
+        const uint8_t *mdata;
+        const struct nodeID **neighbours;
+        char addr[256];
+        int n, i, msize;
+        mdata = topoGetMetadata(&msize);
+        neighbours = topoGetNeighbourhood(&n);
+        fprintf(stderr, "\tMy metadata = %d\nIteration # %d -- Cache size now is : %d -- I have %d neighbours:\n",my_metadata,cnt,now,n);
+        for (i = 0; i < n; i++) {
+                const int *d;
+                d = (const int*)((mdata+i*msize));
+                node_addr(neighbours[i], addr, 256);
+                fprintf(stderr, "\t%d: %s -- %d\n", i, addr, *d);
+        }
     }
     if (cnt % 20 == 0) {
-    	change_metadata(s);
+        change_metadata(s);
     }
 //    if (cnt % 13 == 0) {
-//    	more = ((double)rand() / (double)RAND_MAX)*10;
-//    	now = topoGrowNeighbourhood(more);
-//    	printf("Growing : +%d -- Cache size now is : %d\n", more,now);
+//      more = ((double)rand() / (double)RAND_MAX)*10;
+//      now = topoGrowNeighbourhood(more);
+//      printf("Growing : +%d -- Cache size now is : %d\n", more,now);
 //    }
 //    if (cnt % 10 == 0) {
-//    	less = ((double)rand() / (double)RAND_MAX)*10;
-//    	now = topoShrinkNeighbourhood(less);
-//    	printf("Shrinking : -%d -- Cache size now is : %d\n", less,now);
+//      less = ((double)rand() / (double)RAND_MAX)*10;
+//      now = topoShrinkNeighbourhood(less);
+//      printf("Shrinking : -%d -- Cache size now is : %d\n", less,now);
 //    }
   }
 

@@ -404,7 +404,9 @@ time_t timestamp_cloud(void *context)
 
 int is_cloud_node(void *context, struct nodeID* node)
 {
-  return strcmp(node_ip(node), CLOUD_NODE_ADDR) == 0;
+  char ipaddr[96];
+  node_ip(node, ipaddr, 96);
+  return strcmp(ipaddr, CLOUD_NODE_ADDR) == 0;
 }
 
 int wait4cloud(void *context, struct timeval *tout)
