@@ -7,6 +7,8 @@
 #ifndef CLOUD_HELPER_H
 #define CLOUD_HELPER_H
 
+#define CLOUD_HELPER_MAX_INSTANCES 10
+
 #include <stdint.h>
 #include <sys/time.h>
 
