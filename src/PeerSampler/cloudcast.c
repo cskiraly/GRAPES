@@ -27,7 +27,10 @@
 #include "grapes_msg_types.h"
 
 #define DEFAULT_CACHE_SIZE 10
-#define DEFAULT_CLOUD_CONTACT_TRESHOLD 4000000
+
+#define CLOUDCAST_TRESHOLD 4
+#define CLOUDCAST_PERIOD 10000000 // 10 seconds
+#define CLOUDCAST_BOOTSTRAP_PERIOD 2000000 // 2 seconds
 
 struct peersampler_context{
   uint64_t currtime;
@@ -71,11 +74,12 @@ static struct peersampler_context* cloudcast_context_init(void){
 
   //Initialize context with default values
   con->bootstrap = true;
-  con->bootstrap_period = 2000000;
-  con->period = 10000000;
+  con->bootstrap_period = CLOUDCAST_BOOTSTRAP_PERIOD;
+  con->period = CLOUDCAST_PERIOD;
   con->currtime = gettime();
+  con->cloud_contact_treshold = CLOUDCAST_TRESHOLD;
+
   con->r = NULL;
-  con->cloud_contact_treshold = DEFAULT_CLOUD_CONTACT_TRESHOLD;
 
   return con;
 }
