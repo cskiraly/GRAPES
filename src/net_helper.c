@@ -18,6 +18,7 @@
 
 struct nodeID {
   struct sockaddr_in addr;
+  struct msghdr msg;
   int fd;
 };
 
@@ -116,17 +117,19 @@ void bind_msg_type (uint8_t msgtype)
 
 int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
-  struct msghdr msg;
+  struct msghdr *msg;
   uint8_t my_hdr;
   struct iovec iov[2];
   int res;
 
+  msg = &from->msg;
+
   iov[0].iov_base = &my_hdr;
   iov[0].iov_len = 1;
-  msg.msg_name = &to->addr;
-  msg.msg_namelen = sizeof(struct sockaddr_in);
-  msg.msg_iovlen = 2;
-  msg.msg_iov = iov;
+  msg->msg_name = &to->addr;
+  msg->msg_namelen = sizeof(struct sockaddr_in);
+  msg->msg_iovlen = 2;
+  msg->msg_iov = iov;
 
   do {
     iov[1].iov_base = buffer_ptr;
@@ -139,7 +142,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
     }
     buffer_size -= iov[1].iov_len;
     buffer_ptr += iov[1].iov_len;
-    res = sendmsg(from->fd, &msg, 0);
+    res = sendmsg(from->fd, msg, 0);
   } while (buffer_size > 0);
 
   return res;
