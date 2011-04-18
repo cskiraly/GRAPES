@@ -97,7 +97,7 @@ int peerset_size(const struct peerset *h);
   * @param h a pointer to the set
   * @return the list of peer structures
   */
-struct peer *peerset_get_peers(const struct peerset *h);
+struct peer **peerset_get_peers(const struct peerset *h);
 
  /**
   * @brief Check if a peer is in a set

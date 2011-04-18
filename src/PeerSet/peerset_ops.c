@@ -43,7 +43,7 @@ struct peerset *peerset_init(const char *config)
   }
   free(cfg_tags);
   if (p->size) {
-    p->elements = malloc(p->size * sizeof(struct peer));
+    p->elements = malloc(p->size * sizeof(struct peer *));
   } else {
     p->elements = NULL;
   }
@@ -59,21 +59,22 @@ int peerset_add_peer(struct peerset *h, struct nodeID *id)
   }
 
   if (h->n_elements == h->size) {
-    int *res;
+    struct peer **res;
 
-    res = realloc(h->elements, (h->size + DEFAULT_SIZE_INCREMENT) * sizeof(struct peer));
+    res = realloc(h->elements, (h->size + DEFAULT_SIZE_INCREMENT) * sizeof(struct peer *));
     if (res == NULL) {
       return -1;
     }
     h->size += DEFAULT_SIZE_INCREMENT;
-    h->elements = (struct peer*) res;
+    h->elements = res;
   }
-  e = &(h->elements[h->n_elements++]);
+  e = malloc(sizeof(struct peer));
+  h->elements[h->n_elements++] = e;
   e->id = nodeid_dup(id);
   gettimeofday(&e->creation_timestamp,NULL);
   e->bmap = chunkID_set_init("type=bitmap");
   timerclear(&e->bmap_timestamp);
-  e->cb_size = INT_MAX;
+  e->cb_size = 0;
 
   return h->n_elements;
 }
@@ -92,7 +93,7 @@ int peerset_size(const struct peerset *h)
   return h->n_elements;
 }
 
-struct peer* peerset_get_peers(const struct peerset *h)
+struct peer **peerset_get_peers(const struct peerset *h)
 {
   return h->elements;
 }
@@ -100,16 +101,18 @@ struct peer* peerset_get_peers(const struct peerset *h)
 struct peer *peerset_get_peer(const struct peerset *h, const struct nodeID *id)
 {
   int i = peerset_check(h,id);
-  return (i<0) ? NULL : &(h->elements[i]);
+  return (i<0) ? NULL : h->elements[i];
 }
 
 int peerset_remove_peer(struct peerset *h, const struct nodeID *id){
   int i = peerset_check(h,id);
   if (i >= 0) {
-    struct peer *e = h->elements + i;
+    struct peer *e = h->elements[i];
     nodeid_free(e->id);
     chunkID_set_free(e->bmap);
-    memmove(e, e + 1, ((h->n_elements--) - (i+1)) * sizeof(struct peer));
+    memmove(e, e + 1, ((h->n_elements--) - (i+1)) * sizeof(struct peer *));
+    free(e);
+
     return i;
   }
   return -1;
@@ -120,7 +123,7 @@ int peerset_check(const struct peerset *h, const struct nodeID *id)
   int i;
 
   for (i = 0; i < h->n_elements; i++) {
-    if (nodeid_equal(h->elements[i].id, id)) {
+    if (nodeid_equal(h->elements[i]->id, id)) {
       return i;
     }
   }
@@ -133,14 +136,15 @@ void peerset_clear(struct peerset *h, int size)
   int i;
 
   for (i = 0; i < h->n_elements; i++) {
-    struct peer *e = h->elements + i;
+    struct peer *e = h->elements[i];
     nodeid_free(e->id);
     chunkID_set_free(e->bmap);
+    free(e);
   }
 
   h->n_elements = 0;
   h->size = size;
-  h->elements = realloc(h->elements, size * sizeof(struct peer));
+  h->elements = realloc(h->elements, size * sizeof(struct peer *));
   if (h->elements == NULL) {
     h->size = 0;
   }
