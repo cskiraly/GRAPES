@@ -116,8 +116,8 @@ void bind_msg_type (uint8_t msgtype)
 
 int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
-  static struct msghdr msg;
-  static uint8_t my_hdr;
+  struct msghdr msg = {0};
+  uint8_t my_hdr;
   struct iovec iov[2];
   int res;
 
@@ -149,8 +149,8 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 {
   int res, recv;
   struct sockaddr_in raddr;
-  static struct msghdr msg;
-  static uint8_t my_hdr;
+  struct msghdr msg = {0};
+  uint8_t my_hdr;
   struct iovec iov[2];
 
   iov[0].iov_base = &my_hdr;

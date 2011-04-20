@@ -1,7 +1,10 @@
 CFGDIR ?= $(CURDIR)
 vpath %.c $(BASE)/src
 
-SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler Cache PeerSampler Chunkiser
+SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler Cache PeerSampler CloudSupport Utils
+ifneq ($(ARCH),win32)
+  SUBDIRS += Chunkiser
+endif
 COMMON_OBJS = config.o
 
 .PHONY: subdirs $(SUBDIRS)

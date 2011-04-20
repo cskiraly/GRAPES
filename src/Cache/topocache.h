@@ -3,7 +3,7 @@
 
 struct peer_cache;
 struct cache_entry;
-typedef int (*ranking_function)(const void *target, const void *p1, const void *p2);	// FIXME!
+typedef int (*ranking_function)(const void *target, const void *p1, const void *p2);    // FIXME!
 
 struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp);
 void cache_free(struct peer_cache *c);
@@ -30,4 +30,6 @@ int cache_resize (struct peer_cache *c, int size);
 
 void cache_check(const struct peer_cache *c);
 
-#endif	/* TOPOCACHE */
+void cache_log(const struct peer_cache *c, const char *name);
+
+#endif  /* TOPOCACHE */

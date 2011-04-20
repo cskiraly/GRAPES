@@ -5,8 +5,6 @@ vpath %.c $(BASE)/src/$(notdir $(CURDIR))
 endif
 CFGDIR ?= ..
 
-OBJS = peersampler.o ncast.o dummy.o cyclon.o cloudcast.o
-
-all: libpsample.a
+OBJS = fifo_queue.o request_handler.o
 
 include $(BASE)/src/utils.mak

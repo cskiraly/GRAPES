@@ -10,6 +10,7 @@
 
 extern struct peersampler_iface ncast;
 extern struct peersampler_iface cyclon;
+extern struct peersampler_iface cloudcast;
 extern struct peersampler_iface dummy;
 
 struct psample_context{
@@ -33,9 +34,13 @@ struct psample_context* psample_init(struct nodeID *myID, const void *metadata, 
   if (proto) {
     if (strcmp(proto, "cyclon") == 0) {
       tc->ps = &cyclon;
-    }
-    if (strcmp(proto, "dummy") == 0) {
+    } else if (strcmp(proto, "cloudcast") == 0) {
+      tc->ps = &cloudcast;
+    }else if (strcmp(proto, "dummy") == 0) {
       tc->ps = &dummy;
+    } else {
+      free(tc);
+      return NULL;
     }
   }
   free(cfg_tags);
