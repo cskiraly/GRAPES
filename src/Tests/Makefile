@@ -95,7 +95,7 @@ cloud_topology_monitor: ../net_helper$(NH_INCARNATION).o
 cloud_topology_monitor: LDFLAGS += -ldl
 
 test_queue: test_queue.o
-test_queue: CFLAGS += -I../Utils
+test_queue: CFLAGS += -I$(BASE)/src/Utils
 
 clean::
 	rm -f $(TESTS)
