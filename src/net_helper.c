@@ -116,7 +116,7 @@ void bind_msg_type (uint8_t msgtype)
 
 int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
-  struct msghdr msg;
+  struct msghdr msg = {0};
   uint8_t my_hdr;
   struct iovec iov[2];
   int res;
@@ -149,7 +149,7 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 {
   int res, recv;
   struct sockaddr_in raddr;
-  struct msghdr msg;
+  struct msghdr msg = {0};
   uint8_t my_hdr;
   struct iovec iov[2];
 
@@ -186,13 +186,14 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 
 int node_addr(const struct nodeID *s, char *addr, int len)
 {
-  char buff[96];
   int n;
 
-  if (!inet_ntop(AF_INET, &(s->addr.sin_addr), buff, 96))
-    return 1;
-  n = snprintf(addr, len, "%s:%d", buff, ntohs(s->addr.sin_port));
-  return len < n;
+  if (!inet_ntop(AF_INET, &(s->addr.sin_addr), addr, len)) {
+    return -1;
+  }
+  n = snprintf(addr + strlen(addr), len - strlen(addr) - 1, ":%d", ntohs(s->addr.sin_port));
+
+  return n;
 }
 
 struct nodeID *nodeid_dup(struct nodeID *s)
@@ -241,7 +242,11 @@ void nodeid_free(struct nodeID *s)
 
 int node_ip(const struct nodeID *s, char *ip, int len)
 {
-  return inet_ntop(AF_INET, &(s->addr.sin_addr), ip, len) != 0;
+  if (inet_ntop(AF_INET, &(s->addr.sin_addr), ip, len) == 0) {
+    return -1;
+  }
+
+  return 1;
 }
 
 int node_port(const struct nodeID *s)

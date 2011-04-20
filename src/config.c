@@ -54,7 +54,7 @@ struct tag *config_parse(const char *cfg)
         return NULL;
       }
       memcpy(res[i++].value, p1 + 1, p - p1 - 1);
-      p++;
+      if (*p) p++;
     } else {
       p = NULL;
     }

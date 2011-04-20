@@ -120,7 +120,7 @@ int wait4data(const struct nodeID *n, struct timeval *tout, int *user_fds);
 * @param[in] s A pointer to the nodeID to be printed.
 * @param[out] addr A pointer to the buffer where to write the address
 * @param[in] len The length of the addr buffer
-* @return 0 on success 1 on error (buffer too small)
+* @return >= 0 on success, or < 0 on error (buffer too small)
 */
 int node_addr(const struct nodeID *s, char *addr, int len);
 
@@ -152,7 +152,7 @@ int nodeid_dump(uint8_t *b, const struct nodeID *s, size_t max_write_size);
 * @param[in] s A pointer to the nodeID.
 * @param[out] ip A  pointer to the buffer where to store the ip address
 * @param[in] len The length of the ip buffer
-* @return 0 on success 1 on error (buffer too small)
+* @return >= 0 on success, or < 0 on error (buffer too small)
 */
 int node_ip(const struct nodeID *s, char *ip, int len);
 
