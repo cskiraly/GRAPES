@@ -21,33 +21,45 @@
 #define CLOUD_VIEW_KEY "view"
 
 struct topo_header cloud_header = {MSG_TYPE_TOPOLOGY, CLOUDCAST_CLOUD};
-
 struct cloudcast_proto_context {
   struct peer_cache* myEntry;
+  uint8_t def_cloudcache[128];
+  int def_cloudcache_len;
   struct topo_context *topo_context;
   struct cloud_helper_context *cloud_context;
 };
 
+int cloudcast_payload_fill(struct cloudcast_proto_context *context, uint8_t *payload, int size, struct peer_cache *c, int max_peers, int include_me);
+
 struct cloudcast_proto_context* cloudcast_proto_init(struct nodeID *s, const void *meta, int meta_size)
 {
   struct cloudcast_proto_context *con;
+  struct peer_cache *tmp;
   con = malloc(sizeof(struct cloudcast_proto_context));
 
-  if (!con) return NULL;
+  if (!con) {
+    fprintf(stderr, "cloudcast_proto: Error initializing context. ENOMEM\n");
+    return NULL;
+  }
 
   con->topo_context = topo_proto_init(s, meta, meta_size);
   if (!con->topo_context){
+    fprintf(stderr, "cloudcast_proto: Error initializing topo_proto.\n");
     free(con);
     return NULL;
   }
 
   con->cloud_context = get_cloud_helper_for(s);
   if (!con->cloud_context) {
+    fprintf(stderr, "cloudcast_proto: Error retrieving cloud_helper for current node\n");
     free(con);
     return NULL;
   }
 
   con->myEntry = cache_init(1, meta_size, 0);
+  tmp = cache_init(0, meta_size, 0);
+  con->def_cloudcache_len = cloudcast_payload_fill(con, con->def_cloudcache, sizeof(con->def_cloudcache), tmp, 0, 0);
+  cache_free(tmp);
   cache_add(con->myEntry, s, meta, meta_size);
 
   return con;
@@ -131,7 +143,10 @@ int cloudcast_reply_cloud(struct cloudcast_proto_context *context, struct peer_c
 
 int cloudcast_query_cloud(struct cloudcast_proto_context *context)
 {
-  return get_from_cloud(context->cloud_context, CLOUD_VIEW_KEY, (uint8_t *)&cloud_header, sizeof(cloud_header), 0);
+  return get_from_cloud_default(context->cloud_context, CLOUD_VIEW_KEY,
+                                (uint8_t *)&cloud_header, sizeof(cloud_header),
+                                0, context->def_cloudcache,
+                                context->def_cloudcache_len, 0);
 }
 
 struct peer_cache * cloudcast_cloud_default_reply(struct peer_cache *template, struct nodeID *cloud_entry)

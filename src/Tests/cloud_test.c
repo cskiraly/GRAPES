@@ -5,9 +5,10 @@
  *
  *  This is a small test program for the cloud interface
  *  To try the simple test: run it with
- *    ./cloud_test -c "provider=<cloud_provider>,<provider_opts>" [-g key | -p key=value | -n variant | -e ip:port]
+ *    ./cloud_test -c "provider=<cloud_provider>,<provider_opts>" [-g key | -d key=value | -p key=value | -n variant | -e ip:port]
  *
  *    -g  GET key from cloud
+ *    -d  GET key from cloud with default
  *    -p  PUT key=value on cloud
  *    -n  print the cloud node for the specified variant
  *    -e  check if ip:port references the cloud
@@ -33,6 +34,7 @@
 #define PUT 1
 #define GET_CLOUD_NODE 2
 #define EQ_CLOUD_NODE 3
+#define GETDEF 4
 
 static const char *config;
 static int operation;
@@ -47,7 +49,7 @@ static void cmdline_parse(int argc, char *argv[])
   int o;
   char *temp;
 
-  while ((o = getopt(argc, argv, "c:g:p:n:e:")) != -1) {
+  while ((o = getopt(argc, argv, "c:g:d:p:n:e:")) != -1) {
     switch(o) {
     case 'c':
       config = strdup(optarg);
@@ -65,9 +67,22 @@ static void cmdline_parse(int argc, char *argv[])
         exit(-1);
       }
       break;
-      case 'g':
+    case 'g':
         key =  strdup(optarg);
         break;
+    case 'd':
+      temp = strdup(optarg);
+      operation = GETDEF;
+
+      key = strsep(&optarg, "=");
+      value = optarg;
+
+      if (!value || !key){
+        printf("Expected key=value for option -d");
+        free(temp);
+        exit(-1);
+      }
+      break;
     case 'n':
       operation = GET_CLOUD_NODE;
       variant = atoi(optarg);
@@ -120,6 +135,7 @@ int main(int argc, char *argv[])
 {
   struct cloud_helper_context *cloud;
   char buffer[100];
+  char addr[256];
   int err;
   struct nodeID *t;
   struct timeval tout = {10, 0};
@@ -139,9 +155,19 @@ int main(int argc, char *argv[])
       return 1;
     }
     break;
+  case GETDEF:
   case GET:
     printf("Getting from cloud value for key \"%s\": ", key);
-    err = get_from_cloud(cloud, key, HEADER, strlen(HEADER), 0);
+    memcpy(buffer, HEADER, strlen(HEADER));
+
+    if (operation == GETDEF) {
+      printf("(Using default value: \"%s\")", value);
+      err = get_from_cloud_default(cloud, key, buffer, strlen(HEADER), 0,
+                                   value, strlen(value), 0);
+    } else {
+      err = get_from_cloud(cloud, key, buffer, strlen(HEADER), 0);
+    }
+
     if (err) {
       printf("Error performing the operation");
       return 1;
@@ -168,6 +194,7 @@ int main(int argc, char *argv[])
       printf("No response from cloud\n");
       return 1;
     } else {
+      memset(buffer, 0, sizeof(buffer));
       err = recv_from_cloud(cloud, buffer, sizeof(buffer)-1);
       buffer[sizeof(buffer) - 1] = '\0';
       printf("No value for the specified key. Received: %s\n", buffer);
@@ -175,11 +202,13 @@ int main(int argc, char *argv[])
     }
     break;
   case GET_CLOUD_NODE:
-    printf("Cloud node: %s\n", node_addr(get_cloud_node(cloud, variant)));
+    node_addr(get_cloud_node(cloud, variant), addr, 256);
+    printf("Cloud node: %s\n", addr);
     break;
   case EQ_CLOUD_NODE:
     t = create_node(key, atoi(value));
-    printf("Node %s references cloud? %d\n", node_addr(get_cloud_node(cloud, variant)),
+    node_addr(get_cloud_node(cloud, variant), addr, 256);
+    printf("Node %s references cloud? %d\n", addr,
            is_cloud_node(cloud, t));
     break;
   }

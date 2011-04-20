@@ -7,8 +7,6 @@
 #ifndef CLOUD_HELPER_H
 #define CLOUD_HELPER_H
 
-#define CLOUD_HELPER_MAX_INSTANCES 10
-
 #include <stdint.h>
 #include <sys/time.h>
 
@@ -21,6 +19,9 @@
  *
  * A clean interface throught which all the cloud communication procedure needed by SOM funcions
  * are handled.
+ *
+ * If thread are used, the caller must ensured that calls to cloud_helper_init
+ * and get_cloud_helper_for are synchronized.
  */
 
 /**
@@ -31,8 +32,9 @@ struct cloud_helper_contex;
 /**
  * @brief Initialize all needed internal parameters.
  * Initialize the parameters for the cloud facilities and create a context
- * representing the cloud.
- * Only one instance of net_helper is allowed for a specific nodeID.
+ * representing the cloud. Only one instance of net_helper is allowed for a
+ * specific nodeID.
+ *
  * @param[in] local NodeID associated with this instance of cloud_helper.
  * @param[in] config Cloud specific configuration options.
  */
@@ -64,6 +66,31 @@ struct cloud_helper_context* get_cloud_helper_for(const struct nodeID *local);
  */
 int get_from_cloud(struct cloud_helper_context *context, const char *key,
                    uint8_t *header_ptr, int header_size, int free_header);
+
+/**
+ * @brief Get the value for key or return default value
+ * This function send a request to the cloud for the value associated to the
+ * specified key. Use the wait4cloud to listen for the answer and
+ * revc_from_cloud to read the response.
+ *
+ * If the specified key isn't present on the cloud, return the default value
+ * @param[in] context The contex representing the desired cloud_helper
+ *                    instance.
+ * @param[in] key Key to retrieve.
+ * @param[in] header_ptr A pointer to the header which will be added to the
+ *                       retrieved data. May be NULL
+ * @param[in] header_size The length of the header.
+ * @param[in] free_header A positive value result in buffer_ptr being freed
+ *                        on request completion
+ * @param[in] defval_ptr A pointer to the default value to use if key is missing
+ * @param[in] defval_size The length of the default value
+ * @param[in] free_defvar A positive value result in defval_ptr being freed on
+                          request comletion
+ * @return 0 if the request was successfully sent, 1 Otherwise
+ */
+int get_from_cloud_default(struct cloud_helper_context *context, const char *key,
+                           uint8_t *header_ptr, int header_size, int free_header,
+                           uint8_t *defval_ptr, int defval_size, int free_defval);
 
 /**
  * @brief Returns the timestamp associated to the last GET operation.

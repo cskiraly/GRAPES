@@ -2,6 +2,12 @@
  *  Copyright (c) 2010 Andrea Zito
  *
  *  This is free software; see lgpl-2.1.txt
+ *
+ * Implementation of the Cloudcast peer sampling protocol.
+ *
+ * If thread are used calls to psample_init which result in calls to
+ * cloudcast_init must be syncronized with calls to cloud_helper_init
+ * and get_cloud_helper_for.
  */
 
 #include <sys/time.h>
@@ -57,6 +63,10 @@ static uint64_t gettime(void)
 static struct peersampler_context* cloudcast_context_init(void){
   struct peersampler_context* con;
   con = (struct peersampler_context*) calloc(1,sizeof(struct peersampler_context));
+  if (!con) {
+    fprintf(stderr, "cloudcast: Error! could not create context. ENOMEM\n");
+    return NULL;
+  }
   memset(con, 0, sizeof(struct peersampler_context));
 
   //Initialize context with default values
@@ -134,6 +144,7 @@ static struct peersampler_context* cloudcast_init(struct nodeID *myID, const voi
 
   con->local_cache = cache_init(con->cache_size, metadata_size, 0);
   if (con->local_cache == NULL) {
+    fprintf(stderr, "cloudcast: Error initializing local cache\n");
     free(con);
     return NULL;
   }

@@ -36,6 +36,9 @@ struct delegate_iface {
   void* (*cloud_helper_init)(struct nodeID *local, const char *config);
   int (*get_from_cloud)(void *context, const char *key, uint8_t *header_ptr,
                         int header_size, int free_header);
+  int (*get_from_cloud_default)(void *context, const char *key,
+                                uint8_t *header_ptr, int header_size, int free_header,
+                                uint8_t *defval_ptr, int defval_size, int free_defval);
   int (*put_on_cloud)(void *context, const char *key, uint8_t *buffer_ptr,
                       int buffer_size, int free_buffer);
   struct nodeID* (*get_cloud_node)(void *context, uint8_t variant);
@@ -121,6 +124,10 @@ struct libs3_request {
   int data_length;
   int free_data;
 
+  uint8_t *default_value;
+  int default_value_length;
+  int free_default_value;
+
   struct libs3_cloud_context *ctx;
 };
 typedef struct libs3_request libs3_request_t;
@@ -163,6 +170,8 @@ static void free_request(void *req_ptr)
 
   free(req->key);
   if (req->free_data > 0) free(req->data);
+  if (req->free_default_value > 0)
+    free(req->default_value);
 
   free(req);
 }
@@ -432,10 +441,25 @@ static int process_get_request(void *req_data, void **rsp_data)
     rsp->data_length = cbk_ctx->bytes + req->data_length;
     rsp->read_bytes = 0;
     rsp->last_timestamp = cbk_ctx->last_timestamp;
+  } else {
+    /* Since there was no value for the specified key. If the caller specified a
+       default value, use that */
+    if (req->default_value) {
+      rsp->data = malloc(req->data_length + req->default_value_length);
+      if (!rsp->data) return 1;
+      rsp->current_byte = rsp->data;
+      if (req->data_length > 0)
+        memcpy(rsp->data, req->data, req->data_length);
+
+      memcpy(rsp->data, req->default_value, req->default_value_length);
+
+      rsp->status = S3StatusOK;
+    }
   }
 
-  status = (cbk_ctx->status == S3StatusOK) ? 0 : -1;
   free(cbk_ctx);
+  status = (rsp->status == S3StatusOK) ? 0 : -1;
+
 
   return status;
 }
@@ -536,8 +560,9 @@ void* cloud_helper_init(struct nodeID *local, const char *config)
   return ctx;
 }
 
-int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
-                   int header_size, int free_header)
+int get_from_cloud_default(void *context, const char *key, uint8_t *header_ptr,
+                           int header_size, int free_header, uint8_t *defval_ptr,
+                           int defval_size, int free_defval)
 {
   struct libs3_cloud_context *ctx;
   libs3_request_t *request;
@@ -552,6 +577,9 @@ int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
   request->data = header_ptr;
   request->data_length = header_size;
   request->free_data = free_header;
+  request->default_value = defval_ptr;
+  request->default_value_length = defval_size;
+  request->free_default_value = free_defval;
   request->ctx = ctx;
 
   req_handler_add_request(ctx->req_handler,
@@ -560,6 +588,13 @@ int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
                           &free_request);
 
   return 0;
+}
+
+int get_from_cloud(void *context, const char *key, uint8_t *header_ptr,
+                   int header_size, int free_header)
+{
+  return get_from_cloud_default(context, key, header_ptr, header_size,
+                                free_header, NULL, 0, 0);
 }
 
 int put_on_cloud(void *context, const char *key, uint8_t *buffer_ptr,
@@ -578,6 +613,9 @@ int put_on_cloud(void *context, const char *key, uint8_t *buffer_ptr,
   request->data = buffer_ptr;
   request->data_length = buffer_size;
   request->free_data = free_buffer;
+  request->default_value = NULL;
+  request->default_value_length = 0;
+  request->free_default_value = 0;
   request->ctx = ctx;
 
   if (ctx->blocking_put_request) {
@@ -608,7 +646,9 @@ time_t timestamp_cloud(void *context)
 
 int is_cloud_node(void *context, struct nodeID* node)
 {
-  return strcmp(node_ip(node), CLOUD_NODE_ADDR) == 0;
+  char buff[96];
+  node_ip(node, buff, 96);
+  return strcmp(buff, CLOUD_NODE_ADDR) == 0;
 }
 
 int wait4cloud(void *context, struct timeval *tout)
@@ -674,6 +714,7 @@ int recv_from_cloud(void *context, uint8_t *buffer_ptr, int buffer_size)
 struct delegate_iface delegate_impl = {
   .cloud_helper_init = &cloud_helper_init,
   .get_from_cloud = &get_from_cloud,
+  .get_from_cloud_default = &get_from_cloud_default,
   .put_on_cloud = &put_on_cloud,
   .get_cloud_node = &get_cloud_node,
   .timestamp_cloud = &timestamp_cloud,

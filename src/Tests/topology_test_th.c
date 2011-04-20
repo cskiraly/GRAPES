@@ -83,9 +83,10 @@ static struct nodeID *init(void)
 
 static void *cycle_loop(void *p)
 {
+  char addr[256];
   int done = 0;
   int cnt = 0;
-  
+
   while (!done) {
     const int tout = 1;
 
@@ -100,7 +101,8 @@ static void *cycle_loop(void *p)
       neighbours = psample_get_cache(context, &n);
       printf("I have %d neighbours:\n", n);
       for (i = 0; i < n; i++) {
-        printf("\t%d: %s\n", i, node_addr(neighbours[i]));
+        node_addr(neighbours[i], addr, 256);
+        printf("\t%d: %s\n", i, addr);
       }
       fflush(stdout);
       if (fprefix) {
@@ -111,7 +113,8 @@ static void *cycle_loop(void *p)
         f = fopen(fname, "w");
         if (f) fprintf(f, "#Cache size: %d\n", n);
         for (i = 0; i < n; i++) {
-          if (f) fprintf(f, "%d\t\t%d\t%s\n", port, i, node_addr(neighbours[i]));
+          node_addr(neighbours[i], addr, 256);
+          if (f) fprintf(f, "%d\t\t%d\t%s\n", port, i, addr);
         }
         fclose(f);
       }
@@ -130,7 +133,7 @@ static void *recv_loop(void *p)
   int done = 0;
 #define BUFFSIZE 1024
   static uint8_t buff[BUFFSIZE];
-  
+
   while (!done) {
     int len;
     struct nodeID *remote;

@@ -555,13 +555,15 @@ void cache_check(const struct peer_cache *c)
 }
 
 void cache_log(const struct peer_cache *c, const char *name){
+  char addr[256];
   int i;
   const char default_name[] = "none";
   const char *actual_name = (name)? name : default_name;
   fprintf(stderr, "### dumping cache (%s)\n", actual_name);
   fprintf(stderr, "\tcache_size=%d, current_size=%d\n", c->cache_size, c->current_size);
   for (i = 0; i < c->current_size; i++) {
-    fprintf(stderr, "\t%d: %s\n", i, node_addr(c->entries[i].id));
+    node_addr(c->entries[i].id, addr, 256);
+    fprintf(stderr, "\t%d: %s\n", i, addr);
   }
   fprintf(stderr, "\n-----------------------------\n");
 }

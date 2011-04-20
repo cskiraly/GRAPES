@@ -85,13 +85,14 @@ static void loop(struct nodeID *s)
 #define BUFFSIZE 1024
   static uint8_t buff[BUFFSIZE];
   int cnt = 0;
-  
+
   psample_parse_data(context, NULL, 0);
   while (!done) {
     int len;
     int news;
     const struct timeval tout = {1, 0};
     struct timeval t1;
+    char addr[256];
 
     t1 = tout;
     news = wait4data(s, &t1, NULL);
@@ -110,7 +111,8 @@ static void loop(struct nodeID *s)
         neighbourhoods = psample_get_cache(context, &n);
         printf("I have %d neighbours:\n", n);
         for (i = 0; i < n; i++) {
-          printf("\t%d: %s\n", i, node_addr(neighbourhoods[i]));
+          node_addr(neighbourhoods[i], addr, 256);
+          printf("\t%d: %s\n", i, addr);
         }
         fflush(stdout);
         if (fprefix) {
@@ -121,7 +123,8 @@ static void loop(struct nodeID *s)
           f = fopen(fname, "w");
           if (f) fprintf(f, "#Cache size: %d\n", n);
           for (i = 0; i < n; i++) {
-            if (f) fprintf(f, "%d\t\t%d\t%s\n", port, i, node_addr(neighbourhoods[i]));
+            node_addr(neighbourhoods[i], addr, 256);
+            if (f) fprintf(f, "%d\t\t%d\t%s\n", port, i, addr);
           }
           fclose(f);
         }
