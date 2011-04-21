@@ -87,14 +87,15 @@ cloud_test: LDFLAGS += -ldl
 
 cloudcast_topology_test: cloudcast_topology_test.o net_helpers.o
 cloudcast_topology_test: ../net_helper$(NH_INCARNATION).o
-cloudcast_topology_test: LDFLAGS += -ldl
+cloudcast_topology_test: CFLAGS += -pthread
+cloudcast_topology_test: LDFLAGS += -ldl -pthread
 
 cloud_topology_monitor: cloud_topology_monitor.o net_helpers.o
 cloud_topology_monitor: ../net_helper$(NH_INCARNATION).o
 cloud_topology_monitor: LDFLAGS += -ldl
 
 test_queue: test_queue.o
-test_queue: CFLAGS += -I../Utils
+test_queue: CFLAGS += -I$(BASE)/src/Utils
 
 clean::
 	rm -f $(TESTS)
