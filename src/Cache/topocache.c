@@ -545,8 +545,15 @@ struct peer_cache *merge_caches(const struct peer_cache *c1, const struct peer_c
 void cache_check(const struct peer_cache *c)
 {
   int i, j;
+  int ts = 0;
 
   for (i = 0; i < c->current_size; i++) {
+    if (c->entries[i].timestamp < ts) {
+      fprintf(stderr, "WTF!!!! %d.ts=%d > %d.ts=%d!!!\n",
+              i-1, ts, i, c->entries[i].timestamp);
+      *((char *)0) = 1;
+    }
+    ts = c->entries[i].timestamp;
     for (j = i + 1; j < c->current_size; j++) {
       if (nodeid_equal(c->entries[i].id, c->entries[j].id)) {
         fprintf(stderr, "WTF!!!! %d = %d!!!\n", i, j);
@@ -565,7 +572,7 @@ void cache_log(const struct peer_cache *c, const char *name){
   fprintf(stderr, "\tcache_size=%d, current_size=%d\n", c->cache_size, c->current_size);
   for (i = 0; i < c->current_size; i++) {
     node_addr(c->entries[i].id, addr, 256);
-    fprintf(stderr, "\t%d: %s\n", i, addr);
+    fprintf(stderr, "\t%d: %s[%d]\n", i, addr, c->entries[i].timestamp);
   }
   fprintf(stderr, "\n-----------------------------\n");
 }
