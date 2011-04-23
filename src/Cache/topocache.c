@@ -28,6 +28,51 @@ struct peer_cache {
   int max_timestamp;
 };
 
+
+static int cache_insert_or_update(struct peer_cache *c, struct cache_entry *e, const void *meta)
+{
+  int i, position;
+
+  if (c->current_size == c->cache_size) {
+    return -2;
+  }
+  position = 0;
+  for (i = 0; i < c->current_size; i++) {
+
+if (e->id == NULL) {fprintf(stderr, "e->ID = NULL!!!\n"); *((char *)0) = 1;}
+if (c->entries[i].id == NULL) {fprintf(stderr, "entries[%d]->ID = NULL!!!\n", i); exit(-1);}
+
+    if (c->entries[i].timestamp <= e->timestamp) {
+      position = i + 1;
+    }
+    if (nodeid_equal(e->id, c->entries[i].id)) {
+      if (c->entries[i].timestamp > e->timestamp) {
+        if (position >= i) {
+          c->entries[i].timestamp = e->timestamp;
+          memcpy(c->metadata + i * c->metadata_size, meta, c->metadata_size);
+        } else {
+          nodeid_free(c->entries[i].id);
+          memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (i - position));
+          memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (i -position) * c->metadata_size);
+          c->entries[position] = *e;
+          memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
+        }
+      }
+      return position;
+    }
+  }
+
+  if (position != c->current_size) {
+    memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (c->current_size - position));
+    memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (c->current_size - position) * c->metadata_size);
+  }
+  c->current_size++;
+  c->entries[position] = *e;
+  memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
+
+  return position;
+}
+
 static int cache_insert(struct peer_cache *c, struct cache_entry *e, const void *meta)
 {
   int i, position;
@@ -274,6 +319,121 @@ struct nodeID *last_peer(const struct peer_cache *c)
   return c->entries[c->current_size - 1].id;
 }
 
+
+int cache_fill_ordered(struct peer_cache *dst, const struct peer_cache *src, int target_size)
+{
+  struct cache_entry *e_orig, *e_dup;
+  int count, j;
+cache_check(dst);
+cache_check(src);
+  if (target_size <= 0 || target_size > dst->cache_size) {
+    target_size = dst->cache_size;
+  }
+
+  if (dst->current_size >= target_size) return -1;
+
+  count = 0;
+  j=0;
+  while(dst->current_size < target_size && src->current_size > count) {
+    count++;
+
+    e_orig = src->entries + j;
+    e_dup = malloc(sizeof(struct cache_entry));
+    if (!e_dup) return -1;
+
+    e_dup->id = nodeid_dup(e_orig->id);
+    e_dup->timestamp = e_orig->timestamp;
+
+    cache_insert_or_update(dst, e_dup, src->metadata + src->metadata_size * j);
+    j++;
+  }
+cache_check(dst);
+cache_check(src);
+ return dst->current_size;
+}
+
+int cache_fill_rand(struct peer_cache *dst, const struct peer_cache *src, int target_size)
+{
+  int added[src->current_size];
+  struct cache_entry *e_orig, *e_dup;
+  int count, j;
+cache_check(dst);
+cache_check(src);
+  if (target_size <= 0 || target_size > dst->cache_size) {
+    target_size = dst->cache_size;
+  }
+
+  if (dst->current_size >= target_size) return -1;
+
+  memset(added, 0, sizeof(int) * src->current_size);
+  count = 0;
+  while(dst->current_size < target_size && src->current_size > count) {
+    j = ((double)rand() / (double)RAND_MAX) * src->current_size;
+    if (added[j] != 0) continue;
+    added[j] = 1;
+    count++;
+
+    e_orig = src->entries + j;
+    e_dup = malloc(sizeof(struct cache_entry));
+    if (!e_dup) return -1;
+
+    e_dup->id = nodeid_dup(e_orig->id);
+    e_dup->timestamp = e_orig->timestamp;
+
+    cache_insert_or_update(dst, e_dup, src->metadata + src->metadata_size * j);
+  }
+cache_check(dst);
+cache_check(src);
+ return dst->current_size;
+}
+
+
+struct peer_cache *rand_cache_except(struct peer_cache *c, int n,
+                                     struct nodeID *except[], int len)
+{
+  struct peer_cache *res;
+  struct cache_entry *e;
+  int present[len];
+  int count = 0;
+
+cache_check(c);
+
+ memset(present, 0, sizeof(int) * len);
+
+  if (c->current_size < n) {
+    n = c->current_size;
+  }
+  res = cache_init(n, c->metadata_size, c->max_timestamp);
+  while(res->current_size < (n - count)) {
+    int j,i,flag;
+
+    j = ((double)rand() / (double)RAND_MAX) * c->current_size;
+    e = c->entries +j;
+
+    flag = 0;
+    for (i=0; i<len; i++) {
+      if (nodeid_equal(e->id, except[i])) {
+        if (present[i] == 0) {
+          count++;
+          present[i] = 1;
+        }
+        flag = 1;
+        break;
+      }
+    }
+    if (flag) continue;
+
+    cache_insert(res, c->entries + j, c->metadata + c->metadata_size * j);
+    c->current_size--;
+    memmove(c->entries + j, c->entries + j + 1, sizeof(struct cache_entry) * (c->current_size - j));
+    memmove(c->metadata + c->metadata_size * j, c->metadata + c->metadata_size * (j + 1), c->metadata_size * (c->current_size - j));
+    c->entries[c->current_size].id = NULL;
+cache_check(c);
+  }
+
+  return res;
+}
+
 struct peer_cache *rand_cache(struct peer_cache *c, int n)
 {
   struct peer_cache *res;
@@ -444,6 +604,17 @@ struct peer_cache *cache_union(const struct peer_cache *c1, const struct peer_ca
   *size = new_cache->current_size;
 
   return new_cache;
+}
+
+
+int cache_max_size(const struct peer_cache *c)
+{
+  return c->cache_size;
+}
+
+int cache_current_size(const struct peer_cache *c)
+{
+  return c->current_size;
 }
 
 int cache_resize (struct peer_cache *c, int size)

@@ -18,6 +18,7 @@ int cache_del(struct peer_cache *c, const struct nodeID *neighbour);
 struct nodeID *rand_peer(const struct peer_cache *c, void **meta, int max);
 struct nodeID *last_peer(const struct peer_cache *c);
 struct peer_cache *rand_cache(struct peer_cache *c, int n);
+struct peer_cache *rand_cache_except(struct peer_cache *c, int n, struct nodeID *except[], int len);
 
 struct peer_cache *entries_undump(const uint8_t *buff, int size);
 int cache_header_dump(uint8_t *b, const struct peer_cache *c, int include_me);
@@ -27,6 +28,12 @@ struct peer_cache *merge_caches(const struct peer_cache *c1, const struct peer_c
 struct peer_cache *cache_rank (const struct peer_cache *c, ranking_function rank, const struct nodeID *target, const void *target_meta);
 struct peer_cache *cache_union(const struct peer_cache *c1, const struct peer_cache *c2, int *size);
 int cache_resize (struct peer_cache *c, int size);
+
+int cache_max_size(const struct peer_cache *c);
+int cache_current_size(const struct peer_cache *c);
+
+int cache_fill_rand(struct peer_cache *dst, const struct peer_cache *src, int target_size);
+int cache_fill_ordered(struct peer_cache *dst, const struct peer_cache *src, int target_size);
 
 void cache_check(const struct peer_cache *c);
 
