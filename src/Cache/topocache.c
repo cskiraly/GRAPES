@@ -35,16 +35,16 @@ static int cache_insert(struct peer_cache *c, struct cache_entry *e, const void 
   if (c->current_size == c->cache_size) {
     return -2;
   }
-  position = c->current_size;
+  position = 0;
   for (i = 0; i < c->current_size; i++) {
 if (e->id == NULL) {fprintf(stderr, "e->ID = NULL!!!\n"); *((char *)0) = 1;}
 if (c->entries[i].id == NULL) {fprintf(stderr, "entries[%d]->ID = NULL!!!\n", i); exit(-1);}
     if (nodeid_equal(e->id, c->entries[i].id)) {
       return -1;
     }
-    if (e->timestamp < c->entries[i].timestamp) {
-       position = i;
-     }
+    if (c->entries[i].timestamp <= e->timestamp) {
+      position = i + 1;
+    }
   }
 
   memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (c->current_size - position));
