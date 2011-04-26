@@ -47,8 +47,10 @@ if (c->entries[i].id == NULL) {fprintf(stderr, "entries[%d]->ID = NULL!!!\n", i)
     }
   }
 
-  memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (c->current_size - position));
-  memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (c->current_size - position) * c->metadata_size);
+  if (position != c->current_size) {
+    memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (c->current_size - position));
+    memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (c->current_size - position) * c->metadata_size);
+  }
   c->current_size++;
   c->entries[position] = *e;
   memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
