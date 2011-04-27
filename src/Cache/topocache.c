@@ -9,6 +9,8 @@
 #include <string.h>
 
 #include <stdio.h>
+#undef NDEBUG
+#include <assert.h>
 
 #include "net_helper.h"
 #include "topocache.h"
@@ -37,8 +39,8 @@ static int cache_insert(struct peer_cache *c, struct cache_entry *e, const void 
   }
   position = 0;
   for (i = 0; i < c->current_size; i++) {
-if (e->id == NULL) {fprintf(stderr, "e->ID = NULL!!!\n"); *((char *)0) = 1;}
-if (c->entries[i].id == NULL) {fprintf(stderr, "entries[%d]->ID = NULL!!!\n", i); exit(-1);}
+    assert(e->id);
+    assert(c->entries[i].id);
     if (nodeid_equal(e->id, c->entries[i].id)) {
       return -1;
     }
@@ -326,7 +328,7 @@ struct peer_cache *entries_undump(const uint8_t *buff, int size)
     }
   }
   res->current_size = i;
-if (p - buff != size) { fprintf(stderr, "Waz!! %d != %d\n", (int)(p - buff), size); exit(-1);}
+  assert(p - buff == size);
 
   return res;
 }
@@ -548,10 +550,7 @@ void cache_check(const struct peer_cache *c)
 
   for (i = 0; i < c->current_size; i++) {
     for (j = i + 1; j < c->current_size; j++) {
-      if (nodeid_equal(c->entries[i].id, c->entries[j].id)) {
-        fprintf(stderr, "WTF!!!! %d = %d!!!\n", i, j);
-        *((char *)0) = 1;
-      }
+      assert(!nodeid_equal(c->entries[i].id, c->entries[j].id));
     }
   }
 }
