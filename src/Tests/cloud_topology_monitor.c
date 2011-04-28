@@ -40,18 +40,22 @@ static const char *my_addr = "127.0.0.1";
 static int port = 9999;
 static const char *cloud_conf = NULL;
 static char *fprefix = NULL;
+static int init_cloud = 0;
 
 static void cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "s:c:")) != -1) {
+  while ((o = getopt(argc, argv, "s:c:i")) != -1) {
     switch(o) {
       case 'c':
         cloud_conf = strdup(optarg);
         break;
       case 's':
         fprefix = strdup(optarg);
+        break;
+      case 'i':
+        init_cloud = 1;
         break;
       default:
         fprintf(stderr, "Error: unknown option %c\n", o);
@@ -86,9 +90,10 @@ static void loop(struct context *con)
   static uint8_t buff[BUFFSIZE];
   int cnt = 0;
 
-  printf("Initializing the cloud...\n");
-  put_on_cloud(con->cloud_context, CLOUD_VIEW_KEY, NULL, 0, 0);
-
+  if (init_cloud) {
+    printf("Initializing the cloud...\n");
+    put_on_cloud(con->cloud_context, CLOUD_VIEW_KEY, NULL, 0, 0);
+  }
 
   while (!done) {
     int len;
