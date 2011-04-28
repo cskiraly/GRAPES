@@ -18,10 +18,10 @@ include $(BASE)/src/utils.mak
 
 delegate_helpers: $(DELEGATE_HELPERS)
 
-libs3_delegate_helper.so:
+libs3_delegate_helper.so: ../Utils/request_handler.o ../Utils/fifo_queue.o
 libs3_delegate_helper.so: CFLAGS += -shared -pthread
 ifeq (${PLATFORM}, darwin)
-libs3_delegate_helper.so: CFLAGS += -undefined dynamic_lookup
+libs3_delegate_helper.so: CFLAGS += -dynamiclib -undefined dynamic_lookup
 endif
 libs3_delegate_helper.so: LDFLAGS += -ls3
 libs3_delegate_helper.so: libs3_delegate_helper.o
@@ -29,10 +29,10 @@ libs3_delegate_helper.so: libs3_delegate_helper.o
 
 libs3_delegate_helper.o: CFLAGS += -fPIC
 
-mysql_delegate_helper.so:
+mysql_delegate_helper.so: ../Utils/request_handler.o ../Utils/fifo_queue.o
 mysql_delegate_helper.so: CFLAGS += -shared -pthread
 ifeq (${PLATFORM}, darwin)
-mysql_delegate_helper.so: CFLAGS += -undefined dynamic_lookup
+mysql_delegate_helper.so: CFLAGS += -dynamiclib -undefined dynamic_lookup
 endif
 mysql_delegate_helper.so: LDFLAGS += -lmysqlclient
 mysql_delegate_helper.so: mysql_delegate_helper.o
