@@ -218,7 +218,7 @@ static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
   if (o->outctx == NULL) {
     o->outctx = format_gen(o, data);
     if (o->outctx == NULL) {
-      fprintf(stderr, "Format init failed\n");
+//      fprintf(stderr, "Format init failed\n");
 
       return;
     }

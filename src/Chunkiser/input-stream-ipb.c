@@ -13,16 +13,86 @@
 #include "payload.h"
 #include "config.h"
 #include "chunkiser_iface.h"
+#include "chunkiser_attrib.h"
 
 #define STATIC_BUFF_SIZE 1000 * 1024
+
+struct log_info {
+  int i_frames[16];
+  int p_frames[16];
+  int b_frames[16];
+  int frame_number;
+  FILE *log;
+};
+
 struct chunkiser_ctx {
   AVFormatContext *s;
   int loop;	//loop on input file infinitely
   uint64_t streams;
   int64_t last_ts;
   int64_t base_ts;
+  uint8_t *i_chunk;
+  uint8_t *p_chunk;
+  uint8_t *b_chunk;
+  int i_chunk_size;
+  int p_chunk_size;
+  int b_chunk_size;
+  int p_ready;
+  int b_ready;
   AVBitStreamFilterContext *bsf[MAX_STREAMS];
+
+  struct log_info chunk_log;
 };
+
+static void chunk_print(FILE *log, int id, int *frames, int type)
+{
+  int i = 0;
+
+  switch (type) {
+    case FF_I_TYPE:
+      fprintf(log, "I");
+      break;
+    case FF_P_TYPE:
+      fprintf(log, "P");
+      break;
+    case FF_B_TYPE:
+      fprintf(log, "B");
+      break;
+    default:
+      exit(-1);
+  }
+  fprintf(log, "Chunk %d:", id);
+  while (frames[i] != -1) {
+    fprintf(log, " %d", frames[i++]);
+  }
+  fprintf(log, "\n");
+  frames[0] = -1;
+}
+
+static void frame_add(int *frames, int frame_id)
+{
+  int i = 0;
+
+  while (frames[i] != -1) i++;
+  frames[i] = frame_id;
+  frames[i + 1] = -1;
+}
+
+static int frame_type(AVPacket *pkt)
+{
+  if ((pkt->dts == AV_NOPTS_VALUE) || (pkt->pts == AV_NOPTS_VALUE)) {
+    return -1;
+  }
+  
+  if (pkt->flags & PKT_FLAG_KEY) {
+    return FF_I_TYPE;
+  }
+  if (pkt->dts == pkt->pts) {
+    return FF_B_TYPE;
+  }
+
+  return FF_P_TYPE;
+}
 
 static uint8_t codec_type(enum CodecID cid)
 {
@@ -71,11 +141,6 @@ static uint8_t codec_type(enum CodecID cid)
   }
 }
 
-static void audio_header_fill(uint8_t *data, AVStream *st)
-{
-  audio_payload_header_write(data, codec_type(st->codec->codec_id), st->codec->channels, st->codec->sample_rate, st->codec->frame_size);
-}
-
 static void video_header_fill(uint8_t *data, AVStream *st)
 {
   int num, den;
@@ -92,6 +157,7 @@ static void video_header_fill(uint8_t *data, AVStream *st)
     den /= 1000;
   }
   video_payload_header_write(data, codec_type(st->codec->codec_id), st->codec->width, st->codec->height, num, den);
+  data[VIDEO_PAYLOAD_HEADER_SIZE - 1] = 0;
 }
 
 static void frame_header_fill(uint8_t *data, int size, AVPacket *pkt, AVStream *st, AVRational new_tb, int64_t base_ts)
@@ -129,7 +195,7 @@ static int input_stream_rewind(struct chunkiser_ctx *s)
 
 /* Interface functions */
 
-static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char *config)
+static struct chunkiser_ctx *ipb_open(const char *fname, int *period, const char *config)
 {
   struct chunkiser_ctx *desc;
   int i, res;
@@ -161,6 +227,19 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
   desc->last_ts = 0;
   desc->base_ts = 0;
   desc->loop = 0;
+  desc->i_chunk = NULL;
+  desc->i_chunk_size = 0;
+  desc->p_chunk = NULL;
+  desc->p_chunk_size = 0;
+  desc->b_chunk = NULL;
+  desc->b_chunk_size = 0;
+  desc->p_ready = 0;
+  desc->b_ready = 0;
+  desc->chunk_log.i_frames[0] = -1;
+  desc->chunk_log.p_frames[0] = -1;
+  desc->chunk_log.b_frames[0] = -1;
+  desc->chunk_log.frame_number = 0;
+  desc->chunk_log.log = fopen("chunk_log.txt", "w");
   cfg_tags = config_parse(config);
   if (cfg_tags) {
     const char *media;
@@ -211,7 +290,7 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
   return desc;
 }
 
-static void avf_close(struct chunkiser_ctx *s)
+static void ipb_close(struct chunkiser_ctx *s)
 {
   int i;
 
@@ -221,16 +300,19 @@ static void avf_close(struct chunkiser_ctx *s)
     }
   }
   av_close_input_file(s->s);
+  free(s->i_chunk);
+  free(s->p_chunk);
+  free(s->b_chunk);
+  fclose(s->chunk_log.log);
   free(s);
 }
 
-static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts, void **attr, int *attr_size)
+static uint8_t *ipb_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts, void **attr, int *attr_size)
 {
   AVPacket pkt;
   AVRational new_tb;
   int res;
-  uint8_t *data;
-  int header_size;
+  uint8_t *data, *result;
 
   res = av_read_frame(s->s, &pkt);
   if (res < 0) {
@@ -254,6 +336,14 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
 
     return NULL;
   }
+  if (frame_type(&pkt) < 0) {
+    fprintf(stderr, "Strange frame type!!!\n");
+    *size = 0;
+    *ts = s->last_ts;
+    av_free_packet(&pkt);
+
+    return NULL;
+  }
   if (s->bsf[pkt.stream_index]) {
     AVPacket new_pkt= pkt;
     int res;
@@ -265,6 +355,7 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
     if(res > 0){
       av_free_packet(&pkt);
       new_pkt.destruct= av_destruct_packet;
+      new_pkt.flags = pkt.flags;
     } else if(res < 0){
       fprintf(stderr, "%s failed for stream %d, codec %s: ",
                       s->bsf[pkt.stream_index]->filter->name,
@@ -278,49 +369,77 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
     pkt= new_pkt;
   }
 
-  switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
-    case CODEC_TYPE_VIDEO:
-      header_size = VIDEO_PAYLOAD_HEADER_SIZE;
-      break;
-    case CODEC_TYPE_AUDIO:
-      header_size = AUDIO_PAYLOAD_HEADER_SIZE;
-      break;
-    default:
-      /* Cannot arrive here... */
-      fprintf(stderr, "Internal chunkiser error!\n");
-      exit(-1);
-  }
-  *size = pkt.size + header_size + FRAME_HEADER_SIZE;
-  data = malloc(*size);
-  if (data == NULL) {
-    *size = -1;
-    av_free_packet(&pkt);
+  *size = 0;
+  result = NULL; 
+  switch(frame_type(&pkt)) {
+    case FF_I_TYPE:
+      fprintf(stderr, "I Frame!\n");
+      result = s->i_chunk;
+      *size = s->i_chunk_size;
+      if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.i_frames, FF_I_TYPE);
+      s->i_chunk = NULL;
+      s->p_ready = 1;
+      s->b_ready = 1;
+      if (s->i_chunk == NULL) {
 
-    return NULL;
-  }
-  switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
-    case CODEC_TYPE_VIDEO:
-      video_header_fill(data, s->s->streams[pkt.stream_index]);
-      new_tb.den = s->s->streams[pkt.stream_index]->avg_frame_rate.num;
-      new_tb.num = s->s->streams[pkt.stream_index]->avg_frame_rate.den;
-      if (new_tb.num == 0) {
-        new_tb.den = s->s->streams[pkt.stream_index]->r_frame_rate.num;
-        new_tb.num = s->s->streams[pkt.stream_index]->r_frame_rate.den;
+        s->i_chunk = malloc(VIDEO_PAYLOAD_HEADER_SIZE);
+        s->i_chunk_size = VIDEO_PAYLOAD_HEADER_SIZE;
+        video_header_fill(s->i_chunk, s->s->streams[pkt.stream_index]);
       }
+      frame_add(s->chunk_log.i_frames, s->chunk_log.frame_number);
+      s->i_chunk_size += pkt.size + FRAME_HEADER_SIZE;
+      s->i_chunk = realloc(s->i_chunk, s->i_chunk_size);
+      data = s->i_chunk + (s->i_chunk_size - (pkt.size + FRAME_HEADER_SIZE));
       break;
-    case CODEC_TYPE_AUDIO:
-      audio_header_fill(data, s->s->streams[pkt.stream_index]);
-      new_tb = (AVRational){s->s->streams[pkt.stream_index]->codec->frame_size, s->s->streams[pkt.stream_index]->codec->sample_rate};
+    case FF_P_TYPE:
+      fprintf(stderr, "P Frame!\n");
+      if (s->p_ready) {
+        result = s->p_chunk;
+        *size = s->p_chunk_size;
+        s->p_chunk = NULL;
+        s->p_ready = 0;
+        if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.p_frames, FF_P_TYPE);
+      }
+      if (s->p_chunk == NULL) {
+        s->p_chunk = malloc(VIDEO_PAYLOAD_HEADER_SIZE);
+        s->p_chunk_size = VIDEO_PAYLOAD_HEADER_SIZE;
+        video_header_fill(s->p_chunk, s->s->streams[pkt.stream_index]);
+      }
+      frame_add(s->chunk_log.p_frames, s->chunk_log.frame_number);
+      s->p_chunk_size += pkt.size + FRAME_HEADER_SIZE;
+      s->p_chunk = realloc(s->p_chunk, s->p_chunk_size);
+      data = s->p_chunk + (s->p_chunk_size - (pkt.size + FRAME_HEADER_SIZE));
       break;
-    default:
-      /* Cannot arrive here... */
-      fprintf(stderr, "Internal chunkiser error!\n");
-      exit(-1);
+    case FF_B_TYPE:
+      fprintf(stderr, "B Frame!\n");
+      if (s->b_ready) {
+        result = s->b_chunk;
+        *size = s->b_chunk_size;
+        s->b_chunk = NULL;
+        s->b_ready = 0;
+        if (*size) chunk_print(s->chunk_log.log, id, s->chunk_log.b_frames, FF_B_TYPE);
+      }
+      if (s->b_chunk == NULL) {
+        s->b_chunk = malloc(VIDEO_PAYLOAD_HEADER_SIZE);
+        s->b_chunk_size = VIDEO_PAYLOAD_HEADER_SIZE;
+        video_header_fill(s->b_chunk, s->s->streams[pkt.stream_index]);
+      }
+      frame_add(s->chunk_log.b_frames, s->chunk_log.frame_number);
+      s->b_chunk_size += pkt.size + FRAME_HEADER_SIZE;
+      s->b_chunk = realloc(s->b_chunk, s->b_chunk_size);
+      data = s->b_chunk + (s->b_chunk_size - (pkt.size + FRAME_HEADER_SIZE));
+      break;
   }
-  data[header_size - 1] = 1;
-  frame_header_fill(data + header_size, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
+  s->chunk_log.frame_number++;
 
-  memcpy(data + header_size + FRAME_HEADER_SIZE, pkt.data, pkt.size);
+  new_tb.den = s->s->streams[pkt.stream_index]->avg_frame_rate.num;
+  new_tb.num = s->s->streams[pkt.stream_index]->avg_frame_rate.den;
+  if (new_tb.num == 0) {
+    new_tb.den = s->s->streams[pkt.stream_index]->r_frame_rate.num;
+    new_tb.num = s->s->streams[pkt.stream_index]->r_frame_rate.den;
+  }
+  frame_header_fill(data, pkt.size, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts); // PKT Size???
+  memcpy(data + FRAME_HEADER_SIZE, pkt.data, pkt.size);
   *ts = av_rescale_q(pkt.dts, s->s->streams[pkt.stream_index]->time_base, AV_TIME_BASE_Q);
   //dprintf("pkt.dts=%ld TS1=%lu" , pkt.dts, *ts);
   *ts += s->base_ts;
@@ -328,97 +447,39 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
   s->last_ts = *ts;
   av_free_packet(&pkt);
 
-  return data;
+  //if (*attr_size) {					//TODO: is this check needed
+  //    fprintf(stderr, "Chunk with attribute?\n");
+  //} else 
+  if (result) {
+    struct chunk_attributes_chunker *ca;
+
+    ca = *attr = malloc(sizeof(*ca));
+    if (ca) {
+      chunk_attributes_chunker_init(ca);
+      *attr_size = sizeof(*ca);
+      switch(frame_type(&pkt)) {
+        case FF_I_TYPE:
+          ca->priority = 1;
+          break;
+        case FF_P_TYPE:
+          ca->priority = 2;
+          break;
+        case FF_B_TYPE:
+          ca->priority = 3;
+          break;
+      }
+    } else {
+      *attr_size = 0;
+    }
+  } else {
+    *attr_size = 0;
+  }
+
+  return result;
 }
 
-#if 0
-int chunk_read_avs1(void *s_h, struct chunk *c)
-{
-    AVFormatContext *s = s_h;
-    static AVPacket pkt;
-    static int inited;
-    AVStream *st;
-    int res;
-    int cnt;
-    static uint8_t static_buff[STATIC_BUFF_SIZE];
-    uint8_t *p, *pcurr;
-    static uint8_t *p1;
-    static struct chunk c2;
-    int f1;
-    static int f2;
-
-    if (p1) {
-        c2.id = c->id;
-        *c = c2;
-        p1 = NULL;
-
-        return f2;
-    }
-
-    p = static_buff;
-    p1 = static_buff + STATIC_BUFF_SIZE / 2;
-    if (inited == 0) {
-        inited = 1;
-        res = av_read_frame(s, &pkt);
-        if (res < 0) {
-            fprintf(stderr, "First read failed: %d!!!\n", res);
-
-            return 0;
-        }
-        if ((pkt.flags & PKT_FLAG_KEY) == 0) {
-            fprintf(stderr, "First frame is not key frame!!!\n");
-
-            return 0;
-        }
-    }
-    cnt = 0; f1 = 0; f2 = 0;
-    c->stride_size = 2;
-    c2.stride_size = 2;
-    pcurr = p1;
-    if (pkt.size > 0) {
-        memcpy(p, pkt.data, pkt.size);
-        c->frame[0] = p;
-        c->frame_len[0] = pkt.size;
-        f1++;
-        p += pkt.size;
-    }
-    while (1) {
-        res = av_read_frame(s, &pkt);
-        if (res >= 0) {
-            st = s->streams[pkt.stream_index];
-            if (pkt.flags & PKT_FLAG_KEY) {
-                cnt++;
-                if (cnt == 2) {
-                    return f1;
-                }
-            }
-            memcpy(pcurr, pkt.data, pkt.size);
-            if (pcurr == p) {
-                c->frame[f1] = pcurr;
-                c->frame_len[f1] = pkt.size;
-                p += pkt.size;
-                pcurr = p1;
-                f1++;
-            } else {
-                c2.frame[f2] = pcurr;
-                c2.frame_len[f2] = pkt.size;
-                p1 += pkt.size;
-                pcurr = p;
-                f2++;
-            }
-        } else {
-            pkt.size = 0;
-
-            return f1;
-        }
-    }
-
-    return 0;
-}
-#endif
-
-struct chunkiser_iface in_avf = {
-  .open = avf_open,
-  .close = avf_close,
-  .chunkise = avf_chunkise,
+struct chunkiser_iface in_ipb = {
+  .open = ipb_open,
+  .close = ipb_close,
+  .chunkise = ipb_chunkise,
 };

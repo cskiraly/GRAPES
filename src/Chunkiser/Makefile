@@ -8,6 +8,7 @@ CFGDIR ?= ..
 OBJS = input-stream.o           \
        input-stream-dummy.o     \
        input-stream-dumb.o      \
+       input-stream-ts.o        \
        input-stream-udp.o       \
        output-stream.o          \
        output-stream-raw.o      \
@@ -15,7 +16,7 @@ OBJS = input-stream.o           \
        output-stream-dummy.o 
 
 ifdef FFDIR
-OBJS += input-stream-avf.o output-stream-avf.o
+OBJS += input-stream-avf.o input-stream-ipb.o output-stream-avf.o chunkiser_attrib.o
 endif
 
 all: libchunkiser.a
