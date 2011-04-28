@@ -73,6 +73,35 @@ static int cache_insert(struct peer_cache *c, struct cache_entry *e, const void 
   return position;
 }
 
+int cache_add_cache(struct peer_cache *dst, const struct peer_cache *src)
+{
+  struct cache_entry *e_orig;
+  int count, j;
+  struct cache_entry e_dup;
+cache_check(dst);
+cache_check(src);
+
+  count = 0;
+  j=0;
+  while(dst->current_size < dst->cache_size && src->current_size > count) {
+    count++;
+
+    e_orig = src->entries + j;
+
+    e_dup.id = nodeid_dup(e_orig->id);
+    e_dup.timestamp = e_orig->timestamp;
+
+    if (cache_insert(dst, &e_dup, src->metadata + src->metadata_size * j) < 0) {
+      nodeid_free(e_dup.id);
+    }
+    j++;
+  }
+cache_check(dst);
+cache_check(src);
+
+  return dst->current_size;
+}
+
 struct nodeID *nodeid(const struct peer_cache *c, int i)
 {
   if (i < c->current_size) {
