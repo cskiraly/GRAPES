@@ -7,10 +7,15 @@ CFGDIR ?= ..
 
 UTILS_DIR = ../Utils
 
-OBJS = cloud_helper.o cloud_helper_utils.o cloud_helper_delegate.o
+OBJS = cloud_helper.o cloud_helper_utils.o
 DELEGATE_HELPERS = libs3_delegate_helper.so mysql_delegate_helper.so
 
 CFLAGS += -I$(UTILS_DIR)
+
+ifdef DELEGATE
+OBJS += cloud_helper_delegate.o
+CPPFLAGS += -DDELEGATE
+endif
 
 all: $(OBJS)
 
