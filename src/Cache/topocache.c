@@ -42,22 +42,24 @@ static int cache_insert_or_update(struct peer_cache *c, struct cache_entry *e, c
 if (e->id == NULL) {fprintf(stderr, "e->ID = NULL!!!\n"); *((char *)0) = 1;}
 if (c->entries[i].id == NULL) {fprintf(stderr, "entries[%d]->ID = NULL!!!\n", i); exit(-1);}
 
-    if (c->entries[i].timestamp <= e->timestamp) {
-      position = i + 1;
-    }
     if (nodeid_equal(e->id, c->entries[i].id)) {
       if (c->entries[i].timestamp > e->timestamp) {
         nodeid_free(c->entries[i].id);
-        c->entries[position] = *e;
-        memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
 
         if (position < i) {
           memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (i - position));
           memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (i -position) * c->metadata_size);
         }
 
+        c->entries[position] = *e;
+        memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
+
         return position;
       } else return -1;
+    }
+
+    if (c->entries[i].timestamp <= e->timestamp) {
+      position = i + 1;
     }
   }
 
