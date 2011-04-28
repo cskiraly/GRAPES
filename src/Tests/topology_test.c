@@ -26,7 +26,7 @@
 #include "peersampler.h"
 #include "net_helpers.h"
 
-
+static const char *psample_config;
 static struct psample_context *context;
 static const char *my_addr = "127.0.0.1";
 static int port = 6666;
@@ -38,7 +38,7 @@ static void cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "s:p:i:P:I:")) != -1) {
+  while ((o = getopt(argc, argv, "s:p:i:P:I:c")) != -1) {
     switch(o) {
       case 'p':
         srv_port = atoi(optarg);
@@ -54,6 +54,9 @@ static void cmdline_parse(int argc, char *argv[])
         break;
       case 's':
         fprefix = strdup(optarg);
+        break;
+      case 'c':
+        psample_config = "protocol=cyclon";
         break;
       default:
         fprintf(stderr, "Error: unknown option %c\n", o);
@@ -73,8 +76,7 @@ static struct nodeID *init(void)
 
     return NULL;
   }
-//  context = psample_init(myID, NULL, 0, "protocol=cyclon");
-  context = psample_init(myID, NULL, 0, "");
+  context = psample_init(myID, NULL, 0, psample_config);
 
   return myID;
 }
