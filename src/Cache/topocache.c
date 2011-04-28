@@ -50,8 +50,10 @@ static int cache_insert(struct peer_cache *c, struct cache_entry *e, const void 
         nodeid_free(c->entries[i].id);
         c->entries[i] = *e;
         memcpy(c->metadata + i * c->metadata_size, meta, c->metadata_size);
-        memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (i - position));
-        memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (i -position) * c->metadata_size);
+        if (position != i) {
+          memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (i - position));
+          memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (i -position) * c->metadata_size);
+        }
 
         return position;
       }
