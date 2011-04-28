@@ -41,11 +41,22 @@ static int cache_insert(struct peer_cache *c, struct cache_entry *e, const void 
   for (i = 0; i < c->current_size; i++) {
     assert(e->id);
     assert(c->entries[i].id);
-    if (nodeid_equal(e->id, c->entries[i].id)) {
-      return -1;
-    }
     if (c->entries[i].timestamp <= e->timestamp) {
       position = i + 1;
+    }
+    if (nodeid_equal(e->id, c->entries[i].id)) {
+      if (c->entries[i].timestamp > e->timestamp) {
+        assert(i >= position);
+        nodeid_free(c->entries[i].id);
+        c->entries[i] = *e;
+        memcpy(c->metadata + i * c->metadata_size, meta, c->metadata_size);
+        memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (i - position));
+        memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (i -position) * c->metadata_size);
+
+        return position;
+      }
+
+      return -1;
     }
   }
 
