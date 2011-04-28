@@ -349,13 +349,11 @@ int entry_dump(uint8_t *b, const struct peer_cache *c, int i, size_t max_write_s
   size = +4;
   res = nodeid_dump(b + size, c->entries[i].id, max_write_size - size);
   if (res < 0 ) {
-    fprintf (stderr,"cavolo1\n");
     return -1;
   }
   size += res;
   if (c->metadata_size) {
     if (c->metadata_size > max_write_size - size) {
-      fprintf (stderr,"cavolo2\n");
       return -1;
     }
     memcpy(b + size, c->metadata + c->metadata_size * i, c->metadata_size);

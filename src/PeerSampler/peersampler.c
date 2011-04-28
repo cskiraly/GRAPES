@@ -38,6 +38,7 @@ struct psample_context* psample_init(struct nodeID *myID, const void *metadata, 
       tc->ps = &dummy;
     }
   }
+  free(cfg_tags);
   
   tc->ps_context = tc->ps->init(myID, metadata, metadata_size, config);
   if (!tc->ps_context){

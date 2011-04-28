@@ -1,2 +1,5 @@
 *.o
 lib*.a
+*.swp
+*.d
+*.lst

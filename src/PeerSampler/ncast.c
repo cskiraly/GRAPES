@@ -172,7 +172,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
 
   if (time_to_send(context)) {
     cache_update(context->local_cache);
-    ncast_query(context->tc, context->local_cache);
+    return ncast_query(context->tc, context->local_cache);
   }
 
   return 0;

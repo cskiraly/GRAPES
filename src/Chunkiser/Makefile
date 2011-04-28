@@ -11,7 +11,8 @@ OBJS = input-stream.o           \
        input-stream-udp.o       \
        output-stream.o          \
        output-stream-raw.o      \
-       output-stream-udp.o 
+       output-stream-udp.o      \
+       output-stream-dummy.o 
 
 ifdef FFDIR
 OBJS += input-stream-avf.o output-stream-avf.o
