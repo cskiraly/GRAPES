@@ -44,23 +44,24 @@ static int cache_insert_or_update(struct peer_cache *c, struct cache_entry *e, c
 if (e->id == NULL) {fprintf(stderr, "e->ID = NULL!!!\n"); *((char *)0) = 1;}
 if (c->entries[i].id == NULL) {fprintf(stderr, "entries[%d]->ID = NULL!!!\n", i); exit(-1);}
 
-    if (c->entries[i].timestamp <= e->timestamp) {
-      position = i + 1;
-    }
     if (nodeid_equal(e->id, c->entries[i].id)) {
       if (c->entries[i].timestamp > e->timestamp) {
-        if (position >= i) {
-          c->entries[i].timestamp = e->timestamp;
-          memcpy(c->metadata + i * c->metadata_size, meta, c->metadata_size);
-        } else {
-          nodeid_free(c->entries[i].id);
+        nodeid_free(c->entries[i].id);
+
+        if (position < i) {
           memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (i - position));
           memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (i -position) * c->metadata_size);
-          c->entries[position] = *e;
-          memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
         }
-      }
-      return position;
+
+        c->entries[position] = *e;
+        memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
+
+        return position;
+      } else return -1;
+    }
+
+    if (c->entries[i].timestamp <= e->timestamp) {
+      position = i + 1;
     }
   }
 
@@ -366,8 +367,8 @@ struct nodeID *last_peer(const struct peer_cache *c)
 
 int cache_fill_ordered(struct peer_cache *dst, const struct peer_cache *src, int target_size)
 {
-  struct cache_entry *e_orig, *e_dup;
-  int count, j;
+  struct cache_entry *e_orig, e_dup;
+  int count, j, err;
 cache_check(dst);
 cache_check(src);
   if (target_size <= 0 || target_size > dst->cache_size) {
@@ -382,13 +383,15 @@ cache_check(src);
     count++;
 
     e_orig = src->entries + j;
-    e_dup = malloc(sizeof(struct cache_entry));
-    if (!e_dup) return -1;
+    e_dup.id = nodeid_dup(e_orig->id);
+    e_dup.timestamp = e_orig->timestamp;
 
-    e_dup->id = nodeid_dup(e_orig->id);
-    e_dup->timestamp = e_orig->timestamp;
+    err = cache_insert_or_update(dst, &e_dup, src->metadata + src->metadata_size * j);
+    if (err == -1) {
+      /* Cache entry is fresher */
+      nodeid_free(e_dup.id);
+    }
 
-    cache_insert_or_update(dst, e_dup, src->metadata + src->metadata_size * j);
     j++;
   }
 cache_check(dst);
@@ -399,8 +402,8 @@ cache_check(src);
 int cache_fill_rand(struct peer_cache *dst, const struct peer_cache *src, int target_size)
 {
   int added[src->current_size];
-  struct cache_entry *e_orig, *e_dup;
-  int count, j;
+  struct cache_entry *e_orig, e_dup;
+  int count, j, err;
 cache_check(dst);
 cache_check(src);
   if (target_size <= 0 || target_size > dst->cache_size) {
@@ -418,13 +421,15 @@ cache_check(src);
     count++;
 
     e_orig = src->entries + j;
-    e_dup = malloc(sizeof(struct cache_entry));
-    if (!e_dup) return -1;
 
-    e_dup->id = nodeid_dup(e_orig->id);
-    e_dup->timestamp = e_orig->timestamp;
+    e_dup.id = nodeid_dup(e_orig->id);
+    e_dup.timestamp = e_orig->timestamp;
 
-    cache_insert_or_update(dst, e_dup, src->metadata + src->metadata_size * j);
+    err = cache_insert_or_update(dst, &e_dup, src->metadata + src->metadata_size * j);
+    if (err == -1) {
+      /* Cache entry is fresher */
+      nodeid_free(e_dup.id);
+    }
   }
 cache_check(dst);
 cache_check(src);
