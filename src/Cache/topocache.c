@@ -30,52 +30,6 @@ struct peer_cache {
   int max_timestamp;
 };
 
-
-static int cache_insert_or_update(struct peer_cache *c, struct cache_entry *e, const void *meta)
-{
-  int i, position;
-
-  if (c->current_size == c->cache_size) {
-    return -2;
-  }
-  position = 0;
-  for (i = 0; i < c->current_size; i++) {
-
-if (e->id == NULL) {fprintf(stderr, "e->ID = NULL!!!\n"); *((char *)0) = 1;}
-if (c->entries[i].id == NULL) {fprintf(stderr, "entries[%d]->ID = NULL!!!\n", i); exit(-1);}
-
-    if (nodeid_equal(e->id, c->entries[i].id)) {
-      if (c->entries[i].timestamp > e->timestamp) {
-        nodeid_free(c->entries[i].id);
-
-        if (position < i) {
-          memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (i - position));
-          memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (i -position) * c->metadata_size);
-        }
-
-        c->entries[position] = *e;
-        memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
-
-        return position;
-      } else return -1;
-    }
-
-    if (c->entries[i].timestamp <= e->timestamp) {
-      position = i + 1;
-    }
-  }
-
-  if (position != c->current_size) {
-    memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (c->current_size - position));
-    memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (c->current_size - position) * c->metadata_size);
-  }
-  c->current_size++;
-  c->entries[position] = *e;
-  memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
-
-  return position;
-}
-
 static int cache_insert(struct peer_cache *c, struct cache_entry *e, const void *meta)
 {
   int i, position;
@@ -386,7 +340,7 @@ cache_check(src);
     e_dup.id = nodeid_dup(e_orig->id);
     e_dup.timestamp = e_orig->timestamp;
 
-    err = cache_insert_or_update(dst, &e_dup, src->metadata + src->metadata_size * j);
+    err = cache_insert(dst, &e_dup, src->metadata + src->metadata_size * j);
     if (err == -1) {
       /* Cache entry is fresher */
       nodeid_free(e_dup.id);
@@ -425,7 +379,7 @@ cache_check(src);
     e_dup.id = nodeid_dup(e_orig->id);
     e_dup.timestamp = e_orig->timestamp;
 
-    err = cache_insert_or_update(dst, &e_dup, src->metadata + src->metadata_size * j);
+    err = cache_insert(dst, &e_dup, src->metadata + src->metadata_size * j);
     if (err == -1) {
       /* Cache entry is fresher */
       nodeid_free(e_dup.id);
