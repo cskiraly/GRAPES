@@ -74,18 +74,6 @@ static int time_to_send(struct peersampler_context* con)
   return 0;
 }
 
-static void cache_add_cache(struct peer_cache *dst, const struct peer_cache *add)
-{
-  int i, meta_size;
-  const uint8_t *meta;
-
-  meta = get_metadata(add, &meta_size);
-  for (i = 0; nodeid(add, i); i++) {
-    cache_add(dst,  nodeid(add, i), meta + (meta_size * i), meta_size);
-  }
-}
-
-
 /*
  * Public Functions!
  */
@@ -157,6 +145,7 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
     if (h->type == CYCLON_QUERY) {
       sent_cache = rand_cache(context->local_cache, context->sent_entries);
       cyclon_reply(context->pc, remote_cache, sent_cache);
+      nodeid_free(context->dst);
       context->dst = NULL;
     }
     cache_check(context->local_cache);
@@ -181,6 +170,7 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
       context->flying_cache = NULL;
     }
     cache_update(context->local_cache);
+    nodeid_free(context->dst);
     context->dst = last_peer(context->local_cache);
     if (context->dst == NULL) {
       return 0;

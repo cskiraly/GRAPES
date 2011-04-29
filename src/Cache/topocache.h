@@ -39,4 +39,6 @@ void cache_check(const struct peer_cache *c);
 
 void cache_log(const struct peer_cache *c, const char *name);
 
+int cache_add_cache(struct peer_cache *dst, const struct peer_cache *src);
+
 #endif  /* TOPOCACHE */
