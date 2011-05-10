@@ -7,13 +7,17 @@ CFGDIR ?= ..
 
 OBJS = input-stream.o           \
        input-stream-dummy.o     \
+       output-stream.o          \
+       output-stream-dummy.o
+
+ifneq ($(ARCH),win32)
+OBJS += \
        input-stream-dumb.o      \
        input-stream-ts.o        \
        input-stream-udp.o       \
-       output-stream.o          \
        output-stream-raw.o      \
-       output-stream-udp.o      \
-       output-stream-dummy.o 
+       output-stream-udp.o
+endif
 
 ifdef FFDIR
 OBJS += input-stream-avf.o input-stream-ipb.o output-stream-avf.o chunkiser_attrib.o
