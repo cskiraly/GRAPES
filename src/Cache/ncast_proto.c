@@ -37,7 +37,15 @@ struct ncast_proto_context* ncast_proto_init(struct nodeID *s, const void *meta,
 
 int ncast_reply(struct ncast_proto_context *context, const struct peer_cache *c, const struct peer_cache *local_cache)
 {
-  return topo_reply(context->context, c, local_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY, 0, 1);
+  int ret;
+  struct peer_cache *send_cache;
+
+  send_cache = cache_copy(local_cache);
+  cache_update(send_cache);
+  ret = topo_reply(context->context, c, send_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY, 0, 1);
+  cache_free(send_cache);
+
+  return ret;
 }
 
 int ncast_query_peer(struct ncast_proto_context *context, const struct peer_cache *local_cache, struct nodeID *dst)

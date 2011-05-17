@@ -9,6 +9,8 @@
 #include <string.h>
 
 #include <stdio.h>
+#undef NDEBUG
+#include <assert.h>
 
 #include "net_helper.h"
 #include "topocache.h"
@@ -35,20 +37,35 @@ static int cache_insert(struct peer_cache *c, struct cache_entry *e, const void 
   if (c->current_size == c->cache_size) {
     return -2;
   }
-  position = c->current_size;
+  position = 0;
   for (i = 0; i < c->current_size; i++) {
-if (e->id == NULL) {fprintf(stderr, "e->ID = NULL!!!\n"); *((char *)0) = 1;}
-if (c->entries[i].id == NULL) {fprintf(stderr, "entries[%d]->ID = NULL!!!\n", i); exit(-1);}
+    assert(e->id);
+    assert(c->entries[i].id);
+    if (c->entries[i].timestamp <= e->timestamp) {
+      position = i + 1;
+    }
     if (nodeid_equal(e->id, c->entries[i].id)) {
+      if (c->entries[i].timestamp > e->timestamp) {
+        assert(i >= position);
+        nodeid_free(c->entries[i].id);
+        c->entries[i] = *e;
+        memcpy(c->metadata + i * c->metadata_size, meta, c->metadata_size);
+        if (position != i) {
+          memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (i - position));
+          memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (i -position) * c->metadata_size);
+        }
+
+        return position;
+      }
+
       return -1;
     }
-    if (e->timestamp < c->entries[i].timestamp) {
-       position = i;
-     }
   }
 
-  memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (c->current_size - position));
-  memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (c->current_size - position) * c->metadata_size);
+  if (position != c->current_size) {
+    memmove(c->entries + position + 1, c->entries + position, sizeof(struct cache_entry) * (c->current_size - position));
+    memmove(c->metadata + (position + 1) * c->metadata_size, c->metadata + position * c->metadata_size, (c->current_size - position) * c->metadata_size);
+  }
   c->current_size++;
   c->entries[position] = *e;
   memcpy(c->metadata + position * c->metadata_size, meta, c->metadata_size);
@@ -216,6 +233,27 @@ struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp)
   return res;
 }
 
+struct peer_cache *cache_copy(const struct peer_cache *c1)
+{
+  int n, pos;
+  struct peer_cache *new_cache;
+
+  new_cache = cache_init(c1->current_size, c1->metadata_size, c1->max_timestamp);
+  if (new_cache == NULL) {
+    return NULL;
+  }
+
+  for (n = 0; n < c1->current_size; n++) {
+    if (new_cache->metadata_size) {
+      memcpy(new_cache->metadata, c1->metadata + n * c1->metadata_size, c1->metadata_size);
+    }
+    new_cache->entries[new_cache->current_size].id = nodeid_dup(c1->entries[n].id);
+    new_cache->entries[new_cache->current_size++].timestamp = c1->entries[n].timestamp;
+  }
+
+  return new_cache;
+}
+
 void cache_free(struct peer_cache *c)
 {
   int i;
@@ -324,7 +362,7 @@ struct peer_cache *entries_undump(const uint8_t *buff, int size)
     }
   }
   res->current_size = i;
-if (p - buff != size) { fprintf(stderr, "Waz!! %d != %d\n", (int)(p - buff), size); exit(-1);}
+  assert(p - buff == size);
 
   return res;
 }
@@ -546,10 +584,7 @@ void cache_check(const struct peer_cache *c)
 
   for (i = 0; i < c->current_size; i++) {
     for (j = i + 1; j < c->current_size; j++) {
-      if (nodeid_equal(c->entries[i].id, c->entries[j].id)) {
-        fprintf(stderr, "WTF!!!! %d = %d!!!\n", i, j);
-        *((char *)0) = 1;
-      }
+      assert(!nodeid_equal(c->entries[i].id, c->entries[j].id));
     }
   }
 }
