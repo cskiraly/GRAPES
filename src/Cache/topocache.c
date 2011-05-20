@@ -235,7 +235,7 @@ struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp)
 
 struct peer_cache *cache_copy(const struct peer_cache *c1)
 {
-  int n, pos;
+  int n;
   struct peer_cache *new_cache;
 
   new_cache = cache_init(c1->current_size, c1->metadata_size, c1->max_timestamp);
