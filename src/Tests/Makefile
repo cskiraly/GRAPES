@@ -32,8 +32,12 @@ endif
 CPPFLAGS = -I$(BASE)/include
 
 LDFLAGS += -L..
-LDLIBS += -lgrapes -ldl
+LDLIBS += -lgrapes
 #LDFLAGS += -static
+
+ifdef DELEGATE
+LDLIBS += -ldl
+endif
 
 all: $(TESTS)
 

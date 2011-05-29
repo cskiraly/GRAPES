@@ -92,17 +92,6 @@ static int time_to_send(struct peersampler_context* con)
   return 0;
 }
 
-static void cache_add_cache(struct peer_cache *dst, const struct peer_cache *add)
-{
-  int i, meta_size;
-  const uint8_t *meta;
-
-  meta = get_metadata(add, &meta_size);
-  for (i = 0; nodeid(add, i); i++) {
-    cache_add(dst,  nodeid(add, i), meta + (meta_size * i), meta_size);
-  }
-}
-
 static int cache_add_resize(struct peer_cache *dst, struct nodeID *n, const int cache_max_size)
 {
   int err;
