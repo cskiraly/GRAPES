@@ -6,6 +6,7 @@ struct cache_entry;
 typedef int (*ranking_function)(const void *target, const void *p1, const void *p2);    // FIXME!
 
 struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp);
+struct peer_cache *cache_copy(const struct peer_cache *c);
 void cache_free(struct peer_cache *c);
 void cache_update(struct peer_cache *c);
 struct nodeID *nodeid(const struct peer_cache *c, int i);

@@ -262,6 +262,27 @@ struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp)
   return res;
 }
 
+struct peer_cache *cache_copy(const struct peer_cache *c1)
+{
+  int n;
+  struct peer_cache *new_cache;
+
+  new_cache = cache_init(c1->current_size, c1->metadata_size, c1->max_timestamp);
+  if (new_cache == NULL) {
+    return NULL;
+  }
+
+  for (n = 0; n < c1->current_size; n++) {
+    if (new_cache->metadata_size) {
+      memcpy(new_cache->metadata, c1->metadata + n * c1->metadata_size, c1->metadata_size);
+    }
+    new_cache->entries[new_cache->current_size].id = nodeid_dup(c1->entries[n].id);
+    new_cache->entries[new_cache->current_size++].timestamp = c1->entries[n].timestamp;
+  }
+
+  return new_cache;
+}
+
 void cache_free(struct peer_cache *c)
 {
   int i;
