@@ -5,6 +5,9 @@ vpath %.c $(BASE)/src/$(notdir $(CURDIR))
 endif
 CFGDIR ?= ..
 
+NH_INCARNATION ?= udp
+NET_HELPER = ../net_helper-$(NH_INCARNATION)
+
 TESTS = topology_test \
         topology_test_attr \
         chunk_encoding_test \
@@ -40,16 +43,16 @@ ifeq ($(ARCH),win32)
 LDLIBS += -lws2_32
 endif
 
-topo_msg_size_test: ../net_helper$(NH_INCARNATION).o
+topo_msg_size_test: $(NET_HELPER).o
 
 topology_test_attr: topology_test_attr.o net_helpers.o
-topology_test_attr: ../net_helper$(NH_INCARNATION).o
+topology_test_attr: $(NET_HELPER).o
 
 topology_test: topology_test.o net_helpers.o
-topology_test: ../net_helper$(NH_INCARNATION).o
+topology_test: $(NET_HELPER).o
 
 topology_test_th: topology_test_th.o net_helpers.o
-topology_test_th: ../net_helper.o
+topology_test_th: $(NET_HELPER).o
 topology_test_th: CFLAGS += -pthread
 topology_test_th: LDFLAGS += -pthread
 
@@ -62,16 +65,16 @@ chunkidset_test: chunkidset_test.o chunkid_set_h.o
 chunkidset_test_bug: chunkidset_test_bug.o chunkid_set_h.o
 
 chunk_sending_test: chunk_sending_test.o net_helpers.o
-chunk_sending_test: ../net_helper$(NH_INCARNATION).o
+chunk_sending_test: $(NET_HELPER).o
 
 chunk_signaling_test: chunk_signaling_test.o net_helpers.o chunkid_set_h.o
-chunk_signaling_test: ../net_helper$(NH_INCARNATION).o
+chunk_signaling_test: $(NET_HELPER).o
 
 tman_test: tman_test.o topology.o peer.o net_helpers.o
-tman_test: ../net_helper$(NH_INCARNATION).o
+tman_test: $(NET_HELPER).o
 
 chunkiser_test: chunkiser_test.o
-chunkiser_test: ../net_helper$(NH_INCARNATION).o
+chunkiser_test: $(NET_HELPER).o
 ifdef FFDIR
 chunkiser_test: CFLAGS += -pthread
 chunkiser_test: LDFLAGS += -pthread -L$(FFDIR)/libavutil -L$(FFDIR)/libavcore -L$(FFDIR)/libavcodec -L$(FFDIR)/libavformat
@@ -82,16 +85,16 @@ chunkiser_test: LDLIBS += $(call ld-option, -lbz2)
 endif
 
 cloud_test: cloud_test.o net_helpers.o
-cloud_test: ../net_helper$(NH_INCARNATION).o
+cloud_test: $(NET_HELPER).o
 cloud_test: LDFLAGS += -ldl
 
 cloudcast_topology_test: cloudcast_topology_test.o net_helpers.o
-cloudcast_topology_test: ../net_helper$(NH_INCARNATION).o
+cloudcast_topology_test: $(NET_HELPER).o
 cloudcast_topology_test: CFLAGS += -pthread
 cloudcast_topology_test: LDFLAGS += -ldl -pthread
 
 cloud_topology_monitor: cloud_topology_monitor.o net_helpers.o
-cloud_topology_monitor: ../net_helper$(NH_INCARNATION).o
+cloud_topology_monitor: $(NET_HELPER).o
 cloud_topology_monitor: LDFLAGS += -ldl
 
 test_queue: test_queue.o
