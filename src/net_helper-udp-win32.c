@@ -198,6 +198,11 @@ int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
   return (memcmp(&s1->addr, &s2->addr, sizeof(struct sockaddr_in)) == 0);
 }
 
+int nodeid_cmp(const struct nodeID *s1, const struct nodeID *s2)
+{
+  return memcmp(&s1->addr, &s2->addr, sizeof(struct sockaddr_in));
+}
+
 int nodeid_dump(uint8_t *b, const struct nodeID *s, size_t max_write_size)
 {
   if (max_write_size < sizeof(struct sockaddr_in)) return -1;
