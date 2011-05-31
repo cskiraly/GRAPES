@@ -1,3 +1,6 @@
+#ifndef CHUNKIDS_IFACE
+#define CHUNKIDS_IFACE
+
 struct chunkID_set;
 
 struct cids_ops_iface {
@@ -9,4 +12,4 @@ struct cids_encoding_iface {
   const uint8_t *(*decode)(struct chunkID_set *h, const uint8_t *buff, int buff_len, int *meta_len);
 };
 
-
+#endif	/* CHUNKIDS_IFACE */
