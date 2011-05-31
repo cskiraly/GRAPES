@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #include "chunkids_private.h"
+#include "chunkids_iface.h"
 
 #define DEFAULT_SIZE_INCREMENT 32
 
@@ -46,7 +47,7 @@ static int check_insert_pos(const struct chunkID_set *h, int id)
 
 
 
-int chunkID_set_add_chunk_set(struct chunkID_set *h, int chunk_id)
+static int chunkID_set_add_chunk_set(struct chunkID_set *h, int chunk_id)
 {
   int pos;
 
@@ -73,10 +74,15 @@ int chunkID_set_add_chunk_set(struct chunkID_set *h, int chunk_id)
   return h->n_elements;
 }
 
-inline int chunkID_set_check_set(const struct chunkID_set *h, int chunk_id)
+static int chunkID_set_check_set(const struct chunkID_set *h, int chunk_id)
 {
   int *p;
 
   p = bsearch(&chunk_id, h->elements, (size_t) h->n_elements, sizeof(h->elements[0]), int_cmp);
   return p ? p - h->elements : -1;
 }
+
+struct cids_ops_iface set_ops = {
+  .add_chunk = chunkID_set_add_chunk_set,
+  .check = chunkID_set_check_set,
+};

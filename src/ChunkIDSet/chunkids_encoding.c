@@ -10,14 +10,21 @@
 #include <stdint.h>
 
 #include "chunkids_private.h"
+#include "chunkids_iface.h"
 #include "chunkidset.h"
 #include "trade_sig_la.h"
 #include "int_coding.h"
 
-uint8_t *bmap_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len, int meta_len);
-uint8_t *prio_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len, int meta_len);
-const uint8_t *bmap_decode(struct chunkID_set *h, const uint8_t *buff, int buff_len, int *meta_len);
-const uint8_t *prio_decode(struct chunkID_set *h, const uint8_t *buff, int buff_len, int *meta_len);
+static const char *type_name(uint32_t type)
+{
+  if (type == CIST_PRIORITY) {
+    return "priority";
+  } else if (type == CIST_BITMAP) {
+    return "bitmap";
+  }
+
+  return "Unknown";
+}
 
 int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta_len, uint8_t *buff, int buff_len)
 {
@@ -27,21 +34,11 @@ int encodeChunkSignaling(const struct chunkID_set *h, const void *meta, int meta
   int_cpy(buff + 4, type);
   int_cpy(buff + 8, meta_len);
 
-  switch (type) {
-    case CIST_BITMAP:
-      meta_p =  bmap_encode(h, buff, buff_len, meta_len);
-      break;
-    case CIST_PRIORITY:
-      meta_p =  prio_encode(h, buff, buff_len, meta_len);
-      break;
-    case -1:
-      int_cpy(buff, 0);
-      meta_p = buff + 12;
-      break;
-    default:
-      fprintf(stderr, "Invalid ChunkID encoding type %d\n", type);
-
-      return -1;
+  if (h) {
+    meta_p = h->enc->encode(h, buff, buff_len, meta_len);
+  } else {
+    int_cpy(buff, 0);
+    meta_p = buff + 12;
   }
   if (meta_p == NULL) {
     return -1;
@@ -69,33 +66,17 @@ struct chunkID_set *decodeChunkSignaling(void **meta, int *meta_len, const uint8
     char cfg[32];
 
     memset(cfg, 0, sizeof(cfg));
-    sprintf(cfg, "size=%d", size);
+    sprintf(cfg, "size=%d,type=%s", size, type_name(type));
     h = chunkID_set_init(cfg);
     if (h == NULL) {
       fprintf(stderr, "Error in decoding chunkid set - not enough memory to create a chunkID set.\n");
 
       return NULL;
     }
-    h->type = type;
+    meta_p = h->enc->decode(h, buff, buff_len, meta_len);
   } else {
     h = NULL;
-  }
-
-  switch (type) {
-    case CIST_BITMAP:
-      meta_p = bmap_decode(h, buff, buff_len, meta_len);
-      break;
-    case CIST_PRIORITY:
-      meta_p = prio_decode(h, buff, buff_len, meta_len);
-      break;
-    case -1:
-      meta_p = buff + 12;
-      break;
-    default:
-      fprintf(stderr, "Error in decoding chunkid set - wrong type %d\n", type);
-      chunkID_set_free(h);
-
-      return NULL;
+    meta_p = buff + 12;
   }
 
   if (*meta_len) {

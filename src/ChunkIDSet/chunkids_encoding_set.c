@@ -4,10 +4,11 @@
 #include <stdint.h>
 
 #include "chunkids_private.h"
+#include "chunkids_iface.h"
 #include "int_coding.h"
 #include "chunkidset.h"
 
-uint8_t *bmap_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len, int meta_len)
+static uint8_t *bmap_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len, int meta_len)
 {
   int i, elements;
   uint32_t c_min, c_max;
@@ -34,7 +35,7 @@ uint8_t *bmap_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len, i
   return buff + 16 + elements;
 }
 
-const uint8_t *bmap_decode(struct chunkID_set *h, const uint8_t *buff, int buff_len, int *meta_len)
+static const uint8_t *bmap_decode(struct chunkID_set *h, const uint8_t *buff, int buff_len, int *meta_len)
 {
   int i;
   int base;
@@ -56,4 +57,7 @@ const uint8_t *bmap_decode(struct chunkID_set *h, const uint8_t *buff, int buff_
   return buff + 16 + byte_cnt;
 }
 
-
+struct cids_encoding_iface bmap_encoding = {
+  .encode = bmap_encode,
+  .decode = bmap_decode,
+};

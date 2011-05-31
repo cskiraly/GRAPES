@@ -4,10 +4,11 @@
 #include <stdint.h>
 
 #include "chunkids_private.h"
+#include "chunkids_iface.h"
 #include "int_coding.h"
 #include "chunkidset.h"
 
-uint8_t *prio_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len, int meta_len)
+static uint8_t *prio_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len, int meta_len)
 {
   int i;
 
@@ -22,7 +23,7 @@ uint8_t *prio_encode(const struct chunkID_set *h, uint8_t *buff, int buff_len, i
   return buff + 12 + h->n_elements * 4;
 }
 
-const uint8_t *prio_decode(struct chunkID_set *h, const uint8_t *buff, int buff_len, int *meta_len)
+static const uint8_t *prio_decode(struct chunkID_set *h, const uint8_t *buff, int buff_len, int *meta_len)
 {
   int i;
 
@@ -40,4 +41,7 @@ const uint8_t *prio_decode(struct chunkID_set *h, const uint8_t *buff, int buff_
   return buff + 12 + h->size * 4;
 }
 
-
+struct cids_encoding_iface prio_encoding = {
+  .encode = prio_encode,
+  .decode = prio_decode,
+};

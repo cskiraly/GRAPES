@@ -11,16 +11,16 @@
 #include <assert.h>
 
 #include "chunkids_private.h"
+#include "chunkids_iface.h"
 #include "chunkidset.h"
 #include "config.h"
 
 #define DEFAULT_SIZE_INCREMENT 32
 
-int chunkID_set_add_chunk_list(struct chunkID_set *h, int chunk_id);
-inline int chunkID_set_check_list(const struct chunkID_set *h, int chunk_id);
-int chunkID_set_add_chunk_set(struct chunkID_set *h, int chunk_id);
-inline int chunkID_set_check_set(const struct chunkID_set *h, int chunk_id);
-
+extern struct cids_encoding_iface prio_encoding;
+extern struct cids_encoding_iface bmap_encoding;
+extern struct cids_ops_iface list_ops;
+extern struct cids_ops_iface set_ops;
 
 struct chunkID_set *chunkID_set_init(const char *config)
 {
@@ -51,12 +51,18 @@ struct chunkID_set *chunkID_set_init(const char *config)
   } else {
     p->elements = NULL;
   }
+  p->enc = &prio_encoding;
+  p->ops = &list_ops;
   p->type = CIST_PRIORITY;
   type = config_value_str(cfg_tags, "type");
   if (type) {
     if (!memcmp(type, "priority", strlen(type) - 1)) {
+      p->enc = &prio_encoding;
+      p->ops = &list_ops;
       p->type = CIST_PRIORITY;
     } else if (!memcmp(type, "bitmap", strlen(type) - 1)) {
+      p->enc = &bmap_encoding;
+      p->ops = &set_ops;
       p->type = CIST_BITMAP;
     } else {
       chunkID_set_free(p);
@@ -73,11 +79,7 @@ struct chunkID_set *chunkID_set_init(const char *config)
 
 int chunkID_set_add_chunk(struct chunkID_set *h, int chunk_id)
 {
-  if (h->type == CIST_BITMAP) {
-    return chunkID_set_add_chunk_set(h, chunk_id);
-  } else {
-    return chunkID_set_add_chunk_list(h, chunk_id);
-  }
+  return h->ops->add_chunk(h, chunk_id);
 }
 
 
@@ -97,11 +99,7 @@ int chunkID_set_get_chunk(const struct chunkID_set *h, int i)
 
 int chunkID_set_check(const struct chunkID_set *h, int chunk_id)
 {
-  if (h->type == CIST_BITMAP) {
-    return chunkID_set_check_set(h, chunk_id);
-  } else {
-    return chunkID_set_check_list(h, chunk_id);
-  }
+  return h->ops->check(h, chunk_id);
 }
 
 void chunkID_set_clear(struct chunkID_set *h, int size)

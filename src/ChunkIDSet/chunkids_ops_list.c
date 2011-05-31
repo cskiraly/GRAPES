@@ -5,10 +5,11 @@
 #include <assert.h>
 
 #include "chunkids_private.h"
+#include "chunkids_iface.h"
 
 #define DEFAULT_SIZE_INCREMENT 32
 
-int chunkID_set_check_list(const struct chunkID_set *h, int chunk_id)
+static int chunkID_set_check_list(const struct chunkID_set *h, int chunk_id)
 {
   int i;
 
@@ -21,7 +22,7 @@ int chunkID_set_check_list(const struct chunkID_set *h, int chunk_id)
   return -1;
 }
 
-int chunkID_set_add_chunk_list(struct chunkID_set *h, int chunk_id)
+static int chunkID_set_add_chunk_list(struct chunkID_set *h, int chunk_id)
 {
   if (chunkID_set_check_list(h, chunk_id) >= 0) {
     return 0;
@@ -41,3 +42,8 @@ int chunkID_set_add_chunk_list(struct chunkID_set *h, int chunk_id)
 
   return h->n_elements;
 }
+
+struct cids_ops_iface list_ops = {
+  .add_chunk = chunkID_set_add_chunk_list,
+  .check = chunkID_set_check_list,
+};
