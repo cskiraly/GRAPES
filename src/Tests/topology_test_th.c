@@ -93,7 +93,7 @@ static void *cycle_loop(void *p)
     psample_parse_data(context, NULL, 0);
     pthread_mutex_unlock(&neigh_lock);
     if (cnt % 10 == 0) {
-      const struct nodeID **neighbours;
+      const struct nodeID *const *neighbours;
       int n, i;
 
       pthread_mutex_lock(&neigh_lock);

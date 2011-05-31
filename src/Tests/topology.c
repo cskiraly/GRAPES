@@ -41,7 +41,7 @@ int topoAddNeighbour(struct nodeID *neighbour, void *metadata, int metadata_size
 int topoParseData(const uint8_t *buff, int len)
 {
 	int res,ncs,msize;
-	const struct nodeID **n; const void *m;
+	const struct nodeID *const *n; const void *m;
 	if (!buff || buff[0] == MSG_TYPE_TOPOLOGY) {
 		res = psample_parse_data(context,buff,len);
 		if (counter <= TMAN_MAX_IDLE)
@@ -56,7 +56,7 @@ int topoParseData(const uint8_t *buff, int len)
   return res;
 }
 
-const struct nodeID **topoGetNeighbourhood(int *n)
+const struct nodeID *const *topoGetNeighbourhood(int *n)
 {
 	struct nodeID ** neighbors; void *mdata; int msize;
 	*n = tmanGetNeighbourhoodSize();
@@ -66,7 +66,7 @@ const struct nodeID **topoGetNeighbourhood(int *n)
 		mdata = calloc(*n,msize);
 		tmanGivePeers(*n,neighbors,mdata);
 		free(mdata);
-		return (const struct nodeID **)neighbors;
+		return (const struct nodeID *const *)neighbors;
 	}
 	else
 		return psample_get_cache(context,n);

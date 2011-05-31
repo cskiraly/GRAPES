@@ -153,7 +153,7 @@ static void loop(struct nodeID *s)
       }
       psample_parse_data(context, NULL, 0);
       if (cnt++ % 10 == 0) {
-        const struct nodeID **neighbourhoods;
+        const struct nodeID *const *neighbourhoods;
         int n, i, size;
         const struct peer_attributes *meta;
 

@@ -106,7 +106,7 @@ static void loop(struct nodeID *s)
     } else {
       psample_parse_data(context, NULL, 0);
       if (cnt % 10 == 0) {
-        const struct nodeID **neighbourhoods;
+        const struct nodeID *const *neighbourhoods;
         int n, i;
 
         neighbourhoods = psample_get_cache(context, &n);
