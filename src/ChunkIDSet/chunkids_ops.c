@@ -65,6 +65,27 @@ struct chunkID_set *chunkID_set_init(const char *config)
   return p;
 }
 
+static int chunkID_set_add_chunk_list(struct chunkID_set *h, int chunk_id)
+{
+  if (chunkID_set_check(h, chunk_id) >= 0) {
+    return 0;
+  }
+
+  if (h->n_elements == h->size) {
+    int *res;
+
+    res = realloc(h->elements, (h->size + DEFAULT_SIZE_INCREMENT) * sizeof(int));
+    if (res == NULL) {
+      return -1;
+    }
+    h->size += DEFAULT_SIZE_INCREMENT;
+    h->elements = res;
+  }
+  h->elements[h->n_elements++] = chunk_id;
+
+  return h->n_elements;
+}
+
 static int int_cmp(const void *pa, const void *pb)
 {
   return (*(const int *)pa - *(const int *)pb);
@@ -124,27 +145,6 @@ static int chunkID_set_add_chunk_set(struct chunkID_set *h, int chunk_id)
   memmove(&h->elements[pos + 1], &h->elements[pos] , ((h->n_elements++) - pos) * sizeof(int));
 
   h->elements[pos] = chunk_id;
-
-  return h->n_elements;
-}
-
-static int chunkID_set_add_chunk_list(struct chunkID_set *h, int chunk_id)
-{
-  if (chunkID_set_check(h, chunk_id) >= 0) {
-    return 0;
-  }
-
-  if (h->n_elements == h->size) {
-    int *res;
-
-    res = realloc(h->elements, (h->size + DEFAULT_SIZE_INCREMENT) * sizeof(int));
-    if (res == NULL) {
-      return -1;
-    }
-    h->size += DEFAULT_SIZE_INCREMENT;
-    h->elements = res;
-  }
-  h->elements[h->n_elements++] = chunk_id;
 
   return h->n_elements;
 }
