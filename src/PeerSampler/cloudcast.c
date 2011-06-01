@@ -297,7 +297,7 @@ static int cloudcast_parse_data(struct peersampler_context *context, const uint8
   return 0;
   }
 
-static const struct nodeID **cloudcast_get_neighbourhood(struct peersampler_context *context, int *n)
+static const struct nodeID *const *cloudcast_get_neighbourhood(struct peersampler_context *context, int *n)
 {
   context->r = realloc(context->r, context->cache_size * sizeof(struct nodeID *));
   if (context->r == NULL) {
@@ -339,7 +339,7 @@ static const struct nodeID **cloudcast_get_neighbourhood(struct peersampler_cont
     }
   }
 
-  return (const struct nodeID **)context->r;
+  return (const struct nodeID *const *)context->r;
 }
 
 static const void *cloudcast_get_metadata(struct peersampler_context *context, int *metadata_size)

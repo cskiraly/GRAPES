@@ -128,7 +128,7 @@ static void loop(struct context *con)
         exit(1);
       }
       if (cnt % 10 == 0) {
-        const struct nodeID **neighbourhoods;
+        const struct nodeID *const *neighbourhoods;
         const char *addr;
         int n, i;
 

@@ -69,7 +69,7 @@ int psample_parse_data(struct psample_context *tc, const uint8_t *buff, int len)
   return tc->ps->parse_data(tc->ps_context, buff, len);
 }
 
-const struct nodeID **psample_get_cache(struct psample_context *tc, int *n)
+const struct nodeID *const *psample_get_cache(struct psample_context *tc, int *n)
 {
   return tc->ps->get_neighbourhood(tc->ps_context, n);
 }

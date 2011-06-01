@@ -68,7 +68,7 @@ static int dummy_parse_data(struct peersampler_context *context, const uint8_t *
   return 0;
 }
 
-static const struct nodeID **dummy_get_neighbourhood(struct peersampler_context *context, int *n)
+static const struct nodeID *const *dummy_get_neighbourhood(struct peersampler_context *context, int *n)
 {
   if (context->r == NULL) {
     context->r = malloc(MAX_PEERS * sizeof(struct nodeID *));

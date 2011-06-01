@@ -185,7 +185,7 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
   return 0;
 }
 
-static const struct nodeID **cyclon_get_neighbourhood(struct peersampler_context *context, int *n)
+static const struct nodeID *const *cyclon_get_neighbourhood(struct peersampler_context *context, int *n)
 {
   context->r = realloc(context->r, context->cache_size * sizeof(struct nodeID *));
   if (context->r == NULL) {

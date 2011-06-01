@@ -52,7 +52,7 @@ struct psample_context;
   @return a pointer to an array of nodeID describing a random view of the system. NULL
           in case of error, or if the cache is empty.
 */
-const struct nodeID **psample_get_cache(struct psample_context *tc, int *n);
+const struct nodeID *const *psample_get_cache(struct psample_context *tc, int *n);
 
 /**
   @brief Get the peer's metadata.
