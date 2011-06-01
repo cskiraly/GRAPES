@@ -78,6 +78,7 @@ static void cmdline_parse(int argc, char *argv[])
 static struct nodeID *init(void)
 {
   struct nodeID *myID;
+  char addr[256];
 
   myID = net_helper_init(my_addr, port, "");
   if (myID == NULL) {
@@ -86,7 +87,8 @@ static struct nodeID *init(void)
     return NULL;
   }
 
-  strcpy(my_attr.name, node_addr(myID));
+  node_addr(myID, addr, 256);
+  strcpy(my_attr.name, addr);
   context = psample_init(myID, &my_attr, sizeof(struct peer_attributes), "");
 
   return myID;
@@ -132,8 +134,9 @@ static void loop(struct nodeID *s)
   int done = 0;
 #define BUFFSIZE 1024
   static uint8_t buff[BUFFSIZE];
+  char addr[256];
   int cnt = 0;
-  
+
   psample_parse_data(context, NULL, 0);
   while (!done) {
     int len;
@@ -169,7 +172,8 @@ static void loop(struct nodeID *s)
         }
         printf("I have %d neighbourhoods:\n", n);
         for (i = 0; i < n; i++) {
-          printf("\t%d: %s", i, node_addr(neighbourhoods[i]));
+          node_addr(neighbourhoods[i], addr, 256);
+          printf("\t%d: %s", i, addr);
           if (meta) {
             printf("\tPeer %s is a %s peer and is %s", meta[i].name, meta[i].colour, status_print(meta[i].state));
           }

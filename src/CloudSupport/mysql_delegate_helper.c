@@ -128,6 +128,7 @@ static int init_database(MYSQL *mysql)
            "  cloud_key VARCHAR(255),"\
            "  cloud_value BLOB," \
            "  timestamp INT UNSIGNED," \
+           "  counter INT UNSIGNED," \
            "  PRIMARY KEY (cloud_key))");
   error = mysql_query(mysql, query);
   if (error) {
@@ -257,9 +258,9 @@ int process_get_operation(void *req_data, void **rsp_data)
 int process_put_operation(struct mysql_cloud_context *ctx,
                           mysql_request_t *req)
 {
-  char raw_stmt[] = "INSERT INTO cloud(cloud_key,cloud_value,timestamp)" \
-    "VALUES('%s', '%s', %ld) ON DUPLICATE KEY UPDATE "                  \
-    "cloud_value='%s', timestamp=%ld";
+  char raw_stmt[] = "INSERT INTO cloud(cloud_key,cloud_value,timestamp, counter)" \
+    "VALUES('%s', '%s', %ld, 0) ON DUPLICATE KEY UPDATE "                  \
+    "cloud_value='%s', timestamp=%ld, counter=counter+1";
   char *stmt;
   char *escaped_value;
   int stmt_length;

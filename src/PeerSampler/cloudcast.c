@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 #include "net_helper.h"
 #include "peersampler_iface.h"
@@ -26,23 +27,30 @@
 #include "config.h"
 #include "grapes_msg_types.h"
 
-#define DEFAULT_CACHE_SIZE 10
-#define DEFAULT_CLOUD_CONTACT_TRESHOLD 4000000
+#define DEFAULT_CACHE_SIZE 20
+#define DEFAULT_PARTIAL_VIEW_SIZE 5
+
+#define CLOUDCAST_TRESHOLD 4
+#define CLOUDCAST_PERIOD 10000000 // 10 seconds
+#define CLOUDCAST_BOOTSTRAP_PERIOD 2000000 // 2 seconds
 
 struct peersampler_context{
   uint64_t currtime;
   int cache_size;
   int sent_entries;
-  int keep_cache_full;
   struct peer_cache *local_cache;
   bool bootstrap;
   int bootstrap_period;
   int period;
 
+  uint64_t last_cloud_contact_sec;
+  int max_silence;
+  double cloud_respawn_prob;
   int cloud_contact_treshold;
   struct nodeID *local_node;
   struct nodeID **cloud_nodes;
 
+  int reserved_entries;
   struct peer_cache *flying_cache;
   struct nodeID *dst;
 
@@ -51,6 +59,7 @@ struct peersampler_context{
 };
 
 
+/* return the time in microseconds */
 static uint64_t gettime(void)
 {
   struct timeval tv;
@@ -71,37 +80,32 @@ static struct peersampler_context* cloudcast_context_init(void){
 
   //Initialize context with default values
   con->bootstrap = true;
-  con->bootstrap_period = 2000000;
-  con->period = 10000000;
+  con->bootstrap_period = CLOUDCAST_BOOTSTRAP_PERIOD;
+  con->period = CLOUDCAST_PERIOD;
   con->currtime = gettime();
+  con->cloud_contact_treshold = CLOUDCAST_TRESHOLD;
+  con->last_cloud_contact_sec = 0;
+  con->max_silence = 0;
+  con->cloud_respawn_prob = 0;
+
   con->r = NULL;
-  con->cloud_contact_treshold = DEFAULT_CLOUD_CONTACT_TRESHOLD;
 
   return con;
 }
 
 static int time_to_send(struct peersampler_context* con)
 {
+  long time;
   int p = con->bootstrap ? con->bootstrap_period : con->period;
-  if (gettime() - con->currtime > p) {
-    con->currtime += p;
 
+  time = gettime();
+  if (time - con->currtime > p) {
+    if (con->bootstrap) con->currtime = time;
+    else con->currtime += p;
     return 1;
   }
 
   return 0;
-}
-
-static int cache_add_resize(struct peer_cache *dst, struct nodeID *n, const int cache_max_size)
-{
-  int err;
-  err = cache_add(dst, n, NULL, 0);
-  if (err == -2){
-    // maybe the cache is full... try resizing it to cache_max
-    cache_resize(dst, cache_max_size);
-    err = cache_add(dst, n, NULL, 0);
-  }
-  return (err > 0)? 0 : 1;
 }
 
 /*
@@ -124,11 +128,16 @@ static struct peersampler_context* cloudcast_init(struct nodeID *myID, const voi
   }
   res = config_value_int(cfg_tags, "sent_entries", &(con->sent_entries));
   if (!res) {
-    con->sent_entries = con->cache_size / 2;
+    con->sent_entries = DEFAULT_PARTIAL_VIEW_SIZE;
   }
-  res = config_value_int(cfg_tags, "keep_cache_full", &(con->keep_cache_full));
+  res = config_value_int(cfg_tags, "max_silence", &(con->max_silence));
   if (!res) {
-    con->keep_cache_full = 1;
+    con->max_silence = 0;
+  }
+
+  res = config_value_double(cfg_tags, "cloud_respawn_prob", &(con->cloud_respawn_prob));
+  if (!res) {
+    con->max_silence = 0;
   }
 
   con->local_cache = cache_init(con->cache_size, metadata_size, 0);
@@ -151,151 +160,249 @@ static struct peersampler_context* cloudcast_init(struct nodeID *myID, const voi
 
 static int cloudcast_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, const void *metadata, int metadata_size)
 {
-  if (!context->flying_cache) {
-    context->flying_cache = rand_cache(context->local_cache, context->sent_entries - 1);
-  }
   if (cache_add(context->local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
-  }
-
-  if (cloudcast_is_cloud_node(context->proto_context, neighbour) == 0)
-    return cloudcast_query_peer(context->proto_context, context->flying_cache, neighbour);
-  else
-    return cloudcast_query_cloud(context->proto_context);
+  } return 0;
 }
 
-static int cloudcast_parse_data(struct peersampler_context *context, const uint8_t *buff, int len)
+static int cloudcast_query(struct peersampler_context *context,
+                           struct peer_cache *remote_cache)
 {
+  struct peer_cache *sent_cache;
+
+  /* Fill up reply and send it.
+     NOTE: we don't know the remote node so we cannot prevent putting it into
+     the reply. Remote node should check for entries of itself */
+  sent_cache = rand_cache(context->local_cache, context->sent_entries - 1);
+  cloudcast_reply_peer(context->proto_context, remote_cache, sent_cache,
+                       context->last_cloud_contact_sec);
+
+  /* Insert entries in view without using space reserved by the active thread */
+  cache_fill_rand(context->local_cache, remote_cache,
+                    context->cache_size - context->reserved_entries);
+
+
+  cache_free(remote_cache);
+  cache_free(sent_cache);
+  return 0;
+}
+
+static int cloudcast_reply(struct peersampler_context *context,
+                           struct peer_cache *remote_cache)
+{
+  /* Be sure not to insert local_node in cache!!! */
+  cache_del(remote_cache, context->local_node);
+
+  /* Insert remote entries in view */
+  context->reserved_entries = 0;
+  cache_fill_rand(context->local_cache, remote_cache, 0);
+
+  cache_free(remote_cache);
+  return 0;
+}
+
+static int cloudcast_cloud_dialogue(struct peersampler_context *context,
+                                    struct peer_cache *cloud_cache)
+{
+  struct peer_cache * sent_cache = NULL;
+  uint64_t cloud_tstamp;
+  uint64_t current_time;
+  int delta;
+
+  /* Obtain the timestamp reported by the last query_cloud operation and
+     compute delta */
+  cloud_tstamp = cloudcast_timestamp_cloud(context->proto_context) * 1000000ull;
+  current_time = gettime();
+  delta = current_time - cloud_tstamp;
+
+  /* Fill up the request with one spot free for local node */
+  sent_cache = rand_cache_except(context->local_cache, context->sent_entries - 1,
+                                 context->cloud_nodes, 2);
+
+
+  if (cloud_cache == NULL) {
+    /* Cloud is not initialized, just set the cloud cache to send_cache */
+    cloudcast_reply_cloud(context->proto_context, sent_cache);
+    cloudcast_cloud_default_reply(context->local_cache, context->cloud_nodes[0]);
+    return 0;
+  } else {
+    struct peer_cache *remote_cache = NULL;
+    int err = 0;
+    int g = 0;
+    int i = 0;
+
+
+    /* If the cloud contact frequency *IS NOT* too high save an entry for the
+       cloud  */
+    if (delta > (context->period / context->cloud_contact_treshold)) {
+      g++;
+    }
+
+    /* If the cloud contact frequency *IS* too low save another entry for the
+       cloud */
+    if (delta > (context->cloud_contact_treshold * context->period)) {
+      g++;
+    }
+
+    /* Fill up the reply with g spots free for cloud entries */
+    remote_cache = rand_cache_except(cloud_cache, context->sent_entries-g,
+                                     &context->local_node, 1);
+
+    /* Insert cloud entries in remote cache */
+    cache_resize(remote_cache,  cache_current_size(remote_cache)+g);
+    for (i=0; i<g; i++) {
+      err = cache_add(remote_cache, context->cloud_nodes[i], NULL, 0);
+      assert(err > 0);
+    }
+
+    /* Insert remote entries in local view */
+    cache_fill_rand(context->local_cache, remote_cache, 0);
+
+    /* Insert sent entries in cloud view */
+    cache_del(cloud_cache, context->local_node);
+    cache_resize(cloud_cache, context->cache_size);
+    assert(cache_max_size(cloud_cache) == context->cache_size);
+    cache_fill_rand(cloud_cache, sent_cache, 0);
+
+    /* Write the new view in the cloud */
+    cloudcast_reply_cloud(context->proto_context, cloud_cache);
+
+    cache_free(remote_cache);
+    cache_free(cloud_cache);
+    cache_free(sent_cache);
+    return 0;
+  }
+}
+
+static int silence_treshold(struct peersampler_context *context)
+{
+  int threshold;
+  int delta;
+  if (!context->max_silence) return 0;
+  if (context->last_cloud_contact_sec == 0) return 0;
+
+  threshold = (context->max_silence * context->period) / 1000000ull;
+  delta = (gettime() / 1000000ull) - context->last_cloud_contact_sec;
+
+  return delta > threshold &&
+    ((double) rand())/RAND_MAX < context->cloud_respawn_prob;
+}
+
+static int cloudcast_active_thread(struct peersampler_context *context)
+{
+  int err = 0;
+
+  /* If space permits, re-insert old entries that have been sent in the previous
+     cycle */
+  if (context->flying_cache) {
+    cache_fill_rand(context->local_cache, context->flying_cache, 0);
+    cache_free(context->flying_cache);
+    context->flying_cache = NULL;
+
+    /* If we didn't received an answer since the last cycle, forget about it */
+    context->reserved_entries = 0;
+  }
+
+  /* Increase age of all nodes in the view */
+  cache_update(context->local_cache);
+
+  /* Select oldest node in the view */
+  context->dst = last_peer(context->local_cache);
+
+  /* If we remain without neighbors, forcely add a cloud entry */
+  if (context->dst == NULL) {
+    context->dst = context->cloud_nodes[0];
+  }
+
+  context->dst = nodeid_dup(context->dst);
+  cache_del(context->local_cache, context->dst);
+
+  /* If enabled, readd a cloud node when too much time is passed from the
+     last contact (computed globally) */
+  if (!cloudcast_is_cloud_node(context->proto_context, context->dst) &&
+      silence_treshold(context)) {
+    cache_add(context->local_cache, context->cloud_nodes[0], NULL, 0);
+  }
+
+  if (cloudcast_is_cloud_node(context->proto_context, context->dst)) {
+    context->last_cloud_contact_sec = gettime() / 1000000ull;
+
+    /* Request cloud view */
+    err = cloudcast_query_cloud(context->proto_context);
+  } else {
+    /* Fill up request keeping space for local descriptor */
+    context->flying_cache = rand_cache(context->local_cache,
+                                       context->sent_entries - 1);
+
+    context->reserved_entries = cache_current_size(context->flying_cache);
+
+    /* Send request to remote peer */
+    err = cloudcast_query_peer(context->proto_context, context->flying_cache,
+                               context->dst, context->last_cloud_contact_sec);
+  }
+
+  return err;
+}
+
+static int
+cloudcast_parse_data(struct peersampler_context *context, const uint8_t *buff,
+                     int len)
+{
+  int err = 0;
   cache_check(context->local_cache);
+
+  /* If we got data, perform the appropriate passive thread operation */
   if (len) {
-    // Passive thread
-    const struct topo_header *h = (const struct topo_header *)buff;
+    const struct topo_header *th = NULL;
+    const struct cloudcast_header *ch = NULL;
     struct peer_cache *remote_cache  = NULL;
-    struct peer_cache *sent_cache = NULL;
+    size_t shift = 0;
 
-    if (h->protocol != MSG_TYPE_TOPOLOGY) {
-      fprintf(stderr, "Peer Sampler: Wrong protocol!\n");
 
+    th = (const struct topo_header *) buff;
+    shift += sizeof(struct topo_header);
+
+    ch = (const struct cloudcast_header *) (buff + shift);
+    shift += sizeof(struct cloudcast_header);
+
+    if (th->protocol != MSG_TYPE_TOPOLOGY) {
+      fprintf(stderr, "Peer Sampler: Wrong protocol: %d!\n", th->protocol);
       return -1;
     }
 
     context->bootstrap = false;
 
-    if (len - sizeof(struct topo_header) > 0)
-      remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
-
-
-    if (h->type == CLOUDCAST_QUERY) {
-      sent_cache = rand_cache(context->local_cache, context->sent_entries);
-      cloudcast_reply_peer(context->proto_context, remote_cache, sent_cache);
-      context->dst = NULL;
-    } else if (h->type == CLOUDCAST_CLOUD) {
-      int g = 0;
-      int i = 0;
-      struct peer_cache *reply_cache = NULL;
-
-      // Obtain the timestamp reported by the last query_cloud operation
-      uint64_t cloud_time_stamp = cloudcast_timestamp_cloud(context->proto_context) * 1000000ull;
-      uint64_t current_time = gettime();
-      int delta = current_time - cloud_time_stamp;
-
-      // local view with one spot free for the local nodeID
-      sent_cache = rand_cache(context->local_cache, context->sent_entries - 1);
-      for (i=0; i<2; i++) cache_del(sent_cache, context->cloud_nodes[i]);
-
-      if (remote_cache == NULL) {
-        // Cloud is not initialized, just set the cloud cache to send_cache
-        cloudcast_reply_cloud(context->proto_context, sent_cache);
-        remote_cache = cloudcast_cloud_default_reply(context->local_cache, context->cloud_nodes[0]);
-      } else {
-        // Locally perform exchange of cache entries
-        int err;
-        struct peer_cache *cloud_cache = NULL;
-
-        // if the cloud contact frequency *IS NOT* too high save an entry for the cloud
-        if (delta > (context->period / context->cloud_contact_treshold)) g++;
-
-        // if the cloud contact frequency *IS* too low save another entry for the cloud
-        if (delta > (context->cloud_contact_treshold * context->period)) g++;
-
-        // Remove mentions of local node from the cache
-        cache_del(remote_cache, context->local_node);
-
-        // cloud view with g spot free for cloud nodeID
-        reply_cache = rand_cache(remote_cache, context->sent_entries - g);
-
-        // building new cloud view
-        cloud_cache = merge_caches(remote_cache, sent_cache, context->cache_size, &err);
-        free(remote_cache);
-        cache_add_cache(cloud_cache, sent_cache);
-        if (context->keep_cache_full){
-          cache_add_cache(cloud_cache, reply_cache);
-        }
-
-        err = cloudcast_reply_cloud(context->proto_context, cloud_cache);
-        free(cloud_cache);
-
-        //Add the actual cloud nodes to the cache
-        for (i = 0; i<g; i++){
-          if (cache_add_resize(reply_cache, context->cloud_nodes[i], context->sent_entries) != 0){
-            fprintf(stderr, "WTF!!! cannot add to cache\n");
-            return 1;
-          }
-        }
-
-        remote_cache = reply_cache;
-        context->dst = NULL;
-      }
+    /* Update info on global cloud contact time */
+    if (ch->last_cloud_contact_sec > context->last_cloud_contact_sec) {
+      context->last_cloud_contact_sec = ch->last_cloud_contact_sec;
     }
-    cache_check(context->local_cache);
 
-    if (remote_cache){
-      // Remote cache may be NULL due to a non initialize cloud
-      cache_add_cache(context->local_cache, remote_cache);
-      cache_free(remote_cache);
-    }
-    if (sent_cache) {
-      if (context->keep_cache_full)
-        cache_add_cache(context->local_cache, sent_cache);
-      cache_free(sent_cache);
+    if (len - shift > 0)
+      remote_cache = entries_undump(buff + (shift * sizeof(uint8_t)), len - shift);
+
+    if (th->type == CLOUDCAST_QUERY) {
+      /* We're being queried by a remote peer */
+      err = cloudcast_query(context, remote_cache);
+    } else if(th->type == CLOUDCAST_REPLY){
+      /* We've received the response to our query from the remote peer */
+      err = cloudcast_reply(context, remote_cache);
+    } else if (th->type == CLOUDCAST_CLOUD) {
+      /* We've received the response form the cloud. Simulate dialogue */
+      err = cloudcast_cloud_dialogue(context, remote_cache);
     } else {
-      if (context->flying_cache) {
-        cache_add_cache(context->local_cache, context->flying_cache);
-        cache_free(context->flying_cache);
-        context->flying_cache = NULL;
-      }
+      fprintf(stderr, "Cloudcast: Wrong message type: %d\n", th->type);
+      return -1;
     }
   }
 
-  // Active thread
+  /* It it's time, perform the active thread */
   if (time_to_send(context)) {
-    if (context->flying_cache) {
-      cache_add_cache(context->local_cache, context->flying_cache);
-      cache_free(context->flying_cache);
-      context->flying_cache = NULL;
-    }
-    cache_update(context->local_cache);
-    context->dst = last_peer(context->local_cache);
-    if (context->dst == NULL) {
-      // If we remain without neighbors, forcely add a cloud entry
-      context->dst = cloudcast_get_cloud_node(context->proto_context);
-      cache_add(context->local_cache, context->dst, NULL, 0);
-    }
-    context->dst = nodeid_dup(context->dst);
-    cache_del(context->local_cache, context->dst);
-
-    if (cloudcast_is_cloud_node(context->proto_context, context->dst)) {
-      int err;
-      err = cloudcast_query_cloud(context->proto_context);
-    } else {
-      context->flying_cache = rand_cache(context->local_cache, context->sent_entries - 1);
-      cloudcast_query_peer(context->proto_context, context->flying_cache, context->dst);
-    }
+    err = cloudcast_active_thread(context);
   }
   cache_check(context->local_cache);
 
-  return 0;
-  }
+  return err;
+}
 
 static const struct nodeID *const *cloudcast_get_neighbourhood(struct peersampler_context *context, int *n)
 {
@@ -306,7 +413,6 @@ static const struct nodeID *const *cloudcast_get_neighbourhood(struct peersample
 
   for (*n = 0; nodeid(context->local_cache, *n) && (*n < context->cache_size); (*n)++) {
     context->r[*n] = nodeid(context->local_cache, *n);
-    //fprintf(stderr, "Checking table[%d]\n", *n);
   }
   if (context->flying_cache) {
     int i,j,dup;

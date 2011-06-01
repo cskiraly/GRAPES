@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 {
   struct cloud_helper_context *cloud;
   char buffer[100];
-  const char *addr;
+  char addr[256];
   int err;
   struct nodeID *t;
   struct timeval tout = {10, 0};
@@ -202,12 +202,12 @@ int main(int argc, char *argv[])
     }
     break;
   case GET_CLOUD_NODE:
-    addr = node_addr(get_cloud_node(cloud, variant));
+    node_addr(get_cloud_node(cloud, variant), addr, 256);
     printf("Cloud node: %s\n", addr);
     break;
   case EQ_CLOUD_NODE:
     t = create_node(key, atoi(value));
-    addr = node_addr(get_cloud_node(cloud, variant));
+    node_addr(get_cloud_node(cloud, variant), addr, 256);
     printf("Node %s references cloud? %d\n", addr,
            is_cloud_node(cloud, t));
     break;

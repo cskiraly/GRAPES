@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/time.h>
 
 #include <libs3.h>
@@ -236,9 +237,7 @@ libs3_response_complete_callback(S3Status status, const S3ErrorDetails *error,
   struct libs3_callback_context *req_ctx;
   req_ctx = (struct libs3_callback_context *) context;
 
-  fprintf(stderr, "COMPLETE: %d\n", req_ctx->status);
   req_ctx->status = status;
-  fprintf(stderr, "COMPLETE: %d\n", req_ctx->status);
   if (status != S3StatusOK) {
     if (error) {
       if (error->message) {
@@ -259,7 +258,6 @@ libs3_put_object_data_callback(int bufferSize, char *buffer,
 {
   struct libs3_callback_context *req_ctx;
   int towrite;
-  fprintf(stderr, "FUCK I'M HERE AND I'M OK >> buffer=%d, status=%d, buffer=%p\n", bufferSize, req_ctx->status, buffer);
   req_ctx = (struct libs3_callback_context *) context;
 
   towrite = req_ctx->current_req->data_length - req_ctx->bytes;
@@ -273,7 +271,6 @@ libs3_put_object_data_callback(int bufferSize, char *buffer,
 
   memcpy(buffer, req_ctx->start_ptr, towrite);
   req_ctx->bytes += towrite;
-  fprintf(stderr, "FUCK I'M HERE AND I'M OK >> towrite=%d, buffer=%d, status=%d\n", towrite, bufferSize, req_ctx->status);
   return towrite;
 }
 
@@ -376,7 +373,6 @@ static int process_put_request(void *req_data, void **rsp_data)
                   &libs3_put_object_handler,/* ...using these callback...*/
                   cbk_ctx);                /* ...with this data for context */
 
-    fprintf(stderr, "prima del while: %d\n", cbk_ctx->status);
     /* if we get an error related to a temporary network state retry */
   } while(S3_status_is_retryable(cbk_ctx->status) &&
           should_retry(&retries_left, 0));

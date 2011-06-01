@@ -127,9 +127,11 @@ int wait4data(const struct nodeID *n, struct timeval *tout, int *user_fds);
 *
 * Give a string representation of a nodeID.
 * @param[in] s A pointer to the nodeID to be printed.
-* @return A string representing the nodeID.
+* @param[out] addr A pointer to the buffer where to write the address
+* @param[in] len The length of the addr buffer
+* @return >= 0 on success, or < 0 on error (buffer too small)
 */
-const char *node_addr(const struct nodeID *s);
+int node_addr(const struct nodeID *s, char *addr, int len);
 
 /**
 * @brief Create a nodeID structure from a serialized object.
@@ -157,8 +159,19 @@ int nodeid_dump(uint8_t *b, const struct nodeID *s, size_t max_write_size);
 *
 * Serialize the public IP address of a given node and return it.
 * @param[in] s A pointer to the nodeID.
-* @return the publicly accessible IP address of the node.
+* @param[out] ip A  pointer to the buffer where to store the ip address
+* @param[in] len The length of the ip buffer
+* @return >= 0 on success, or < 0 on error (buffer too small)
 */
-const char *node_ip(const struct nodeID *s);
+int node_ip(const struct nodeID *s, char *ip, int len);
+
+/**
+* @brief Give the port number associated to the nodeID.
+*
+* Return the port number of the nodeID
+* @param[in] s A pointer to the nodeID.
+* @return The port number belonging to the nodeID
+*/
+int node_port(const struct nodeID *s);
 
 #endif /* NET_HELPER_H */

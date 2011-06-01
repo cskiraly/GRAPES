@@ -648,18 +648,21 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 	return remote;
 }
 
-const char *node_ip(const struct nodeID *s) {
-	static char ip[64];
+int node_ip(const struct nodeID *s, char *ip, int size)
 	int len;
 	const char *start, *end;
 	const char *tmp = node_addr(s);
+
 	start = strstr(tmp, "-") + 1;
 	end = strstr(start, ":");
 	len = end - start;
+	if (len >= size) {
+		return -1;
+	}
 	memcpy(ip, start, len);
 	ip[len] = 0;
 
-	return (const char *)ip;
+	return 1;
 }
 
 // TODO: check why closing the connection is annoying for the ML
@@ -677,15 +680,14 @@ void nodeid_free(struct nodeID *n) {
 }
 
 
-const char *node_addr(const struct nodeID *s)
+int node_addr(const struct nodeID *s, char *addr, int len)
 {
-  static char addr[256];
   // TODO: mlSocketIDToString always return 0 !!!
-  int r = mlSocketIDToString(s->addr,addr,256);
+  int r = mlSocketIDToString(s->addr,addr,len);
   if (!r)
-	  return addr;
+	  return 1;
   else
-	  return "";
+	  return -1;
 }
 
 struct nodeID *nodeid_dup(struct nodeID *s)

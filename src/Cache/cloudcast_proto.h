@@ -6,11 +6,14 @@
 
 struct cloudcast_proto_context;
 
+struct cloudcast_header {
+  uint64_t last_cloud_contact_sec;
+};
+
 struct cloudcast_proto_context* cloudcast_proto_init(struct nodeID *s, const void *meta, int meta_size);
 
-
-int cloudcast_reply_peer(struct cloudcast_proto_context *context, const struct peer_cache *c, struct peer_cache *local_cache);
-int cloudcast_query_peer(struct cloudcast_proto_context *context, struct peer_cache *local_cache, struct nodeID *dst);
+int cloudcast_reply_peer(struct cloudcast_proto_context *context, const struct peer_cache *c, struct peer_cache *local_cache, uint64_t last_cloud_contact_sec);
+int cloudcast_query_peer(struct cloudcast_proto_context *context, struct peer_cache *local_cache, struct nodeID *dst, uint64_t last_cloud_contact_sec);
 
 int cloudcast_reply_cloud(struct cloudcast_proto_context *context, struct peer_cache *cloud_cache);
 

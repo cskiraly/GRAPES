@@ -19,9 +19,7 @@
 
 #define CLOUD_HELPER_INITAIL_INSTANCES 2
 
-#ifdef DELEGATE
 extern struct cloud_helper_iface delegate;
-#endif
 
 struct cloud_helper_context {
   struct cloud_helper_iface *ch;
@@ -88,16 +86,8 @@ struct cloud_helper_context* cloud_helper_init(struct nodeID *local,
 
   ctx = malloc(sizeof(struct cloud_helper_context));
   if (!ctx) return NULL;
-  memset(ctx, 0, sizeof(struct cloud_helper_context));
-#ifdef DELEGATE
   if (strcmp(provider, "delegate") == 0){
     ctx->ch = &delegate;
-  }
-#endif
-  if (!ctx->ch) {
-    free(ctx);
-
-    return NULL;
   }
 
  ctx->ch_context = ctx->ch->cloud_helper_init(local, config);

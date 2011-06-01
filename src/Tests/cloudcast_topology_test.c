@@ -129,13 +129,13 @@ static void loop(struct context *con)
       }
       if (cnt % 10 == 0) {
         const struct nodeID *const *neighbourhoods;
-        const char *addr;
+        char addr[256];
         int n, i;
 
         neighbourhoods = psample_get_cache(con->ps_context, &n);
         printf("I have %d neighbours:\n", n);
         for (i = 0; i < n; i++) {
-          addr = node_addr(neighbourhoods[i]);
+          node_addr(neighbourhoods[i], addr, 256);
           printf("\t%d: %s\n", i, addr);
         }
         fflush(stdout);
@@ -147,7 +147,7 @@ static void loop(struct context *con)
           f = fopen(fname, "w");
           if (f) fprintf(f, "#Cache size: %d\n", n);
           for (i = 0; i < n; i++) {
-            addr = node_addr(neighbourhoods[i]);
+            node_addr(neighbourhoods[i], addr, 256);
             if (f) fprintf(f, "%d\t\t%d\t%s\n", port, i, addr);
           }
           fclose(f);
