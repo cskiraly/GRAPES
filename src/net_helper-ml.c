@@ -192,7 +192,7 @@ static int next_S() {
  */
 static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
 	static int stun_retry_cnt = 0;
-	int stun_retries = 0;	//set number of retries (0: no retry)
+	int stun_retries = 2;	//set number of retries (0: no retry)
 
 	switch (errorstatus) {
 	case 0:
