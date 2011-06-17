@@ -191,6 +191,9 @@ static int next_S() {
  * @param errorstatus
  */
 static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
+	static int stun_retry_cnt = 0;
+	int stun_retries = 0;	//set number of retries (0: no retry)
+
 	switch (errorstatus) {
 	case 0:
 		me->addr = malloc(SOCKETID_SIZE);
@@ -217,9 +220,11 @@ static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
 		exit(1);
 		break;
 	case 2:
-	    fprintf(stderr,"Net-helper init : NAT traversal timeout while creating socket\n");
-	    fprintf(stderr,"Net-helper init : Retrying without STUN\n");
-	    mlSetStunServer(0,NULL);
+		fprintf(stderr,"Net-helper init : NAT traversal timeout while creating socket\n");
+		if (++stun_retry_cnt > stun_retries) {
+			fprintf(stderr,"Net-helper init : Retrying without STUN\n");
+			mlSetStunServer(0,NULL);
+		}
 	    break;
 	default :	// should never happen
 		//
