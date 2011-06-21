@@ -129,6 +129,17 @@ void schedSelectComposed(SchedOrdering ordering, schedPeerID  *peers, size_t pee
                      filterFunction filter,
                      peerEvaluateFunction peerevaluate, chunkEvaluateFunction chunkevaluate, double2op weightcombine);
 
+/*---PeersForChunks----------------*/
+/** 
+  * @brief Added by Arpad without knowing what he is doing
+   Documentation: see above
+
+  */
+void schedSelectPeersForChunks(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len,        //in
+                     schedPeerID *selected, size_t *selected_len,       //out, inout
+                     filterFunction filter,
+                     peerEvaluateFunction evaluate);
+
 /*---Hybrid----------------*/
 
 /**
