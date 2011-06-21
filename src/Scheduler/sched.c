@@ -267,6 +267,12 @@ void toPairs(schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t 
 }
 
 /*----------------- scheduler_la implementations --------------*/
+void schedSelectChunksForPeers(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
+                     schedChunkID *selected, size_t *selected_len,	//out, inout
+                     filterFunction filter,
+                     chunkEvaluateFunction evaluate){
+   selectChunksForPeers(ordering, peers, peers_len, chunks, chunks_len, selected, selected_len, filter, evaluate);
+}
 
 void schedSelectPeerFirst(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
@@ -334,3 +340,17 @@ void schedSelectComposed(SchedOrdering ordering, schedPeerID *peers, size_t peer
   schedSelectHybrid(ordering,peers,peers_len,chunks,chunks_len,selected,selected_len,filter,combinedWeight);
 
 }
+
+void schedSelectPeersForChunks(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len,        //in
+                     schedPeerID *selected, size_t *selected_len,       //out, inout
+                     filterFunction filter,
+                     peerEvaluateFunction evaluate){
+   selectPeersForChunks(ordering, peers, peers_len, chunks, chunks_len,        //in
+                     selected, selected_len,       //out, inout
+                     filter,
+                      evaluate);
+}
+
+
+
+

@@ -332,7 +332,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 		sprintf(str,"!Unknown!");
 	if (arg->nrMissingBytes || !arg->firstPacketArrived) {
 	    fprintf(stderr, "Net-helper : corrupted message arrived from %s\n",str);
-/**/    fprintf(stderr, "\tMessage # %d -- Message type: %hhd -- Missing # %d bytes%s\n",
+/**/    fprintf(stderr, "\tMessage # %d -- Message type: ??? -- Missing # %d bytes%s\n",
 			recv_counter, buffer[0],arg->nrMissingBytes, arg->firstPacketArrived?"":", Missing first!");
 	}
 	else {
@@ -494,6 +494,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 {
 	msgData_cb *p;
 	int current;
+        int index;
 	send_params params = {0,0,0,0};
 
 	if (buffer_size <= 0) {
@@ -502,7 +503,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 	}
 
 	// if buffer is full, discard the message and return an error flag
-	int index = next_S();
+	index = next_S();
 	if (index<0) {
 		// free(buffer_ptr);
 		fprintf(stderr,"Net-helper: send buffer full\n ");
