@@ -60,7 +60,7 @@ static int cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "slP:u:f:rRdlavVUTO:I:")) != -1) {
+  while ((o = getopt(argc, argv, "slP:u:f:rRdlavVxUTO:I:")) != -1) {
     char port[8];
 
     switch(o) {
@@ -124,6 +124,13 @@ static int cmdline_parse(int argc, char *argv[])
         in_ptr = addopt(in_opts, in_ptr, "media", "av");
         out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "avf");
         out_ptr = addopt(out_opts, out_ptr, "media", "av");
+        break;
+      case 'x':
+        in_ptr = addopt(in_opts, in_ptr, "chunkiser", "avf");
+        in_ptr = addopt(in_opts, in_ptr, "media", "av");
+        out_ptr = addopt(out_opts, out_ptr, "dechunkiser", "play");
+        out_ptr = addopt(out_opts, out_ptr, "media", "av");
+        timed = 1;
         break;
       case 'O':
         out_ptr += sprintf(out_ptr, "%s", optarg);
