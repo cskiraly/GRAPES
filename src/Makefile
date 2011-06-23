@@ -13,7 +13,7 @@ OBJ_LSTS = $(addsuffix /objs.lst, $(SUBDIRS))
 all: libgrapes.a
 
 $(OBJ_LSTS):
-	$(MAKE) -C $(dir $@) objs.lst FFDIR=$(FFDIR)
+	$(MAKE) -C $(dir $@) objs.lst FFDIR=$(FFDIR) GTK=$(GTK)
 
 libgrapes.a: $(OBJ_LSTS) $(COMMON_OBJS)
 	$(AR) rcs libgrapes.a `cat $(OBJ_LSTS)` $(COMMON_OBJS)
