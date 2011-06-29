@@ -648,10 +648,9 @@ struct nodeID *create_node(const char *rem_IP, int rem_port) {
 	return remote;
 }
 
-int node_ip(const struct nodeID *s, char *ip, int size)
+int node_ip(const struct nodeID *s, char *ip, int size) {
 	int len;
 	const char *start, *end;
-	const char *tmp = node_addr(s);
 	char tmp[256];
 	
 	node_addr(s, tmp, 256);
