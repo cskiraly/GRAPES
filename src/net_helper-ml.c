@@ -359,7 +359,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int s, i;
 	struct tag *cfg_tags;
 	const char *res;
-	const char *stun_server = "stun.ekiga.net";
+	const char *stun_server = "130.192.9.140";	//rucola.polito.it
 	int stun_port = 3478;
 	const char *repo_address = NULL;
 	int publish_interval = 60;
