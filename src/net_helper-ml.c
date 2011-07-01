@@ -7,6 +7,9 @@
 #include <event2/event.h>
 #ifndef _WIN32
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #endif
 #include <unistd.h>
 #include <stdlib.h>
@@ -16,8 +19,10 @@
 #include <assert.h>
 #include <signal.h>
 
+
 #include "net_helper.h"
 #include "ml.h"
+#include <evhttp.h>
 #include "config.h"
 
 #include "grapes_msg_types.h"
@@ -332,7 +337,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 		sprintf(str,"!Unknown!");
 	if (arg->nrMissingBytes || !arg->firstPacketArrived) {
 	    fprintf(stderr, "Net-helper : corrupted message arrived from %s\n",str);
-/**/    fprintf(stderr, "\tMessage # %d -- Message type: ??? -- Missing # %d bytes%s\n",
+/**/    fprintf(stderr, "\tMessage # %d -- Message type: %d  -- Missing # %d bytes%s\n",
 			recv_counter, buffer[0],arg->nrMissingBytes, arg->firstPacketArrived?"":", Missing first!");
 	}
 	else {
@@ -357,6 +362,45 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 //	event_base_loopbreak(base);
 }
 
+void  staticserver(struct evhttp_request *req, void *dir) {
+   struct evbuffer *buf;
+   char resname[300];
+   char datbuf[1024];
+   int len;
+   int resource;
+   strcpy(resname,(char*)dir);
+   if(resname[strlen(resname)-1] != '/') strcat(resname,"/");
+   strcat(resname,req->uri);
+   resource = open(resname, O_WRONLY);
+   fprintf(stderr, "HTTP Request for url: %s from resource %s (%d)\n", req->uri, resname, resource);
+   if(resource < 0) {
+       evhttp_send_error (req, 404, "Not found");
+       return;
+   }    
+   buf = evbuffer_new();
+   while((len = read(resource, datbuf, sizeof(datbuf))) > 0) {
+      evbuffer_add(buf, datbuf, len);
+   }
+   close(resource);
+   evhttp_send_reply(req, HTTP_OK, "OK", buf);
+}
+
+
+void visInit(struct event_base *base, int visport)  {
+     struct evhttp* httpserver;
+     httpserver = evhttp_new(base);
+     if(0 != evhttp_bind_socket(httpserver, "0.0.0.0", visport)) {
+   		  fprintf(stderr, "Net-helper : cannot start Visualizer server\n");
+        evhttp_free(httpserver);
+        httpserver = NULL;
+        return;
+     }
+     
+     evhttp_set_cb(httpserver, "/files/", staticserver, "/home/arpad/NV/NAPA/vis"); 
+}
+
+
+
 
 struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config) {
 
@@ -364,12 +408,15 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int s, i;
 	struct tag *cfg_tags;
 	const char *res;
-	const char *stun_server = "130.192.9.140";	//rucola.polito.it
+//	const char *stun_server = "stun.ekiga.net";	
+        const char *stun_server = "130.192.9.140";	//rucola.polito.it
 	int stun_port = 3478;
+	int vis_port = 0;
 	const char *repo_address = NULL;
 	int publish_interval = 60;
 
 	int verbosity = DCLOG_ERROR;
+        int icmpignore = 0;
 
 	int bucketsize = 80000; /* this allows a burst of 80000 Bytes [Bytes] */
 	int rate = 10000000; /* 10Mbit/s [bits/s]*/
@@ -394,6 +441,8 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	}
 	config_value_int(cfg_tags, "stun_port", &stun_port);
 
+	config_value_int(cfg_tags, "vis_port", &vis_port);
+
 	res = config_value_str(cfg_tags, "repo_address");
 	if (res) {
 		repo_address = res;
@@ -402,6 +451,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	config_value_int(cfg_tags, "publish_interval", &publish_interval);
 
 	config_value_int(cfg_tags, "verbosity", &verbosity);
+	config_value_int(cfg_tags, "icmpignore", &icmpignore);
 
 	config_value_int(cfg_tags, "bucketsize", &bucketsize);
 	config_value_int(cfg_tags, "rate", &rate);
@@ -421,9 +471,12 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 		sendingBuffer[i] = NULL;
 		receivedBuffer[i].data = NULL;
 	}
+	mlSetVerbosity(verbosity);
 
+        if(icmpignore != 0) mlSetIcmpIgnore();
 	mlRegisterErrorConnectionCb(&connError_cb);
 	mlRegisterRecvConnectionCb(&receive_conn_cb);
+
 	s = mlInit(1, tout, port, IPaddr, stun_port, stun_server, &init_myNodeID_cb, base);
 	if (s < 0) {
 		fprintf(stderr, "Net-helper : error initializing ML!\n");
@@ -431,7 +484,6 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 		return NULL;
 	}
 
-	mlSetVerbosity(verbosity);
 
 	mlSetRateLimiterParams(bucketsize, rate, queuesize, RTXqueuesize, RTXholtdingtime);
 
@@ -448,6 +500,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	// NULL is inow valid for disabled repo 
 	// if (repoclient == NULL) fatal("Unable to initialize repoclient");
 	monInit(base, repoclient);
+        if(vis_port > 0) visInit(base, vis_port);
 }
 #endif
 	free(cfg_tags);
