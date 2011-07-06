@@ -142,4 +142,15 @@ void schedSelectHybrid(SchedOrdering ordering, schedPeerID  *peers, size_t peers
                      filterFunction filter,
                      pairEvaluateFunction pairevaluate);
 
+
+/* BIG FAT WARNING: This is here only because it's needed by the streamer;
+ * will be changed in the future!
+ * (this is why the function is not doxygenized)
+ * Use it at your own risk... ;-)
+ */
+void selectPeersForChunks(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
+                     schedPeerID *selected, size_t *selected_len,	//out, inout
+                     filterFunction filter,
+                     peerEvaluateFunction evaluate);
+
 #endif /* SCHEDULER_LA_H */
