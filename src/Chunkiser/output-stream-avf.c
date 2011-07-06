@@ -170,7 +170,7 @@ static struct dechunkiser_ctx *avf_init(const char *fname, const char *config)
   memset(out, 0, sizeof(struct dechunkiser_ctx));
   out->output_format = strdup("nut");
   out->selected_streams = 0x01;
-  if (fname) {
+  if (fname && fname[0]) {
     out->output_file = strdup(fname);
   } else {
     out->output_file = strdup("/dev/stdout");
