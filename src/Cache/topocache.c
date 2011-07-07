@@ -273,11 +273,11 @@ struct peer_cache *cache_copy(const struct peer_cache *c1)
   }
 
   for (n = 0; n < c1->current_size; n++) {
-    if (new_cache->metadata_size) {
-      memcpy(new_cache->metadata, c1->metadata + n * c1->metadata_size, c1->metadata_size);
-    }
     new_cache->entries[new_cache->current_size].id = nodeid_dup(c1->entries[n].id);
     new_cache->entries[new_cache->current_size++].timestamp = c1->entries[n].timestamp;
+  }
+  if (new_cache->metadata_size) {
+    memcpy(new_cache->metadata, c1->metadata, c1->metadata_size * c1->current_size);
   }
 
   return new_cache;
