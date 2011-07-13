@@ -11,11 +11,6 @@
 #define MAX(A,B)    ((A)>(B) ? (A) : (B))
 #define MIN(A,B)    ((A)<(B) ? (A) : (B))
 
-/**
-  * casted evaluator for generic use in generic selector functions
-  */
-typedef double (*evaluateFunction)(void*);
-
 struct iw {
   int index;
   double weight;
