@@ -207,6 +207,7 @@ static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
 	//	me->addrStringSize = SOCKETID_STRING_SIZE;
 		me->connID = -1;
 		me->refcnt = 1;
+		set_unique_node_id(me->addr, local_socketID);
 	//	fprintf(stderr,"Net-helper init : received my own socket: %s.\n",node_addr(me));
 		break;
 	case -1:
