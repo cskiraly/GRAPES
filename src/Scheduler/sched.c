@@ -11,11 +11,6 @@
 #define MAX(A,B)    ((A)>(B) ? (A) : (B))
 #define MIN(A,B)    ((A)<(B) ? (A) : (B))
 
-/**
-  * casted evaluator for generic use in generic selector functions
-  */
-typedef double (*evaluateFunction)(void*);
-
 struct iw {
   int index;
   double weight;
@@ -74,13 +69,15 @@ void selectWeighted(size_t size,unsigned char *base, size_t nmemb, double(*weigh
   double w_sum=0;
   double selected_index[nmemb];
   int s=0;
-  int s_max = MIN (*selected_len, nmemb);;
+  int s_max = MIN (*selected_len, nmemb);
+  int zeros = 0;
 
   // calculate weights
   for (i=0; i<nmemb; i++){
      weights[i] = weight(base + size*i);
      // weights should not be negative
      weights[i] = MAX (weights[i], 0);
+     if (weights[i] == 0) zeros += 1;
      w_sum += weights[i];
   }
 
@@ -90,6 +87,8 @@ void selectWeighted(size_t size,unsigned char *base, size_t nmemb, double(*weigh
       weights[i] = 1;
       w_sum += weights[i];
     }
+  } else { //exclude 0 weight from selection
+    s_max = MIN (s_max, nmemb - zeros);
   }
 
   while (s < s_max) {
