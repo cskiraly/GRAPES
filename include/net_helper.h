@@ -73,7 +73,7 @@ void nodeid_free(struct nodeID *s);
 * @param[in] config Additional configuration options.
 * @return A pointer to a nodeID representing the caller, initialized with all the necessary data.
 */
-struct nodeID *net_helper_init(const char *IPaddr, int port,const char *config);
+struct nodeID *net_helper_init(const char *IPaddr, int port,const char *config, const char *srv_ip, int srv_port);
 
 /**
 * @brief Prepare to receive messages of the specified type.

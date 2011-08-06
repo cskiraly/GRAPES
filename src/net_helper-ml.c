@@ -225,6 +225,7 @@ static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
 		if (++stun_retry_cnt > stun_retries) {
 			fprintf(stderr,"Net-helper init : Retrying without STUN\n");
 			mlSetStunServer(0,NULL);
+			mlSetBootstrapNode(NULL);
 		}
 	    break;
 	default :	// should never happen
@@ -334,7 +335,7 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 	if (arg->nrMissingBytes || !arg->firstPacketArrived) {
 	    fprintf(stderr, "Net-helper : corrupted message arrived from %s\n",str);
 /**/    fprintf(stderr, "\tMessage # %d -- Message type: ??? -- Missing # %d bytes%s\n",
-			recv_counter, buffer[0],arg->nrMissingBytes, arg->firstPacketArrived?"":", Missing first!");
+			recv_counter, buffer[0],arg->nrMissingBytes, (arg->firstPacketArrived?"":", Missing first!"));
 	}
 	else {
 	//	fprintf(stderr, "Net-helper : message arrived from %s\n",str);
@@ -358,10 +359,10 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 //	event_base_loopbreak(base);
 }
 
-
-struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config) {
+struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config, const char *srv_ip, int srv_port) {
 
 	struct timeval tout = NH_ML_INIT_TIMEOUT;
+	struct nodeID *bootstrap_node;
 	int s, i;
 	struct tag *cfg_tags;
 	const char *res;
@@ -425,7 +426,14 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 
 	mlRegisterErrorConnectionCb(&connError_cb);
 	mlRegisterRecvConnectionCb(&receive_conn_cb);
-	s = mlInit(1, tout, port, IPaddr, stun_port, stun_server, &init_myNodeID_cb, base);
+
+	if (!strcmp(srv_ip, "") || srv_port == 0)
+		s = mlInitStun(1, tout, port, IPaddr, stun_port, stun_server, &init_myNodeID_cb, base);
+	else {
+		bootstrap_node = create_node(srv_ip, srv_port);
+		fprintf(stderr, "Bootstrap node: %s\n", node_addr(bootstrap_node));
+		s = mlInitNode(1, tout, port, IPaddr, bootstrap_node->addr, &init_myNodeID_cb, base);
+	}
 	if (s < 0) {
 		fprintf(stderr, "Net-helper : error initializing ML!\n");
 		free(me);
