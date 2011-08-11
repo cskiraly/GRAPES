@@ -31,6 +31,7 @@ struct peersampler_context{
   int cache_size;
   struct peer_cache *local_cache;
   bool bootstrap;
+  struct nodeID *bootstrap_node;
   int bootstrap_period;
   int bootstrap_cycles;
   int period;
@@ -55,6 +56,7 @@ static struct peersampler_context* ncast_context_init(void)
 
   //Initialize context with default values
   con->bootstrap = true;
+  con->bootstrap_node = NULL;
   con->currtime = gettime();
   con->r = NULL;
 
@@ -137,6 +139,9 @@ static int ncast_add_neighbour(struct peersampler_context *context, struct nodeI
 {
   if (cache_add(context->local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
+  }
+  if (!context->bootstrap_node) {	//save the first added nodeid as bootstrap nodeid
+    context->bootstrap_node = nodeid_dup(neighbour);
   }
   return ncast_query_peer(context->tc, context->local_cache, neighbour);
 }
