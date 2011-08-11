@@ -9,6 +9,7 @@ struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp);
 struct peer_cache *cache_copy(const struct peer_cache *c);
 void cache_free(struct peer_cache *c);
 void cache_update(struct peer_cache *c);
+void cache_delay(struct peer_cache *c, int dts);
 struct nodeID *nodeid(const struct peer_cache *c, int i);
 const void *get_metadata(const struct peer_cache *c, int *size);
 int cache_metadata_update(struct peer_cache *c, const struct nodeID *p, const void *meta, int meta_size);
