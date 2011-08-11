@@ -29,6 +29,7 @@
 struct peersampler_context{
   uint64_t currtime;
   int cache_size;
+  int cache_size_threshold;
   struct peer_cache *local_cache;
   bool bootstrap;
   struct nodeID *bootstrap_node;
@@ -75,6 +76,11 @@ static int time_to_send(struct peersampler_context *context)
   return 0;
 }
 
+static void cache_size_threshold_init(struct peersampler_context* context)
+{
+  context->cache_size_threshold = (context->cache_size - 1 / 2);
+}
+
 /*
  * Exported Functions!
  */
@@ -115,6 +121,8 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, const void *m
     free(context);
     return NULL;
   }
+
+  cache_size_threshold_init(context);
 
   context->tc = ncast_proto_init(myID, metadata, metadata_size);
   if (!context->tc){
@@ -176,6 +184,11 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
   }
 
   if (time_to_send(context)) {
+    if (context->bootstrap_node &&
+        (cache_entries(context->local_cache) <= context->cache_size_threshold) &&
+        (cache_pos(context->local_cache, context->bootstrap_node) < 0)) {
+      cache_add(context->local_cache, context->bootstrap_node, NULL, 0);
+    }
     cache_update(context->local_cache);
     return ncast_query(context->tc, context->local_cache);
   }
@@ -206,6 +219,7 @@ static const void *ncast_get_metadata(struct peersampler_context *context, int *
 static int ncast_grow_neighbourhood(struct peersampler_context *context, int n)
 {
   context->cache_size += n;
+  cache_size_threshold_init(context);
 
   return context->cache_size;
 }
@@ -216,6 +230,7 @@ static int ncast_shrink_neighbourhood(struct peersampler_context *context, int n
     return -1;
   }
   context->cache_size -= n;
+  cache_size_threshold_init(context);
 
   return context->cache_size;
 }
