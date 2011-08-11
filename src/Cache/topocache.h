@@ -16,6 +16,7 @@ int cache_add_ranked(struct peer_cache *c, struct nodeID *neighbour, const void 
 int cache_add(struct peer_cache *c, struct nodeID *neighbour, const void *meta, int meta_size);
 int cache_del(struct peer_cache *c, const struct nodeID *neighbour);
 
+int cache_pos(const struct peer_cache *c, const struct nodeID *neighbour);
 struct nodeID *rand_peer(const struct peer_cache *c, void **meta, int max);
 struct nodeID *last_peer(const struct peer_cache *c);
 struct peer_cache *rand_cache(struct peer_cache *c, int n);
@@ -30,5 +31,6 @@ struct peer_cache *cache_union(const struct peer_cache *c1, const struct peer_ca
 int cache_resize (struct peer_cache *c, int size);
 
 void cache_check(const struct peer_cache *c);
+
 
 #endif	/* TOPOCACHE */

@@ -268,17 +268,22 @@ void cache_free(struct peer_cache *c)
   free(c);
 }
 
-static int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
+int cache_pos(const struct peer_cache *c, const struct nodeID *n)
 {
   int i;
 
   for (i = 0; i < c->current_size; i++) {
-    if (nodeid_equal(c->entries[i].id, elem->id)) {
+    if (nodeid_equal(c->entries[i].id, n)) {
       return i;
     }
   }
 
   return -1;
+}
+
+static int in_cache(const struct peer_cache *c, const struct cache_entry *elem)
+{
+  return cache_pos(c, elem->id);
 }
 
 struct nodeID *rand_peer(const struct peer_cache *c, void **meta, int max)
