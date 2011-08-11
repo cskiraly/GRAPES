@@ -160,8 +160,11 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == NCAST_QUERY) {
+      cache_randomize(context->local_cache);
       ncast_reply(context->tc, remote_cache, context->local_cache);
     }
+    cache_randomize(context->local_cache);
+    cache_randomize(remote_cache);
     new = merge_caches(context->local_cache, remote_cache, context->cache_size, &dummy);
     cache_free(remote_cache);
     if (new != NULL) {
