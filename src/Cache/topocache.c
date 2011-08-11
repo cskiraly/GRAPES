@@ -176,12 +176,12 @@ int cache_del(struct peer_cache *c, const struct nodeID *neighbour)
   return c->current_size;
 }
 
-void cache_update(struct peer_cache *c)
+void cache_delay(struct peer_cache *c, int dts)
 {
   int i;
   
   for (i = 0; i < c->current_size; i++) {
-    if (c->max_timestamp && (c->entries[i].timestamp == c->max_timestamp)) {
+    if (c->max_timestamp && (c->entries[i].timestamp + dts > c->max_timestamp)) {
       int j = i;
 
       while(j < c->current_size && c->entries[j].id) {
@@ -193,10 +193,16 @@ void cache_update(struct peer_cache *c)
 				   this one, so remove all of them
 				*/
     } else {
-      c->entries[i].timestamp++;
+      c->entries[i].timestamp = c->entries[i].timestamp + dts > 0 ? c->entries[i].timestamp + dts : 0;
     }
   }
 }
+
+void cache_update(struct peer_cache *c)
+{
+  cache_delay(c, 1);
+}
+
 
 struct peer_cache *cache_init(int n, int metadata_size, int max_timestamp)
 {
