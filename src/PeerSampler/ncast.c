@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <limits.h>
 
 #include "net_helper.h"
 #include "peersampler_iface.h"
@@ -37,6 +38,7 @@ struct peersampler_context{
   int counter;
   struct ncast_proto_context *tc;
   const struct nodeID **r;
+  int query_tokens;
 };
 
 static uint64_t gettime(void)
@@ -121,6 +123,8 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, const void *m
     return NULL;
   }
 
+  context->query_tokens = 0;
+
   return context;
 }
 
@@ -161,6 +165,8 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == NCAST_QUERY) {
       ncast_reply(context->tc, remote_cache, context->local_cache);
+    } else {
+     context->query_tokens--;	//a query was successful
     }
     new = merge_caches(context->local_cache, remote_cache, context->cache_size, &dummy);
     cache_free(remote_cache);
@@ -171,10 +177,19 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
   }
 
   if (time_to_send(context)) {
-    cache_update(context->local_cache);
-    return ncast_query(context->tc, context->local_cache);
-  }
+    int ret = INT_MIN;
+    int i;
 
+    context->query_tokens++;
+
+    cache_update(context->local_cache);
+    for (i = 0; i < context->query_tokens; i++) {
+      int r;
+
+      r = ncast_query(context->tc, context->local_cache);
+      r = r > ret ? r : ret;
+    }
+  }
   return 0;
 }
 
