@@ -80,13 +80,31 @@ int topo_query_peer(struct topo_context *context, const struct peer_cache *local
   return len > 0  ? send_to_peer(nodeid(context->myEntry, 0), dst, context->pkt, sizeof(struct topo_header) + len) : len;
 }
 
-int topo_proto_metadata_update(struct topo_context *context, const void *meta, int meta_size)
+int topo_proto_myentry_update(struct topo_context *context, struct nodeID *s, int dts, const void *meta, int meta_size)
 {
-  if (cache_metadata_update(context->myEntry, nodeid(context->myEntry, 0), meta, meta_size) > 0) {
-    return 1;
+  int ret = 1;
+
+  if (s && !nodeid_equal(nodeid(context->myEntry, 0), s)) {
+    fprintf(stderr, "ERROR: myEntry change not implemented!\n");	//TODO
+    exit(1);
   }
 
-  return -1;
+  if (dts) {
+    cache_delay(context->myEntry, dts);
+  }
+
+  if (meta) {
+    if (cache_metadata_update(context->myEntry, nodeid(context->myEntry, 0), meta, meta_size) <= 0) {
+      ret = -1;
+    }
+  }
+
+  return ret;
+}
+
+int topo_proto_metadata_update(struct topo_context *context, const void *meta, int meta_size)
+{
+  return topo_proto_myentry_update(context, nodeid(context->myEntry, 0), 0 , meta, meta_size);
 }
 
 struct topo_context* topo_proto_init(struct nodeID *s, const void *meta, int meta_size)
