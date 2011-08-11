@@ -154,12 +154,17 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
 
       return -1;
     }
-    cache_log(context->local_cache, "ncast:local");
 
     context->counter++;
     if (context->counter == context->bootstrap_cycles) context->bootstrap = false;
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
+if (h->type == NCAST_QUERY) {
+fprintf(stderr, "ncast: received query from %s!\n", node_addr(nodeid(remote_cache,0)));
+} else {
+fprintf(stderr, "ncast: received reply from %s!\n", node_addr(nodeid(remote_cache,0)));
+}
+    cache_log(context->local_cache, "ncast:local");
     cache_log(remote_cache, "ncast:remote");
     if (h->type == NCAST_QUERY) {
       ncast_reply(context->tc, remote_cache, context->local_cache);

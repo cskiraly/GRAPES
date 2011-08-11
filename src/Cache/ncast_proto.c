@@ -42,6 +42,7 @@ int ncast_reply(struct ncast_proto_context *context, const struct peer_cache *c,
 
   send_cache = cache_copy(local_cache);
   cache_update(send_cache);
+fprintf(stderr, "ncast: sending reply to %s!\n", node_addr(nodeid(c,0)));
   ret = topo_reply(context->context, c, send_cache, MSG_TYPE_TOPOLOGY, NCAST_REPLY, 0, 1);
   cache_free(send_cache);
 
@@ -50,6 +51,7 @@ int ncast_reply(struct ncast_proto_context *context, const struct peer_cache *c,
 
 int ncast_query_peer(struct ncast_proto_context *context, const struct peer_cache *local_cache, struct nodeID *dst)
 {
+fprintf(stderr, "ncast: sending query to %s!\n", node_addr(dst));
   return topo_query_peer(context->context, local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY, 0);
 }
 
@@ -59,8 +61,10 @@ int ncast_query(struct ncast_proto_context *context, const struct peer_cache *lo
 
   dst = rand_peer(local_cache, NULL, 0);
   if (dst == NULL) {
+fprintf(stderr, "ncast: sending query to ... no one!\n");
     return 0;
   }
+fprintf(stderr, "ncast: sending query to %s!\n", node_addr(dst));
   return topo_query_peer(context->context, local_cache, dst, MSG_TYPE_TOPOLOGY, NCAST_QUERY, 0);
 }
 
