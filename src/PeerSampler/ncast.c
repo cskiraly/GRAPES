@@ -39,6 +39,7 @@ struct peersampler_context{
   struct ncast_proto_context *tc;
   const struct nodeID **r;
   int query_tokens;
+  int reply_tokens;
 };
 
 static uint64_t gettime(void)
@@ -124,6 +125,7 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, const void *m
   }
 
   context->query_tokens = 0;
+  context->reply_tokens = 0;
 
   return context;
 }
@@ -164,6 +166,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == NCAST_QUERY) {
+      context->reply_tokens--;	//sending a reply to someone who presumably receives it
       ncast_reply(context->tc, remote_cache, context->local_cache);
     } else {
      context->query_tokens--;	//a query was successful
@@ -181,6 +184,10 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     int i;
 
     context->query_tokens++;
+    if (context->reply_tokens++ > 0) {//on average one reply is sent, if not, do something
+      context->query_tokens += context->reply_tokens;
+      context->reply_tokens = 0;
+    }
 
     cache_update(context->local_cache);
     for (i = 0; i < context->query_tokens; i++) {
