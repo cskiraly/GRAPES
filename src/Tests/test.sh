@@ -14,8 +14,44 @@ CLIENT="./topology_test"
 CLIENT_ARGS=""
 IFACE=""
 
+CHURN_MAX=30
+CHURN_MIN=30
+CHURN_WAIT=10
+CHURN_PORT_INCR=100
+STARTUP_WAIT=0
+
+function churn {
+  # Kill everything we've started on exit (with trap).
+  trap "ps -o pid= --ppid $BASHPID | xargs kill 2>/dev/null" 0
+
+  MIN=$1
+  MAX=$2
+  PAUSE=$3
+  PORT=$4
+  PORT_INCREMENT=$5
+
+  if [ $MIN -lt $MAX ]; then
+    let "RUN=$MIN+($RANDOM%($MAX-$MIN))"
+  else
+    RUN=$MIN
+  fi
+
+  while [ 1 ] ; do
+#    echo "$VALGRIND $CLIENT $PEER_OPTIONS $IFACE -P $PORT -i 127.0.0.1 -p $SOURCE_PORT $CLIENT_ARGS" > cmd.$PORT
+    $VALGRIND $CLIENT $PEER_OPTIONS $IFACE -P $PORT -i 127.0.0.1 -p $SOURCE_PORT $CLIENT_ARGS 2>stderr.$PORT > stdout.$PORT &
+    PID=$!
+    sleep $RUN
+    kill $PID
+    sleep $PAUSE
+    ((PORT+=PORT_INCREMENT))
+  done
+
+}
+
+
+
 #process options
-while getopts "s:S:p:I:P:N:f:e:v:VX:A:" opt; do
+while getopts "s:S:p:I:P:N:f:e:v:VX:A:C:c:t:T:w:W:" opt; do
   case $opt in
     s)
       SOURCE_OPTIONS=$OPTARG
@@ -26,9 +62,9 @@ while getopts "s:S:p:I:P:N:f:e:v:VX:A:" opt; do
     p)
       PEER_OPTIONS=$OPTARG
       ;;
-    P)
-      PEER_PORT_BASE=$OPTARG
-      ;;
+#    P)
+#      PEER_PORT_BASE=$OPTARG
+#      ;;
     I)
      IFACE="-I $OPTARG"
      ;;
@@ -53,6 +89,24 @@ while getopts "s:S:p:I:P:N:f:e:v:VX:A:" opt; do
       ;;
     A)
       CLIENT_ARGS=$OPTARG
+      ;;
+    C)
+      NUM_PEERS_C=$OPTARG
+      ;;
+    c)
+      CHURN_PORT_INCR=$OPTARG
+      ;;
+    t)
+      CHURN_MIN=$OPTARG
+      ;;
+    T)
+      CHURN_MAX=$OPTARG
+      ;;
+    w)
+      CHURN_WAIT=$OPTARG
+      ;;
+    W)
+      STARTUP_WAIT=$OPTARG
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -83,10 +137,17 @@ if [ $PEER_PORT_BASE -le $PEER_PORT_MAX ]; then
         FIFO=fifo.$PORT
         rm -f $FIFO
         mkfifo $FIFO
-        xterm -e "$CLIENT $PEER_OPTIONS $IFACE -P $PORT -i 127.0.0.1 -p $SOURCE_PORT $CLIENT_ARGS >$FIFO 2>/dev/null | grep '$FILTER' $FIFO" &
+        xterm -e "$CLIENT $PEER_OPTIONS $IFACE -P $PORT -i 127.0.0.1 -p $SOURCE_PORT $CLIENT_ARGS >$FIFO 2>stderr.$PORT | grep '$FILTER' $FIFO" &
         PIDS="$!,$PIDS"
     done
 fi
+
+((PEER_PORT_BASE = PEER_PORT_MAX + 1))
+((PEER_PORT_MAX=PEER_PORT_BASE + NUM_PEERS_C - 1))
+for PORT in `seq $PEER_PORT_BASE 1 $PEER_PORT_MAX`; do
+    churn $CHURN_MIN $CHURN_MAX $CHURN_WAIT $PORT $CHURN_PORT_INCR &
+    sleep $STARTUP_WAIT
+done
 
 # Kill everything we've stared on exit (with trap).
 if [ `uname -s` = "Linux" ]; then
