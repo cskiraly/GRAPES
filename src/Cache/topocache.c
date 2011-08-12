@@ -583,6 +583,63 @@ struct peer_cache *merge_caches(const struct peer_cache *c1, const struct peer_c
   return new_cache;
 }
 
+static int swap_entries(const struct peer_cache *c, int i, int j)
+{
+  struct cache_entry t;
+  uint8_t *metadata;
+
+  if (i == j) {
+    return 1;
+  }
+
+  if (c->metadata_size) {
+    metadata = malloc(c->metadata_size);
+    if (! metadata) {
+      return -1;
+    }
+
+    memcpy(metadata,                           c->metadata + i * c->metadata_size, c->metadata_size);
+    memcpy(c->metadata + i * c->metadata_size, c->metadata + j * c->metadata_size, c->metadata_size);
+    memcpy(c->metadata + j * c->metadata_size, metadata,                           c->metadata_size);
+
+    free(metadata);
+  }
+
+  t = c->entries[i];
+  c->entries[i] = c->entries[j];
+  c->entries[j] = t;
+
+  return 1;
+}
+
+void cache_randomize(const struct peer_cache *c)
+{
+  int i;
+
+  for (i = 0; i < c->current_size - 1; i++) {
+    int j, k;
+    uint32_t ts = c->entries[i].timestamp;
+
+    for (j = i + 1; j < c->current_size; j++) {
+      if (c->entries[j].timestamp != ts) {
+        break;
+      }
+    }
+
+    //permutate entries from i to j-1
+    if (j - 1 > i) {
+      for (k = i; k < j - 1; k++) {
+        int r;
+        double rd;
+        r = (rand() / (RAND_MAX + 1.0)) * (j - k);
+        swap_entries(c, k, k + r);
+      }
+    }
+
+    i = j - 1;
+  }
+}
+
 void cache_check(const struct peer_cache *c)
 {
   int i, j;

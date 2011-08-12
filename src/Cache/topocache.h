@@ -21,6 +21,7 @@ int cache_pos(const struct peer_cache *c, const struct nodeID *neighbour);
 struct nodeID *rand_peer(const struct peer_cache *c, void **meta, int max);
 struct nodeID *last_peer(const struct peer_cache *c);
 struct peer_cache *rand_cache(struct peer_cache *c, int n);
+void cache_randomize(const struct peer_cache *c);
 
 struct peer_cache *entries_undump(const uint8_t *buff, int size);
 int cache_header_dump(uint8_t *b, const struct peer_cache *c, int include_me);
