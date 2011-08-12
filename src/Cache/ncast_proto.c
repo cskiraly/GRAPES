@@ -67,3 +67,7 @@ int ncast_query(struct ncast_proto_context *context, const struct peer_cache *lo
 int ncast_proto_metadata_update(struct ncast_proto_context *context, const void *meta, int meta_size){
   return topo_proto_metadata_update(context->context, meta, meta_size);
 }
+
+int ncast_proto_myentry_update(struct ncast_proto_context *context, struct nodeID *s, int dts, const void *meta, int meta_size) {
+  return topo_proto_myentry_update(context->context, s, dts, meta, meta_size);
+}
