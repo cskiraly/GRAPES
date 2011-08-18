@@ -206,6 +206,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
   if (time_to_send(context)) {
     int ret = INT_MIN;
     int i;
+    int entries = cache_entries(context->local_cache);
 
     if (context->bootstrap_node &&
         (cache_entries(context->local_cache) <= context->cache_size_threshold) &&
@@ -217,6 +218,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
       context->query_tokens += context->reply_tokens;
       context->reply_tokens = 0;
     }
+    if (context->query_tokens > entries) context->query_tokens = entries;	//don't be too aggressive
 
     cache_update(context->local_cache);
     for (i = 0; i < context->query_tokens; i++) {
