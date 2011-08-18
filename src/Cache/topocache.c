@@ -588,3 +588,8 @@ void cache_check(const struct peer_cache *c)
     }
   }
 }
+
+int cache_entries(const struct peer_cache *c)
+{
+  return c->current_size;
+}
