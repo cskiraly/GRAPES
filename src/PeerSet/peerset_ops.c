@@ -118,6 +118,7 @@ int peerset_add_peer(struct peerset *h, struct nodeID *id)
   e->bmap = chunkID_set_init("type=bitmap");
   timerclear(&e->bmap_timestamp);
   e->cb_size = 0;
+  e->capacity = 0;
 
   return h->n_elements;
 }
