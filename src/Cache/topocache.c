@@ -755,6 +755,11 @@ void cache_check(const struct peer_cache *c)
   }
 }
 
+int cache_entries(const struct peer_cache *c)
+{
+  return c->current_size;
+}
+
 void cache_log(const struct peer_cache *c, const char *name){
   char addr[256];
   int i;
