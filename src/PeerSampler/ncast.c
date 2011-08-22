@@ -159,10 +159,13 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     if (context->counter == context->bootstrap_cycles) context->bootstrap = false;
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
+cache_log(context->local_cache, "ncast:local");
+cache_log(remote_cache, "ncast:remote");
     if (h->type == NCAST_QUERY) {
       ncast_reply(context->tc, remote_cache, context->local_cache);
     }
     new = merge_caches(context->local_cache, remote_cache, context->cache_size, &dummy);
+cache_log(new, "ncast:new");
     cache_free(remote_cache);
     if (new != NULL) {
       cache_free(context->local_cache);
@@ -172,6 +175,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
 
   if (time_to_send(context)) {
     cache_update(context->local_cache);
+cache_log(context->local_cache, "ncast:time_to_send");
     return ncast_query(context->tc, context->local_cache);
   }
 
