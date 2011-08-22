@@ -144,6 +144,7 @@ static int ncast_add_neighbour(struct peersampler_context *context, struct nodeI
 static int ncast_parse_data(struct peersampler_context *context, const uint8_t *buff, int len)
 {
   int dummy;
+char addr[256];
 
   if (len) {
     const struct topo_header *h = (const struct topo_header *)buff;
@@ -159,6 +160,12 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     if (context->counter == context->bootstrap_cycles) context->bootstrap = false;
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
+node_addr(nodeid(remote_cache,0), addr, sizeof(addr));
+if (h->type == NCAST_QUERY) {
+  fprintf(stderr, "ncast: received query from %s!\n", addr);
+} else {
+  fprintf(stderr, "ncast: received reply from %s!\n", addr);
+}
 cache_log(context->local_cache, "ncast:local");
 cache_log(remote_cache, "ncast:remote");
     if (h->type == NCAST_QUERY) {
