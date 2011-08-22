@@ -167,6 +167,7 @@ static int ncast_add_neighbour(struct peersampler_context *context, struct nodeI
 static int ncast_parse_data(struct peersampler_context *context, const uint8_t *buff, int len)
 {
   int dummy;
+char addr[256];
 
   if (len) {
     const struct topo_header *h = (const struct topo_header *)buff;
@@ -185,6 +186,14 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     }
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
+node_addr(nodeid(remote_cache,0), addr, sizeof(addr));
+if (h->type == NCAST_QUERY) {
+  fprintf(stderr, "ncast: received query from %s!\n", addr);
+} else {
+  fprintf(stderr, "ncast: received reply from %s!\n", addr);
+}
+cache_log(context->local_cache, "ncast:local");
+cache_log(remote_cache, "ncast:remote");
     if (h->type == NCAST_QUERY) {
       context->reply_tokens--;	//sending a reply to someone who presumably receives it
       cache_randomize(context->local_cache);
@@ -195,6 +204,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     cache_randomize(context->local_cache);
     cache_randomize(remote_cache);
     new = merge_caches(context->local_cache, remote_cache, context->cache_size, &dummy);
+cache_log(new, "ncast:new");
     cache_free(remote_cache);
     if (new != NULL) {
       cache_free(context->local_cache);
@@ -222,6 +232,7 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     if (context->query_tokens > entries) context->query_tokens = entries;	//don't be too aggressive
 
     cache_update(context->local_cache);
+cache_log(context->local_cache, "ncast:time_to_send");
     for (i = 0; i < context->query_tokens; i++) {
       int r;
 
