@@ -30,8 +30,10 @@
 struct peersampler_context{
   uint64_t currtime;
   int cache_size;
+  int cache_size_threshold;
   struct peer_cache *local_cache;
   bool bootstrap;
+  struct nodeID *bootstrap_node;
   int bootstrap_period;
   int bootstrap_cycles;
   int period;
@@ -58,6 +60,7 @@ static struct peersampler_context* ncast_context_init(void)
 
   //Initialize context with default values
   con->bootstrap = true;
+  con->bootstrap_node = NULL;
   con->currtime = gettime();
   con->r = NULL;
 
@@ -74,6 +77,11 @@ static int time_to_send(struct peersampler_context *context)
   }
 
   return 0;
+}
+
+static void cache_size_threshold_init(struct peersampler_context* context)
+{
+  context->cache_size_threshold = (context->cache_size - 1 / 2);
 }
 
 /*
@@ -117,6 +125,8 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, const void *m
     return NULL;
   }
 
+  cache_size_threshold_init(context);
+
   context->tc = ncast_proto_init(myID, metadata, metadata_size);
   if (!context->tc){
     free(context->local_cache);
@@ -143,6 +153,9 @@ static int ncast_add_neighbour(struct peersampler_context *context, struct nodeI
 {
   if (cache_add(context->local_cache, neighbour, metadata, metadata_size) < 0) {
     return -1;
+  }
+  if (!context->bootstrap_node) {	//save the first added nodeid as bootstrap nodeid
+    context->bootstrap_node = nodeid_dup(neighbour);
   }
   return ncast_query_peer(context->tc, context->local_cache, neighbour);
 }
@@ -183,6 +196,13 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     int ret = INT_MIN;
     int i;
     int entries = cache_entries(context->local_cache);
+
+    if (context->bootstrap_node &&
+        (entries <= context->cache_size_threshold) &&
+        (cache_pos(context->local_cache, context->bootstrap_node) < 0)) {
+      cache_add(context->local_cache, context->bootstrap_node, NULL, 0);
+	  entries = cache_entries(context->local_cache);
+    }
 
     context->query_tokens++;
     if (context->reply_tokens++ > 0) {//on average one reply is sent, if not, do something
@@ -225,6 +245,7 @@ static const void *ncast_get_metadata(struct peersampler_context *context, int *
 static int ncast_grow_neighbourhood(struct peersampler_context *context, int n)
 {
   context->cache_size += n;
+  cache_size_threshold_init(context);
 
   return context->cache_size;
 }
@@ -235,6 +256,7 @@ static int ncast_shrink_neighbourhood(struct peersampler_context *context, int n
     return -1;
   }
   context->cache_size -= n;
+  cache_size_threshold_init(context);
 
   return context->cache_size;
 }
