@@ -42,6 +42,7 @@ struct peersampler_context{
   const struct nodeID **r;
   int query_tokens;
   int reply_tokens;
+  int first_ts;
 };
 
 static uint64_t gettime(void)
@@ -136,6 +137,9 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, const void *m
 
   context->query_tokens = 0;
   context->reply_tokens = 0;
+  context->first_ts = (max_timestamp + 1) / 2;
+  // increase timestamp for initial message, since that is out of the normal cycle of the bootstrap peer
+  ncast_proto_myentry_update(context->tc, NULL, context->first_ts, NULL, 0);
 
   return context;
 }
@@ -175,7 +179,10 @@ static int ncast_parse_data(struct peersampler_context *context, const uint8_t *
     }
 
     context->counter++;
-    if (context->counter == context->bootstrap_cycles) context->bootstrap = false;
+    if (context->counter == context->bootstrap_cycles) {
+      context->bootstrap = false;
+      ncast_proto_myentry_update(context->tc, NULL , - context->first_ts, NULL, 0);  // reset the timestamp of our own ID, we are in normal cycle, we will not disturb the algorithm
+    }
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == NCAST_QUERY) {
