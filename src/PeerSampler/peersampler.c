@@ -28,11 +28,13 @@ struct psample_context* psample_init(struct nodeID *myID, const void *metadata, 
   tc = malloc(sizeof(struct psample_context));
   if (!tc) return NULL;
 
-  tc->ps = &ncast;
+  tc->ps = &cyclon;
   cfg_tags = config_parse(config);
   proto = config_value_str(cfg_tags, "protocol");
   if (proto) {
-    if (strcmp(proto, "cyclon") == 0) {
+    if (strcmp(proto, "newscast") == 0) {
+      tc->ps = &ncast;
+    } else if (strcmp(proto, "cyclon") == 0) {
       tc->ps = &cyclon;
     } else if (strcmp(proto, "cloudcast") == 0) {
       tc->ps = &cloudcast;
