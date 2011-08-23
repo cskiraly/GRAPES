@@ -142,4 +142,16 @@ void schedSelectHybrid(SchedOrdering ordering, schedPeerID  *peers, size_t peers
                      filterFunction filter,
                      pairEvaluateFunction pairevaluate);
 
+
+/*---selector function----------------*/
+/**
+  * casted evaluator for generic use in generic selector functions
+  */
+typedef double (*evaluateFunction)(void*);
+
+/**
+  * Select best N of K with the given ordering method
+  */
+void selectWithOrdering(SchedOrdering ordering, size_t size, unsigned char *base, size_t nmemb, double(*evaluate)(void *), unsigned char *selected,size_t *selected_len);
+
 #endif /* SCHEDULER_LA_H */
