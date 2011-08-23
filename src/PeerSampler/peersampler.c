@@ -9,6 +9,7 @@
 #include "config.h"
 
 extern struct peersampler_iface ncast;
+extern struct peersampler_iface ncastplus;
 extern struct peersampler_iface cyclon;
 extern struct peersampler_iface cloudcast;
 extern struct peersampler_iface dummy;
@@ -34,6 +35,8 @@ struct psample_context* psample_init(struct nodeID *myID, const void *metadata, 
   if (proto) {
     if (strcmp(proto, "newscast") == 0) {
       tc->ps = &ncast;
+    } else if (strcmp(proto, "newscastplus") == 0) {
+      tc->ps = &ncastplus;
     } else if (strcmp(proto, "cyclon") == 0) {
       tc->ps = &cyclon;
     } else if (strcmp(proto, "cloudcast") == 0) {
