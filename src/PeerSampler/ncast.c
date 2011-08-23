@@ -98,28 +98,13 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, const void *m
   if (!context) return NULL;
 
   cfg_tags = config_parse(config);
-  res = config_value_int(cfg_tags, "cache_size", &context->cache_size);
-  if (!res) {
-    context->cache_size = DEFAULT_CACHE_SIZE;
-  }
-  res = config_value_int(cfg_tags, "max_timestamp", &max_timestamp);
-  if (!res) {
-    max_timestamp = DEFAULT_MAX_TIMESTAMP;
-  }
-  res = config_value_int(cfg_tags, "period", &context->period);
-  if (!res) {
-    context->period = DEFAULT_PERIOD;
-  }
-  res = config_value_int(cfg_tags, "bootstrap_period", &context->bootstrap_period);
-  if (!res) {
-    context->bootstrap_period = DEFAULT_BOOTSTRAP_PERIOD;
-  }
-  res = config_value_int(cfg_tags, "bootstrap_cycles", &context->bootstrap_cycles);
-  if (!res) {
-    context->bootstrap_cycles = DEFAULT_BOOTSTRAP_CYCLES;
-  }
+  res = config_value_int_default(cfg_tags, "cache_size", &context->cache_size, DEFAULT_CACHE_SIZE);
+  res = config_value_int_default(cfg_tags, "max_timestamp", &max_timestamp, DEFAULT_MAX_TIMESTAMP);
+  res = config_value_int_default(cfg_tags, "period", &context->period, DEFAULT_PERIOD);
+  res = config_value_int_default(cfg_tags, "bootstrap_period", &context->bootstrap_period, DEFAULT_BOOTSTRAP_PERIOD);
+  res = config_value_int_default(cfg_tags, "bootstrap_cycles", &context->bootstrap_cycles, DEFAULT_BOOTSTRAP_CYCLES);
   free(cfg_tags);
-  
+
   context->local_cache = cache_init(context->cache_size, metadata_size, max_timestamp);
   if (context->local_cache == NULL) {
     free(context);
