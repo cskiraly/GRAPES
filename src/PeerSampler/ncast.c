@@ -43,6 +43,10 @@ struct peersampler_context{
   int query_tokens;
   int reply_tokens;
   int first_ts;
+  int adaptive;
+  int restart;
+  int randomize;
+  int slowstart;
 };
 
 static uint64_t gettime(void)
@@ -88,7 +92,7 @@ static void cache_size_threshold_init(struct peersampler_context* context)
 /*
  * Exported Functions!
  */
-static struct peersampler_context* ncast_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
+static struct peersampler_context* init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config, int plus_features)
 {
   struct tag *cfg_tags;
   struct peersampler_context *context;
@@ -98,28 +102,17 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, const void *m
   if (!context) return NULL;
 
   cfg_tags = config_parse(config);
-  res = config_value_int(cfg_tags, "cache_size", &context->cache_size);
-  if (!res) {
-    context->cache_size = DEFAULT_CACHE_SIZE;
-  }
-  res = config_value_int(cfg_tags, "max_timestamp", &max_timestamp);
-  if (!res) {
-    max_timestamp = DEFAULT_MAX_TIMESTAMP;
-  }
-  res = config_value_int(cfg_tags, "period", &context->period);
-  if (!res) {
-    context->period = DEFAULT_PERIOD;
-  }
-  res = config_value_int(cfg_tags, "bootstrap_period", &context->bootstrap_period);
-  if (!res) {
-    context->bootstrap_period = DEFAULT_BOOTSTRAP_PERIOD;
-  }
-  res = config_value_int(cfg_tags, "bootstrap_cycles", &context->bootstrap_cycles);
-  if (!res) {
-    context->bootstrap_cycles = DEFAULT_BOOTSTRAP_CYCLES;
-  }
+  res = config_value_int_default(cfg_tags, "cache_size", &context->cache_size, DEFAULT_CACHE_SIZE);
+  res = config_value_int_default(cfg_tags, "max_timestamp", &max_timestamp, DEFAULT_MAX_TIMESTAMP);
+  res = config_value_int_default(cfg_tags, "period", &context->period, DEFAULT_PERIOD);
+  res = config_value_int_default(cfg_tags, "bootstrap_period", &context->bootstrap_period, DEFAULT_BOOTSTRAP_PERIOD);
+  res = config_value_int_default(cfg_tags, "bootstrap_cycles", &context->bootstrap_cycles, DEFAULT_BOOTSTRAP_CYCLES);
+  res = config_value_int_default(cfg_tags, "adaptive", &context->adaptive, plus_features);
+  res = config_value_int_default(cfg_tags, "restart", &context->restart, plus_features);
+  res = config_value_int_default(cfg_tags, "randomize", &context->randomize, plus_features);
+  res = config_value_int_default(cfg_tags, "slowstart", &context->slowstart, plus_features);
   free(cfg_tags);
-  
+
   context->local_cache = cache_init(context->cache_size, metadata_size, max_timestamp);
   if (context->local_cache == NULL) {
     free(context);
@@ -151,6 +144,16 @@ static int ncast_change_metadata(struct peersampler_context *context, const void
   }
 
   return 1;
+}
+
+static struct peersampler_context* ncast_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
+{
+    return init(myID, metadata, metadata_size, config, 0);
+}
+
+static struct peersampler_context* ncastplus_init(struct nodeID *myID, const void *metadata, int metadata_size, const char *config)
+{
+    return init(myID, metadata, metadata_size, config, 1);
 }
 
 static int ncast_add_neighbour(struct peersampler_context *context, struct nodeID *neighbour, const void *metadata, int metadata_size)
@@ -289,6 +292,18 @@ static int ncast_remove_neighbour(struct peersampler_context *context, const str
 
 struct peersampler_iface ncast = {
   .init = ncast_init,
+  .change_metadata = ncast_change_metadata,
+  .add_neighbour = ncast_add_neighbour,
+  .parse_data = ncast_parse_data,
+  .get_neighbourhood = ncast_get_neighbourhood,
+  .get_metadata = ncast_get_metadata,
+  .grow_neighbourhood = ncast_grow_neighbourhood,
+  .shrink_neighbourhood = ncast_shrink_neighbourhood,
+  .remove_neighbour = ncast_remove_neighbour,
+};
+
+struct peersampler_iface ncastplus = {
+  .init = ncastplus_init,
   .change_metadata = ncast_change_metadata,
   .add_neighbour = ncast_add_neighbour,
   .parse_data = ncast_parse_data,

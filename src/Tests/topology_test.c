@@ -38,7 +38,7 @@ static void cmdline_parse(int argc, char *argv[])
 {
   int o;
 
-  while ((o = getopt(argc, argv, "s:p:i:P:I:c")) != -1) {
+  while ((o = getopt(argc, argv, "s:p:i:P:I:cno")) != -1) {
     switch(o) {
       case 'p':
         srv_port = atoi(optarg);
@@ -57,6 +57,12 @@ static void cmdline_parse(int argc, char *argv[])
         break;
       case 'c':
         psample_config = "protocol=cyclon";
+        break;
+      case 'n':
+        psample_config = "protocol=newscast";
+        break;
+      case 'o':
+        psample_config = "protocol=newscastplus";
         break;
       default:
         fprintf(stderr, "Error: unknown option %c\n", o);
