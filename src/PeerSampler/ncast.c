@@ -26,6 +26,10 @@
 #define DEFAULT_BOOTSTRAP_CYCLES 5
 #define DEFAULT_BOOTSTRAP_PERIOD 2*1000*1000
 #define DEFAULT_PERIOD 10*1000*1000
+#define DEFAULT_ADAPTIVE 0
+#define DEFAULT_RESTART 0
+#define DEFAULT_RANDOMIZE 0
+#define DEFAULT_SLOWSTART 0
 
 struct peersampler_context{
   uint64_t currtime;
@@ -43,6 +47,10 @@ struct peersampler_context{
   int query_tokens;
   int reply_tokens;
   int first_ts;
+  int adaptive;
+  int restart;
+  int randomize;
+  int slowstart;
 };
 
 static uint64_t gettime(void)
@@ -103,6 +111,10 @@ static struct peersampler_context* ncast_init(struct nodeID *myID, const void *m
   res = config_value_int_default(cfg_tags, "period", &context->period, DEFAULT_PERIOD);
   res = config_value_int_default(cfg_tags, "bootstrap_period", &context->bootstrap_period, DEFAULT_BOOTSTRAP_PERIOD);
   res = config_value_int_default(cfg_tags, "bootstrap_cycles", &context->bootstrap_cycles, DEFAULT_BOOTSTRAP_CYCLES);
+  res = config_value_int_default(cfg_tags, "adaptive", &context->adaptive, DEFAULT_ADAPTIVE);
+  res = config_value_int_default(cfg_tags, "restart", &context->restart, DEFAULT_RESTART);
+  res = config_value_int_default(cfg_tags, "randomize", &context->randomize, DEFAULT_RANDOMIZE);
+  res = config_value_int_default(cfg_tags, "slowstart", &context->slowstart, DEFAULT_SLOWSTART);
   free(cfg_tags);
 
   context->local_cache = cache_init(context->cache_size, metadata_size, max_timestamp);
