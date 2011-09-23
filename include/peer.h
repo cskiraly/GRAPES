@@ -18,6 +18,7 @@ struct peer {
     struct timeval bmap_timestamp; ///< buffermap timestamp
     int cb_size; ///< chunk buffer size
     double capacity; ///< chunk buffer size
+    int subnet;
 };
 
 
