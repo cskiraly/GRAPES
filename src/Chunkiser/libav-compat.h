@@ -9,3 +9,6 @@
 #undef URL_WRONLY
 #define URL_WRONLY AVIO_FLAG_WRITE
 #endif
+#ifndef PKT_FLAG_KEY
+#define PKT_FLAG_KEY AV_PKT_FLAG_KEY
+#endif
