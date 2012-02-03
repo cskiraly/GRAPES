@@ -44,7 +44,6 @@ struct dechunkiser_ctx {
   AVRational video_time_base;
   AVRational audio_time_base;
 
-  char *output_file;
   int64_t prev_pts, prev_dts;
   AVFormatContext *outctx;
   struct controls *c1;
@@ -487,7 +486,6 @@ static gint configure_event(GtkWidget * widget, GdkEventConfigure * event,
 void *window_prepare(struct dechunkiser_ctx *o)
 { int w;
   int h;
-  GdkGC *gc1;
   GtkWidget *vbox;
   GtkWidget *hbox;
   GtkWidget *window;
@@ -538,14 +536,11 @@ void *window_prepare(struct dechunkiser_ctx *o)
   c->u_area.width = c->d_area->allocation.width;
   c->u_area.height = c->d_area->allocation.height;
   c->gc = gdk_gc_new(c->d_area->window);
-  gc1 = gdk_gc_new(c->d_area->window);
 
   gdk_color_black(gdk_colormap_get_system(), &black);
   gdk_color_white(gdk_colormap_get_system(), &white);
   gdk_gc_set_foreground(c->gc, &black);
   gdk_gc_set_background(c->gc, &white);
-  gdk_gc_set_foreground(gc1, &white);
-  gdk_gc_set_background(gc1, &black);
 
   return c;
 }
@@ -676,11 +671,6 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
 
   memset(out, 0, sizeof(struct dechunkiser_ctx));
   out->selected_streams = 0x01;
-  if (fname) {
-    out->output_file = strdup(fname);
-  } else {
-    out->output_file = strdup("/dev/stdout");
-  }
   cfg_tags = config_parse(config);
   if (cfg_tags) {
     const char *format;
@@ -757,7 +747,7 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
       o->t0=getmicro();
     }
     av_set_parameters(o->outctx, NULL);
-    dump_format(o->outctx, 0, o->output_file, 1);
+    dump_format(o->outctx, 0, "", 1);
   }
   if ((o->streams & media_type) == 0) {
     return;    /* Received a chunk for a non-selected stream */
@@ -860,7 +850,6 @@ static void play_close(struct dechunkiser_ctx *s)
   }
   av_metadata_free(&s->outctx->metadata);
   free(s->outctx);
-  free(s->output_file);
   free(s);
 }
 
