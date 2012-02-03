@@ -850,6 +850,9 @@ static void play_close(struct dechunkiser_ctx *s)
   }
   av_metadata_free(&s->outctx->metadata);
   free(s->outctx);
+  //tobefreed c1->d_area, c1->gc
+  //gtk_widget_destroy(window);
+  free(s->c1);
   free(s);
 }
 
