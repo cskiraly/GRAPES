@@ -759,15 +759,7 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
       o->t0=getmicro();
     }
     av_set_parameters(o->outctx, NULL);
-    snprintf(o->outctx->filename, sizeof(o->outctx->filename), "%s", o->output_file);
     dump_format(o->outctx, 0, o->output_file, 1);
-    url_fopen(&o->outctx->pb, o->output_file, URL_WRONLY );
-  
-    if (o->outctx->pb == NULL) {
-      fprintf(stderr, "Cannot open %s!\n", o->output_file);
-    }
-
-    av_write_header(o->outctx);
   }
   if ((o->streams & media_type) == 0) {
     return;    /* Received a chunk for a non-selected stream */
@@ -795,22 +787,13 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
       //                                       av_rescale_q(pts, outctx->streams[0]->codec->time_base, AV_TIME_BASE_Q),
       //                                       av_rescale_q(dts, outctx->streams[0]->codec->time_base, AV_TIME_BASE_Q));
 
-
-      if (pkt.stream_index==0){
-        pkt.pts = av_rescale_q(pts, o->video_time_base, o->outctx->streams[0]->time_base);
-      } else {
-        pkt.pts = av_rescale_q(pts, o->audio_time_base, o->outctx->streams[1]->time_base);
-      }
+      pkt.pts = pts;
     } else {
       pkt.pts = AV_NOPTS_VALUE;
     }
     dts += (dts < o->prev_dts - ((1LL << 31) - 1)) ? ((o->prev_dts >> 32) + 1) << 32 : (o->prev_dts >> 32) << 32;
     o->prev_dts = dts;
-    if (pkt.stream_index==0){
-      pkt.dts = av_rescale_q(dts, o->video_time_base, o->outctx->streams[0]->time_base);
-    } else {
-      pkt.dts = av_rescale_q(dts, o->audio_time_base, o->outctx->streams[1]->time_base);
-    }
+    pkt.dts = dts;
     // pkt.data = p;
     pkt.data = av_mallocz(frame_size+FF_INPUT_BUFFER_PADDING_SIZE);
     memcpy(pkt.data,p,frame_size);
@@ -863,8 +846,6 @@ static void play_close(struct dechunkiser_ctx *s)
 	pthread_cond_signal(&s->condaudio);
 	pthread_cond_signal(&s->condvideo);
   snd_pcm_close (s->playback_handle);
-  av_write_trailer(s->outctx);
-  url_fclose(s->outctx->pb);
   audio_resample_close(s->rsc);
   pthread_join(&s->tid_video,NULL);
   pthread_join(&s->tid_audio,NULL);
