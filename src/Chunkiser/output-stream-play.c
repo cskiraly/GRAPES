@@ -845,10 +845,10 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
 static void play_close(struct dechunkiser_ctx *s)
 {
   int i;
-  int64_t last;
+
   s->end=1;
-	pthread_cond_signal(&s->condaudio);
-	pthread_cond_signal(&s->condvideo);
+  pthread_cond_signal(&s->condaudio);
+  pthread_cond_signal(&s->condvideo);
   snd_pcm_close (s->playback_handle);
   audio_resample_close(s->rsc);
   pthread_join(s->tid_video, NULL);
