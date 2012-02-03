@@ -44,7 +44,6 @@ struct dechunkiser_ctx {
   AVRational video_time_base;
   AVRational audio_time_base;
 
-  char *output_format;
   char *output_file;
   int64_t prev_pts, prev_dts;
   AVFormatContext *outctx;
@@ -559,7 +558,7 @@ static AVFormatContext *format_init(struct dechunkiser_ctx * o)
   
   av_register_all();
 
-  outfmt = av_guess_format(o->output_format, o->output_file, NULL);
+  outfmt = av_guess_format("null", NULL, NULL);
   of = avformat_alloc_context();
   if (of == NULL) {
     return NULL;
@@ -676,7 +675,6 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
   }
 
   memset(out, 0, sizeof(struct dechunkiser_ctx));
-  out->output_format = strdup("nut");
   out->selected_streams = 0x01;
   if (fname) {
     out->output_file = strdup(fname);
@@ -687,10 +685,6 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
   if (cfg_tags) {
     const char *format;
 
-    format = config_value_str(cfg_tags, "format");
-    if (format) {
-      out->output_format = strdup(format);
-    }
     format = config_value_str(cfg_tags, "media");
     if (format) {
       if (!strcmp(format, "video")) {
@@ -866,7 +860,6 @@ static void play_close(struct dechunkiser_ctx *s)
   }
   av_metadata_free(&s->outctx->metadata);
   free(s->outctx);
-  free(s->output_format);
   free(s->output_file);
   free(s);
 }
