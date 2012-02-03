@@ -71,6 +71,12 @@ struct dechunkiser_ctx {
   int64_t ritardoMax;
 };
 
+struct controls {
+  GtkWidget *d_area;
+  GdkRectangle u_area;
+  GdkGC *gc;
+};
+
 static enum CodecID libav_codec_id(uint8_t mytype)
 {
   switch (mytype) {
@@ -114,18 +120,7 @@ static enum CodecID libav_codec_id(uint8_t mytype)
   }
 }
 
-
-struct controls {
-  GtkWidget *d_area;
-  GdkRectangle u_area;
-  GdkGC *gc;
-};
-  
-
-void *window_prepare(struct dechunkiser_ctx * o);
-
-
-snd_pcm_format_t sample_fmt_to_snd_pcm_format(enum AVSampleFormat  sample_fmt)
+static snd_pcm_format_t sample_fmt_to_snd_pcm_format(enum AVSampleFormat  sample_fmt)
 {
   switch((sample_fmt)){
     case AV_SAMPLE_FMT_U8  :return SND_PCM_FORMAT_U8;
@@ -139,7 +134,7 @@ snd_pcm_format_t sample_fmt_to_snd_pcm_format(enum AVSampleFormat  sample_fmt)
   }
 }
 
-int enqueue(struct PacketQueue * q, AVPacket pkt)
+static int enqueue(struct PacketQueue * q, AVPacket pkt)
 {
   AVPacketList *pkt1;
   pkt1 = av_malloc(sizeof(AVPacketList));
@@ -155,7 +150,8 @@ int enqueue(struct PacketQueue * q, AVPacket pkt)
   q->length++;
   return 1;
 }
-AVPacket dequeue(struct PacketQueue * q)
+
+static AVPacket dequeue(struct PacketQueue * q)
 {
   AVPacketList *pkt1;
   AVPacket pkt;
@@ -172,10 +168,7 @@ AVPacket dequeue(struct PacketQueue * q)
 
 }
 
-
-
-
-void  prepare_audio ( snd_pcm_t * playback_handle, snd_pcm_hw_params_t * hw_params, const snd_pcm_format_t format, int channels, int *freq)
+static void prepare_audio(snd_pcm_t *playback_handle, snd_pcm_hw_params_t *hw_params, const snd_pcm_format_t format, int channels, int *freq)
 { /*http://www.equalarea.com/paul/alsa-audio.html*/
 
   int err;
@@ -233,8 +226,6 @@ void  prepare_audio ( snd_pcm_t * playback_handle, snd_pcm_hw_params_t * hw_para
 
 }
 
-
-
 static int audio_write_packet(struct dechunkiser_ctx * o ,AVPacket * pkt)
 {
   int res; 
@@ -276,8 +267,6 @@ static int audio_write_packet(struct dechunkiser_ctx * o ,AVPacket * pkt)
   return 0;
 }
 
-
-
 static struct SwsContext *rescaler_context(AVCodecContext * c)
 {
   int w, h;
@@ -288,15 +277,15 @@ static struct SwsContext *rescaler_context(AVCodecContext * c)
                         SWS_BICUBIC, NULL, NULL, NULL);
 }
 
-
-int64_t getmicro(){
+/* Remove me! */
+static int64_t getmicro(){
   struct timespec r;
   clock_gettime(CLOCK_REALTIME, &r);
   return r.tv_nsec/1000+r.tv_sec*1000000;
 }
 
 /* FIXME: Return value??? What is it used for? */
-uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
+static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
 { 
   GdkPixmap *screen=o->screen;
   AVFormatContext *ctx = o->outctx;
@@ -371,9 +360,7 @@ uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
   return NULL;
 }
 
-
-
-void *videothread(void *p)
+static void *videothread(void *p)
 { 
   AVPacket pkt;
   struct dechunkiser_ctx *o = p;
@@ -397,8 +384,7 @@ void *videothread(void *p)
   pthread_exit(NULL);
 }
 
-
-void *audiothread(void *p)
+static void *audiothread(void *p)
 {
   AVPacket pkt;
   int64_t difft;
@@ -445,11 +431,6 @@ void *audiothread(void *p)
   pthread_exit(NULL);
 }
 
-
-
-
-
-
 static gint delete_event(GtkWidget * widget, GdkEvent * event, struct dechunkiser_ctx * data)
 {
   data->end=1;
@@ -483,8 +464,9 @@ static gint configure_event(GtkWidget * widget, GdkEventConfigure * event,
   return TRUE;
 }
 
-void *window_prepare(struct dechunkiser_ctx *o)
-{ int w;
+static void *window_prepare(struct dechunkiser_ctx *o)
+{
+  int w;
   int h;
   GtkWidget *vbox;
   GtkWidget *hbox;
@@ -544,7 +526,6 @@ void *window_prepare(struct dechunkiser_ctx *o)
 
   return c;
 }
-
 
 static AVFormatContext *format_init(struct dechunkiser_ctx * o)
 {
@@ -715,8 +696,6 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
 
   return out;
 }
-
-
 
 static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size)
 {
