@@ -297,9 +297,7 @@ int64_t getmicro(){
   return r.tv_nsec/1000+r.tv_sec*1000000;
 }
 
-
-
-
+/* FIXME: Return value??? What is it used for? */
 uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
 { 
   GdkPixmap *screen=o->screen;
@@ -380,7 +378,6 @@ uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
 void * videothread(struct dechunkiser_ctx * o)
 { 
   AVPacket pkt;
-  unsigned char * rgbbuff ;
   if (gtk_events_pending()) {
     gtk_main_iteration_do(FALSE);
   }
@@ -392,7 +389,7 @@ void * videothread(struct dechunkiser_ctx * o)
 		if(!o->end){
     	pkt=dequeue(&o->videoq);
     	pthread_mutex_unlock(&o->lockvideo);
-    	rgbbuff = frame_display(o,pkt);
+    	frame_display(o,pkt);
     	av_free_packet(&pkt);
   	}else{
 			pthread_mutex_unlock(&o->lockvideo);}
@@ -493,7 +490,6 @@ void *window_prepare(struct dechunkiser_ctx *o)
   GtkWidget *window;
   GdkColor black;
   GdkColor white;
-  gint expid, confid;
   struct controls *c;
   w=o->width;
   h=o->height;
@@ -517,9 +513,8 @@ void *window_prepare(struct dechunkiser_ctx *o)
   //drawing area
   c->d_area = gtk_drawing_area_new();
   gtk_drawing_area_size(GTK_DRAWING_AREA(c->d_area), w, h);
-  expid = gtk_signal_connect(GTK_OBJECT(c->d_area), "expose_event",
+  gtk_signal_connect(GTK_OBJECT(c->d_area), "expose_event",
            GTK_SIGNAL_FUNC(expose_event),o );
-  confid =
   gtk_signal_connect(GTK_OBJECT(c->d_area), "configure_event",
          GTK_SIGNAL_FUNC(configure_event),o );
   gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(c->d_area), FALSE, FALSE, 5);
