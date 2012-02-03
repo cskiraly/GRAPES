@@ -27,10 +27,9 @@
 #define CODEC_TYPE_AUDIO AVMEDIA_TYPE_AUDIO
 #endif
 
-
 struct PacketQueue {
   AVPacketList *first_pkt;
-AVPacketList *last_pkt;
+  AVPacketList *last_pkt;
   int length;
 } ;
 
@@ -67,7 +66,11 @@ struct dechunkiser_ctx {
   int64_t playout_delay;
   int64_t t0;
   int64_t pts0;
- 
+  ReSampleContext * rsc;
+  int64_t last_video_pts;
+  int cLimit;
+  int consLate;
+  int64_t ritardoMax;
 };
 
 static enum CodecID libav_codec_id(uint8_t mytype)
@@ -120,7 +123,6 @@ struct controls {
   GdkGC *gc;
 };
   
-
 
 void *window_prepare(struct dechunkiser_ctx * o);
 
@@ -242,14 +244,11 @@ static int audio_write_packet(struct dechunkiser_ctx * o ,AVPacket * pkt)
   snd_pcm_t * playback_handle=o->playback_handle;
   int size_out;
   int data_size=AVCODEC_MAX_AUDIO_FRAME_SIZE,len1;
-  ReSampleContext * rsc;
   uint8_t *outbuf,*buffer_resample;
-  
 
   if (pkt->size == 0)
     return 0;
 
-  rsc=av_audio_resample_init(s1->streams[pkt->stream_index]->codec->channels,s1->streams[pkt->stream_index]->codec->channels,o->sample_rate,s1->streams[pkt->stream_index]->codec->sample_rate,s1->streams[pkt->stream_index]->codec->sample_fmt,s1->streams[pkt->stream_index]->codec->sample_fmt,16,10,0,0.8);
   while (pkt->size > 0) { 
     outbuf = av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE*8);
     buffer_resample = av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE*8);
@@ -261,29 +260,21 @@ static int audio_write_packet(struct dechunkiser_ctx * o ,AVPacket * pkt)
       fprintf(stderr, "Error while decoding\n"); 
       return 0;
     }
-
-   
     if(data_size > 0) {
-      size_out=audio_resample(rsc,(short *)buffer_resample,(int16_t *)outbuf,data_size); 
-      size_out/= s1->streams[pkt->stream_index]->codec->channels*pow(2,s1->streams[pkt->stream_index]->codec->sample_fmt);
+      data_size/= s1->streams[pkt->stream_index]->codec->channels*pow(2,s1->streams[pkt->stream_index]->codec->sample_fmt);
+      size_out=audio_resample(o->rsc,(short *)buffer_resample,(int16_t *)outbuf,data_size); 
+      //size_out/= s1->streams[pkt->stream_index]->codec->channels*pow(2,s1->streams[pkt->stream_index]->codec->sample_fmt);
    
       if((res = snd_pcm_writei (playback_handle, buffer_resample,size_out)) <0) { 
         snd_pcm_recover(playback_handle,res,0);
- 
       } else if(res==size_out){    
         pkt->size -= len1;  
         pkt->data += len1;
       }
-
     }
-
-    
- 
-  
     av_free(outbuf);
     av_free(buffer_resample);
   }
-  audio_resample_close(rsc);
   return 0;
 }
 
@@ -298,7 +289,6 @@ static struct SwsContext *rescaler_context(AVCodecContext * c)
   return sws_getContext(w, h, c->pix_fmt, w, h,PIX_FMT_RGB24,
                         SWS_BICUBIC, NULL, NULL, NULL);
 }
-
 
 
 int64_t getmicro(){
@@ -322,6 +312,7 @@ uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
   static AVFrame rgb;
   struct controls *c = o->c1;
   avcodec_get_frame_defaults(&pic);
+  pic.pkt_pts=pkt.dts;
   res = avcodec_decode_video2(ctx->streams[pkt.stream_index]->codec,&pic, &decoded, &pkt);
 
   if (res < 0) {
@@ -334,10 +325,33 @@ uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
     } else {
       pic.pkt_pts=av_rescale_q(pic.pkt_pts,o->video_time_base,AV_TIME_BASE_Q);
     }
-    if(o->pts0==-1)o->pts0=pic.pkt_pts;
-    difft=pic.pkt_pts-o->pts0+o->t0-now;
+    if(o->pts0==-1){
+      o->pts0=pic.pkt_pts;
+      o->last_video_pts=pic.pkt_pts;
+    }
+
+  difft=pic.pkt_pts-o->pts0+o->t0+o->playout_delay-now;
+	if(difft<0){
+		o->consLate++;
+		if(difft<o->ritardoMax)
+			o->ritardoMax=difft;
+	}	else	{
+		o->consLate=0;
+		o->ritardoMax=0;
+	}
+	if(o->consLate>=o->cLimit){
+		o->playout_delay-=o->ritardoMax;
+		o->consLate=0;
+		o->ritardoMax=0;
+	}
     if(difft>=0){
       usleep(difft);
+    }else{
+   	return NULL;
+    }
+    
+    if(o->last_video_pts<=pic.pkt_pts){
+      o->last_video_pts=pic.pkt_pts;
       height=ctx->streams[pkt.stream_index]->codec->height;
       width=ctx->streams[pkt.stream_index]->codec->width;
 
@@ -354,7 +368,6 @@ uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
                            GDK_RGB_DITHER_MAX, rgb.data[0], width*3 );
       
         gtk_widget_draw(GTK_WIDGET(c->d_area), &c->u_area);
-      
         return rgb.data[0]; 
       }
     }
@@ -364,28 +377,26 @@ uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
 
 
 
-
-
 void * videothread(struct dechunkiser_ctx * o)
 { 
   AVPacket pkt;
   unsigned char * rgbbuff ;
-  gtk_init(NULL, NULL);
   if (gtk_events_pending()) {
     gtk_main_iteration_do(FALSE);
   }
-  gdk_rgb_init();
-  for(;;){
+  for(;!o->end;){
     pthread_mutex_lock(&o->lockvideo);
     while(o->videoq.length<1){
       pthread_cond_wait(&o->condvideo,&o->lockvideo);
     }
-    pkt=dequeue(&o->videoq);
-    pthread_mutex_unlock(&o->lockvideo);
-    rgbbuff = frame_display(o,pkt);
-    av_free_packet(&pkt);
-
-  }
+		if(!o->end){
+    	pkt=dequeue(&o->videoq);
+    	pthread_mutex_unlock(&o->lockvideo);
+    	rgbbuff = frame_display(o,pkt);
+    	av_free_packet(&pkt);
+  	}else{
+			pthread_mutex_unlock(&o->lockvideo);}
+		}
   pthread_exit(NULL);
 }
 
@@ -395,21 +406,42 @@ void * audiothread(struct dechunkiser_ctx * o)
   AVPacket pkt;
   int64_t difft;
   int64_t now;
-  for(;;){
+  for(;!o->end;){
     pthread_mutex_lock(&o->lockaudio);
     while(o->audioq.length<1){
       pthread_cond_wait(&o->condaudio,&o->lockaudio);
     }
-    pkt=dequeue(&o->audioq);
-    pthread_mutex_unlock(&o->lockaudio);
-    difft=0;
-    now=getmicro();
-    difft=pkt.pts-o->pts0+o->t0-now;
-    if(difft>=0){usleep(difft);
-      audio_write_packet(o, &pkt);
-    }  
-    av_free_packet(&pkt);
-  }
+		if(!o->end){
+    	pkt=dequeue(&o->audioq);
+    	pthread_mutex_unlock(&o->lockaudio);
+
+    	difft=0;
+   		now=getmicro();
+    	difft=pkt.pts-o->pts0+o->t0+o->playout_delay-now;
+
+			if(difft<0){
+				o->consLate++;
+				if(difft<o->ritardoMax)
+					o->ritardoMax=difft;
+			}	else	{
+				o->consLate=0;
+				o->ritardoMax=0;
+			}
+			if(o->consLate>=o->cLimit){
+				o->playout_delay-=o->ritardoMax;
+				o->consLate=0;
+				o->ritardoMax=0;
+			}
+    	if(difft>=0){
+    	  usleep(difft);
+    	  audio_write_packet(o, &pkt);
+
+    	}
+    	av_free_packet(&pkt);
+  	}else{
+			pthread_mutex_unlock(&o->lockaudio);
+		}
+}
 
   pthread_exit(NULL);
 }
@@ -422,6 +454,7 @@ void * audiothread(struct dechunkiser_ctx * o)
 static gint delete_event(GtkWidget * widget, GdkEvent * event, struct dechunkiser_ctx * data)
 {
   data->end=1;
+
   return (TRUE);
 }
 
@@ -469,7 +502,6 @@ void *window_prepare(struct dechunkiser_ctx *o)
     return NULL;
   }
 
-  gdk_rgb_init();
   gtk_widget_set_default_colormap(gdk_rgb_get_cmap());
   gtk_widget_set_default_visual(gdk_rgb_get_visual());
 
@@ -572,7 +604,7 @@ static AVFormatContext *format_gen(struct dechunkiser_ctx * o, const uint8_t * d
     AVCodecContext *c;
     o->outctx = format_init(o);
     if (o->streams & 0x01) {
-      AVCodec *vCodec; 
+      AVCodec *vCodec;  
       av_new_stream(o->outctx, 0);
       c = o->outctx->streams[o->outctx->nb_streams - 1]->codec;
       c->codec_id = o->video_codec_id;
@@ -595,11 +627,11 @@ static AVFormatContext *format_gen(struct dechunkiser_ctx * o, const uint8_t * d
        fprintf (stderr, "could not open video codec\n");
        return NULL; // Could not open codec
       }
-  
+
 
      o->c1 = window_prepare(o);
     }
-    if (o->streams & 0x02) { 
+    if (o->streams & 0x02) {
       AVCodec  *aCodec;
       av_new_stream(o->outctx, 1);
       c = o->outctx->streams[o->outctx->nb_streams - 1]->codec;
@@ -676,7 +708,9 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
   out->playout_delay=1000000;
   out->pts0=-1;
   out->t0=0;
- 
+  out->consLate=0;
+  out->cLimit=30;
+  out->ritardoMax=0;
   if ((err = snd_pcm_open (&out->playback_handle, device_name, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
    fprintf (stderr, "cannot open audio device %s (%s)\n", 
       device_name,
@@ -684,8 +718,11 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
    exit (1);
   }
 
+
   free(cfg_tags); 
 
+  gtk_init(NULL, NULL);
+  //gdk_rgb_init();
   pthread_mutex_init(&out->lockvideo,NULL);
   pthread_cond_init(&out->condvideo,NULL);
   pthread_mutex_init(&out->lockaudio,NULL);
@@ -716,7 +753,7 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
     media_type = 2;
   }
 
-  if (o->outctx == NULL) {  
+  if (o->outctx == NULL) { 
     o->outctx = format_gen(o, data);
     if (o->outctx == NULL) {    
       fprintf(stderr, "Format init failed\n");
@@ -724,7 +761,7 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
     }
     
     if(o->t0==0){
-      o->t0=getmicro()+o->playout_delay;
+      o->t0=getmicro();
     }
     av_set_parameters(o->outctx, NULL);
     snprintf(o->outctx->filename, sizeof(o->outctx->filename), "%s", o->output_file);
@@ -764,40 +801,56 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
       //                                       av_rescale_q(dts, outctx->streams[0]->codec->time_base, AV_TIME_BASE_Q));
 
 
-
-      pkt.pts = av_rescale_q(pts, o->outctx->streams[0]->codec->time_base, o->outctx->streams[0]->time_base);
+      if (pkt.stream_index==0){
+        pkt.pts = av_rescale_q(pts, o->video_time_base, o->outctx->streams[0]->time_base);
+      } else {
+        pkt.pts = av_rescale_q(pts, o->audio_time_base, o->outctx->streams[1]->time_base);
+      }
     } else {
       pkt.pts = AV_NOPTS_VALUE;
     }
     dts += (dts < o->prev_dts - ((1LL << 31) - 1)) ? ((o->prev_dts >> 32) + 1) << 32 : (o->prev_dts >> 32) << 32;
     o->prev_dts = dts;
-    pkt.dts = av_rescale_q(dts, o->outctx->streams[0]->codec->time_base, o->outctx->streams[0]->time_base);
+    if (pkt.stream_index==0){
+      pkt.dts = av_rescale_q(dts, o->video_time_base, o->outctx->streams[0]->time_base);
+    } else {
+      pkt.dts = av_rescale_q(dts, o->audio_time_base, o->outctx->streams[1]->time_base);
+    }
     // pkt.data = p;
     pkt.data = av_mallocz(frame_size+FF_INPUT_BUFFER_PADDING_SIZE);
     memcpy(pkt.data,p,frame_size);
     p += frame_size;
     pkt.size = frame_size;
 
-    if(pkt.stream_index==0){
+		if(pkt.stream_index==0){
+
       pthread_mutex_lock(&o->lockvideo);
       enqueue(&o->videoq,pkt);
       pthread_cond_signal(&o->condvideo);
       pthread_mutex_unlock(&o->lockvideo);
     } else {
+
       if(o->pts0==-1) o->pts0=av_rescale_q(pkt.pts,o->audio_time_base,AV_TIME_BASE_Q);
 
       pkt.pts=av_rescale_q(pkt.pts,o->audio_time_base,AV_TIME_BASE_Q);
+
       pthread_mutex_lock(&o->lockaudio);
 
-      snd_pcm_format_t snd_pcm_fmt=sample_fmt_to_snd_pcm_format(o->outctx->streams[pkt.stream_index]->codec->sample_fmt);
-
-      if (snd_pcm_fmt==SND_PCM_FORMAT_UNKNOWN){
-        fprintf (stderr, "sample format not supported\n");
-        return;
-      }
       if (o->playback_handleopened==0){
+        snd_pcm_format_t snd_pcm_fmt=sample_fmt_to_snd_pcm_format(o->outctx->streams[pkt.stream_index]->codec->sample_fmt);
+
+        if (snd_pcm_fmt==SND_PCM_FORMAT_UNKNOWN){
+       		fprintf (stderr, "sample format not supported\n");
+        	return;
+        }
         prepare_audio(o->playback_handle,o->hw_params,snd_pcm_fmt,o->channels,&o->sample_rate);
         o->playback_handleopened=1;
+        o->rsc=av_audio_resample_init(o->outctx->streams[pkt.stream_index]->codec->channels,
+                                      o->outctx->streams[pkt.stream_index]->codec->channels,
+                                      o->sample_rate,
+                                      o->outctx->streams[pkt.stream_index]->codec->sample_rate,
+                                      o->outctx->streams[pkt.stream_index]->codec->sample_fmt,
+                                      o->outctx->streams[pkt.stream_index]->codec->sample_fmt,16,10,0,0.8);
       }
 
       enqueue(&o->audioq,pkt);
@@ -810,16 +863,21 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
 static void play_close(struct dechunkiser_ctx *s)
 {
   int i;
+  int64_t last;
+  s->end=1;
+	pthread_cond_signal(&s->condaudio);
+	pthread_cond_signal(&s->condvideo);
   snd_pcm_close (s->playback_handle);
   av_write_trailer(s->outctx);
   url_fclose(s->outctx->pb);
-
+  audio_resample_close(s->rsc);
   pthread_join(&s->tid_video,NULL);
   pthread_join(&s->tid_audio,NULL);
   pthread_cond_destroy(&s->condvideo);
   pthread_mutex_destroy(&s->lockvideo);
   pthread_cond_destroy(&s->condaudio);
   pthread_mutex_destroy(&s->lockaudio);
+ 
   for (i = 0; i < s->outctx->nb_streams; i++) {
     av_metadata_free(&s->outctx->streams[i]->metadata);
     av_free(s->outctx->streams[i]->codec);
