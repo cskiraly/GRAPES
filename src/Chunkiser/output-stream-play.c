@@ -375,9 +375,11 @@ uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
 
 
 
-void * videothread(struct dechunkiser_ctx * o)
+void *videothread(void *p)
 { 
   AVPacket pkt;
+  struct dechunkiser_ctx *o = p;
+
   if (gtk_events_pending()) {
     gtk_main_iteration_do(FALSE);
   }
@@ -398,11 +400,13 @@ void * videothread(struct dechunkiser_ctx * o)
 }
 
 
-void * audiothread(struct dechunkiser_ctx * o)
+void *audiothread(void *p)
 {
   AVPacket pkt;
   int64_t difft;
   int64_t now;
+  struct dechunkiser_ctx *o = p;
+
   for(;!o->end;){
     pthread_mutex_lock(&o->lockaudio);
     while(o->audioq.length<1){
@@ -722,8 +726,8 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
   pthread_cond_init(&out->condvideo,NULL);
   pthread_mutex_init(&out->lockaudio,NULL);
   pthread_cond_init(&out->condaudio,NULL);
-  pthread_create(&out->tid_video,thAttr,videothread,out);
-  pthread_create(&out->tid_audio,thAttr,audiothread,out);
+  pthread_create(&out->tid_video, thAttr, videothread, out);
+  pthread_create(&out->tid_audio, thAttr, audiothread, out);
 
   return out;
 }
@@ -847,8 +851,8 @@ static void play_close(struct dechunkiser_ctx *s)
 	pthread_cond_signal(&s->condvideo);
   snd_pcm_close (s->playback_handle);
   audio_resample_close(s->rsc);
-  pthread_join(&s->tid_video,NULL);
-  pthread_join(&s->tid_audio,NULL);
+  pthread_join(s->tid_video, NULL);
+  pthread_join(s->tid_audio, NULL);
   pthread_cond_destroy(&s->condvideo);
   pthread_mutex_destroy(&s->lockvideo);
   pthread_cond_destroy(&s->condaudio);
