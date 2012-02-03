@@ -277,13 +277,6 @@ static struct SwsContext *rescaler_context(AVCodecContext * c)
                         SWS_BICUBIC, NULL, NULL, NULL);
 }
 
-/* Remove me! */
-static int64_t getmicro(){
-  struct timespec r;
-  clock_gettime(CLOCK_REALTIME, &r);
-  return r.tv_nsec/1000+r.tv_sec*1000000;
-}
-
 /* FIXME: Return value??? What is it used for? */
 static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
 { 
@@ -304,7 +297,7 @@ static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
     return NULL;
   }
   if (decoded) {
-    now=getmicro();
+    now= av_gettime();
     if(AV_NOPTS_VALUE==pic.pkt_pts){
       pic.pkt_pts=av_rescale_q(pkt.dts,o->video_time_base,AV_TIME_BASE_Q);
     } else {
@@ -401,7 +394,7 @@ static void *audiothread(void *p)
     	pthread_mutex_unlock(&o->lockaudio);
 
     	difft=0;
-   		now=getmicro();
+   		now = av_gettime();
     	difft=pkt.pts-o->pts0+o->t0+o->playout_delay-now;
 
 			if(difft<0){
@@ -723,7 +716,7 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
     }
     
     if(o->t0==0){
-      o->t0=getmicro();
+      o->t0 = av_gettime();
     }
     av_set_parameters(o->outctx, NULL);
     dump_format(o->outctx, 0, "", 1);
