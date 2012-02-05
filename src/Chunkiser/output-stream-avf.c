@@ -12,6 +12,7 @@
 #include "int_coding.h"
 #include "payload.h"
 #include "config.h"
+#include "ffmpeg_compat.h"
 #include "dechunkiser_iface.h"
 
 struct dechunkiser_ctx {

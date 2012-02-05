@@ -12,6 +12,7 @@
 #include "int_coding.h"
 #include "payload.h"
 #include "config.h"
+#include "ffmpeg_compat.h"
 #include "chunkiser_iface.h"
 
 #define STATIC_BUFF_SIZE 1000 * 1024
