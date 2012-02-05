@@ -51,7 +51,6 @@ struct dechunkiser_ctx {
   
   int playback_handleopened;
   snd_pcm_t *playback_handle;
-  snd_pcm_hw_params_t *hw_params;
   int end;
   GdkPixmap *screen;
   pthread_mutex_t lockaudio;
@@ -169,62 +168,77 @@ static AVPacket dequeue(struct PacketQueue * q)
 
 }
 
-static void prepare_audio(snd_pcm_t *playback_handle, snd_pcm_hw_params_t *hw_params, const snd_pcm_format_t format, int channels, int *freq)
-{ /*http://www.equalarea.com/paul/alsa-audio.html*/
-
+/* http://www.equalarea.com/paul/alsa-audio.html */
+static int prepare_audio(snd_pcm_t *playback_handle, const snd_pcm_format_t format, int channels, int *freq)
+{
   int err;
+  snd_pcm_hw_params_t *hw_params;
     
-  if ((err = snd_pcm_hw_params_malloc (&hw_params)) < 0) {
-    fprintf (stderr, "cannot allocate hardware parameter structure (%s)\n",
-      snd_strerror (err));
-    exit (1);
+  err = snd_pcm_hw_params_malloc(&hw_params);
+  if (err < 0) {
+    fprintf (stderr, "cannot allocate hardware parameter structure (%s)\n", snd_strerror(err));
+
+    return -1;
   }
     
-  if ((err = snd_pcm_hw_params_any (playback_handle, hw_params)) < 0) {
-    fprintf (stderr, "cannot initialize hardware parameter structure (%s)\n",
-      snd_strerror (err));
-    exit (1);
+  err = snd_pcm_hw_params_any(playback_handle, hw_params);
+  if (err < 0) {
+    fprintf (stderr, "cannot initialize hardware parameter structure (%s)\n", snd_strerror(err));
+    snd_pcm_hw_params_free(hw_params);
+
+    return -2;
   } 
 
-  if ((err = snd_pcm_hw_params_set_access (playback_handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
-    fprintf (stderr, "cannot set access type (%s)\n",
-      snd_strerror (err));
-    exit (1);
+  err = snd_pcm_hw_params_set_access(playback_handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED);
+  if (err < 0) {
+    fprintf (stderr, "cannot set access type (%s)\n", snd_strerror(err));
+    snd_pcm_hw_params_free(hw_params);
+
+    return -3;
   }
 
-  if ((err = snd_pcm_hw_params_set_format (playback_handle, hw_params, format)) < 0) {
-    fprintf (stderr, "cannot set sample format (%s)\n",
-      snd_strerror (err));
-    exit (1);
+  err = snd_pcm_hw_params_set_format(playback_handle, hw_params, format);
+  if (err < 0) {
+    fprintf (stderr, "cannot set sample format (%s)\n", snd_strerror(err));
+    snd_pcm_hw_params_free(hw_params);
+
+    return -4;
   } 
 
-  if ((err = snd_pcm_hw_params_set_rate_near (playback_handle, hw_params,freq,0)) < 0) {    
-    fprintf (stderr, "cannot set sample rate (%s)\n",
-      snd_strerror (err));
-    exit (1);
+  err = snd_pcm_hw_params_set_rate_near(playback_handle, hw_params, freq, 0);
+  if (err < 0) {    
+    fprintf (stderr, "cannot set sample rate (%s)\n", snd_strerror(err));
+    snd_pcm_hw_params_free(hw_params);
+
+    return -5;
   }
 
-  if ((err = snd_pcm_hw_params_set_channels (playback_handle, hw_params,channels)) < 0) {
-    fprintf (stderr, "cannot set channel count (%s)\n",
-      snd_strerror (err)); 
-    exit (1);
+  err = snd_pcm_hw_params_set_channels(playback_handle, hw_params, channels);
+  if (err < 0) {
+    fprintf (stderr, "cannot set channel count (%s)\n", snd_strerror(err)); 
+    snd_pcm_hw_params_free(hw_params);
+
+    return -6;
   }
 
-  
-  if ((err = snd_pcm_hw_params (playback_handle, hw_params)) < 0) {
-    fprintf (stderr, "cannot set parameters (%s)\n",
-      snd_strerror (err));
-    exit (1);
+  err = snd_pcm_hw_params(playback_handle, hw_params);
+  if (err < 0) {
+    fprintf (stderr, "cannot set parameters (%s)\n", snd_strerror(err));
+    snd_pcm_hw_params_free(hw_params);
+
+    return -7;
   }
 
-  snd_pcm_hw_params_free (hw_params);
+  snd_pcm_hw_params_free(hw_params);
 
-  if ((err = snd_pcm_prepare (playback_handle)) < 0) {
-    fprintf (stderr, "cannot prepare audio interface for use (%s)\n",
-      snd_strerror (err));
-    exit (1);
+  err = snd_pcm_prepare(playback_handle);
+  if (err < 0) {
+    fprintf (stderr, "cannot prepare audio interface for use (%s)\n", snd_strerror (err));
+
+    return -8;
   }
 
+  return 1;
 }
 
 static int audio_write_packet(struct dechunkiser_ctx * o ,AVPacket * pkt)
@@ -636,9 +650,10 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
 {
   struct dechunkiser_ctx *out;
   struct tag *cfg_tags;
-  pthread_attr_t * thAttr=NULL;
+  pthread_attr_t *thAttr = NULL;
   int err;
-  const char * device_name="hw:0";
+  const char *device_name = "hw:0";
+
   out = malloc(sizeof(struct dechunkiser_ctx));
   if (out == NULL) {
     return NULL;
@@ -661,30 +676,30 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
       }
     }
   }
-  out->playback_handleopened=0;
-  out->end=0;
-  out->playout_delay=1000000;
-  out->pts0=-1;
-  out->t0=0;
-  out->consLate=0;
-  out->cLimit=30;
-  out->ritardoMax=0;
-  if ((err = snd_pcm_open (&out->playback_handle, device_name, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
-   fprintf (stderr, "cannot open audio device %s (%s)\n", 
-      device_name,
-      snd_strerror (err)); 
-   exit (1);
-  }
-
-
   free(cfg_tags); 
+
+  out->playback_handleopened = 0;
+  out->end = 0;
+  out->playout_delay = 1000000;
+  out->pts0 = -1;
+  out->t0 = 0;
+  out->consLate = 0;
+  out->cLimit = 30;
+  out->ritardoMax = 0;
+  err = snd_pcm_open(&out->playback_handle, device_name, SND_PCM_STREAM_PLAYBACK, 0);
+  if (err  < 0) {
+    fprintf (stderr, "cannot open audio device %s (%s)\n", device_name, snd_strerror (err)); 
+    free(out);
+
+    return NULL;
+  }
 
   gtk_init(NULL, NULL);
   //gdk_rgb_init();
-  pthread_mutex_init(&out->lockvideo,NULL);
-  pthread_cond_init(&out->condvideo,NULL);
-  pthread_mutex_init(&out->lockaudio,NULL);
-  pthread_cond_init(&out->condaudio,NULL);
+  pthread_mutex_init(&out->lockvideo, NULL);
+  pthread_cond_init(&out->condvideo, NULL);
+  pthread_mutex_init(&out->lockaudio, NULL);
+  pthread_cond_init(&out->condaudio, NULL);
   pthread_create(&out->tid_video, thAttr, videothread, out);
   pthread_create(&out->tid_audio, thAttr, audiothread, out);
 
@@ -782,14 +797,15 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
        		fprintf (stderr, "sample format not supported\n");
         	return;
         }
-        prepare_audio(o->playback_handle,o->hw_params,snd_pcm_fmt,o->channels,&o->sample_rate);
-        o->playback_handleopened=1;
-        o->rsc=av_audio_resample_init(o->outctx->streams[pkt.stream_index]->codec->channels,
+        if (prepare_audio(o->playback_handle,snd_pcm_fmt,o->channels,&o->sample_rate) >= 0) {
+          o->playback_handleopened=1;
+          o->rsc=av_audio_resample_init(o->outctx->streams[pkt.stream_index]->codec->channels,
                                       o->outctx->streams[pkt.stream_index]->codec->channels,
                                       o->sample_rate,
                                       o->outctx->streams[pkt.stream_index]->codec->sample_rate,
                                       o->outctx->streams[pkt.stream_index]->codec->sample_fmt,
                                       o->outctx->streams[pkt.stream_index]->codec->sample_fmt,16,10,0,0.8);
+        }
       }
 
       enqueue(&o->audioq,pkt);
