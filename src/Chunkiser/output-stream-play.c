@@ -50,6 +50,7 @@ struct dechunkiser_ctx {
   struct controls *c1;
   
   snd_pcm_t *playback_handle;
+  const char *device_name;
   int end;
   GdkPixmap *screen;
   pthread_mutex_t lockaudio;
@@ -245,7 +246,6 @@ static int audio_write_packet(struct dechunkiser_ctx * o, AVPacket *op)
   int res; 
   AVPacket *pkt, pkt1;
   AVFormatContext * s1=o->outctx;
-  snd_pcm_t * playback_handle=o->playback_handle;
   int size_out;
   int data_size=AVCODEC_MAX_AUDIO_FRAME_SIZE,len1;
   uint8_t *outbuf,*buffer_resample;
@@ -256,6 +256,16 @@ static int audio_write_packet(struct dechunkiser_ctx * o, AVPacket *op)
   if (pkt->size == 0)
     return 0;
 
+  if (o->playback_handle == NULL) {
+
+    res = snd_pcm_open(&o->playback_handle, o->device_name, SND_PCM_STREAM_PLAYBACK, 0);
+    if (res  < 0) {
+      fprintf (stderr, "cannot open audio device %s (%s)\n", o->device_name, snd_strerror(res)); 
+
+      return -1;
+    }
+  }
+
   if (o->rsc == NULL){
     snd_pcm_format_t snd_pcm_fmt;
 
@@ -263,7 +273,7 @@ static int audio_write_packet(struct dechunkiser_ctx * o, AVPacket *op)
     if (snd_pcm_fmt==SND_PCM_FORMAT_UNKNOWN){
       fprintf (stderr, "sample format not supported\n");
 
-      return -1;
+      return -2;
     }
     
     if (prepare_audio(o->playback_handle, snd_pcm_fmt, o->channels, &o->sample_rate) >= 0) {
@@ -294,9 +304,10 @@ static int audio_write_packet(struct dechunkiser_ctx * o, AVPacket *op)
       size_out=audio_resample(o->rsc,(short *)buffer_resample,(int16_t *)outbuf,data_size); 
       //size_out/= s1->streams[pkt->stream_index]->codec->channels*pow(2,s1->streams[pkt->stream_index]->codec->sample_fmt);
    
-      if((res = snd_pcm_writei (playback_handle, buffer_resample,size_out)) <0) { 
-        snd_pcm_recover(playback_handle,res,0);
-      } else if(res==size_out){    
+      res = snd_pcm_writei(o->playback_handle, buffer_resample, size_out);
+      if (res <0) { 
+        snd_pcm_recover(o->playback_handle, res, 0);
+      } else if(res == size_out){    
         pkt->size -= len1;  
         pkt->data += len1;
       }
@@ -689,8 +700,6 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
   struct dechunkiser_ctx *out;
   struct tag *cfg_tags;
   pthread_attr_t *thAttr = NULL;
-  int err;
-  const char *device_name = "hw:0";
 
   out = malloc(sizeof(struct dechunkiser_ctx));
   if (out == NULL) {
@@ -723,13 +732,8 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
   out->consLate = 0;
   out->cLimit = 30;
   out->ritardoMax = 0;
-  err = snd_pcm_open(&out->playback_handle, device_name, SND_PCM_STREAM_PLAYBACK, 0);
-  if (err  < 0) {
-    fprintf (stderr, "cannot open audio device %s (%s)\n", device_name, snd_strerror (err)); 
-    free(out);
-
-    return NULL;
-  }
+  out->playback_handle = NULL;
+  out->device_name = "hw:0";
 
   gtk_init(NULL, NULL);
   //gdk_rgb_init();
@@ -848,7 +852,9 @@ static void play_close(struct dechunkiser_ctx *s)
   pthread_cond_destroy(&s->condaudio);
   pthread_mutex_destroy(&s->lockaudio);
 
-  snd_pcm_close (s->playback_handle);
+  if (s->playback_handle) {
+    snd_pcm_close (s->playback_handle);
+  }
   if (s->rsc) {
     audio_resample_close(s->rsc);
   }
