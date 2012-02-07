@@ -385,6 +385,7 @@ static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
       width=ctx->streams[pkt.stream_index]->codec->width;
 
       if (o->swsctx == NULL) { 
+fprintf(stderr, "Doing SWSCTX\n");
         o->swsctx = rescaler_context(ctx->streams[pkt.stream_index]->codec);
         avcodec_get_frame_defaults(&rgb);
         avpicture_alloc((AVPicture*)&rgb, PIX_FMT_RGB24, width, height);
@@ -871,6 +872,9 @@ static void play_close(struct dechunkiser_ctx *s)
   //gtk_widget_destroy(window);
   if (s->swsctx) {
     sws_freeContext(s->swsctx);
+  }
+  if (s->rsc) {
+    audio_resample_close(s->rsc);
   }
   free(s->c1);
   free(s);
