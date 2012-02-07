@@ -61,15 +61,17 @@ struct dechunkiser_ctx {
   struct PacketQueue audioq;
   pthread_t tid_video;
   pthread_t tid_audio;
+  ReSampleContext * rsc;
+  struct SwsContext *swsctx;
+
+  int64_t last_video_pts;
+
   int64_t playout_delay;
   int64_t t0;
   int64_t pts0;
-  ReSampleContext * rsc;
-  int64_t last_video_pts;
   int cLimit;
   int consLate;
-  int64_t ritardoMax;
-  struct SwsContext *swsctx;
+  int64_t maxDelay;
 };
 
 struct controls {
@@ -135,38 +137,47 @@ static snd_pcm_format_t sample_fmt_to_snd_pcm_format(enum AVSampleFormat  sample
   }
 }
 
+/* FIXME: Can we receive a pointer to AVPacket? */
 static int enqueue(struct PacketQueue * q, AVPacket pkt)
 {
   AVPacketList *pkt1;
+
   pkt1 = av_malloc(sizeof(AVPacketList));
-  if (!pkt1)
+  if (pkt1 == NULL) {
     return -1;
+  }
+
   pkt1->pkt = pkt;
   pkt1->next = NULL;
-  if (!q->last_pkt)
+  if (!q->last_pkt) {
     q->first_pkt = pkt1;
-  else
+  } else {
     q->last_pkt->next = pkt1;
+  }
   q->last_pkt = pkt1;
   q->length++;
+
   return 1;
 }
 
-static AVPacket dequeue(struct PacketQueue * q)
+/* FIXME: This looks broken! can return uninitialised pkt??? */
+static AVPacket dequeue(struct PacketQueue *q)
 {
   AVPacketList *pkt1;
   AVPacket pkt;
-  pkt1 = q->first_pkt;
-    if (pkt1) {
-      q->first_pkt = pkt1->next;
-      if (!q->first_pkt)
-        q->last_pkt = NULL;
-      q->length--;
-      pkt = pkt1->pkt;
-      av_free(pkt1);
-    }
-  return pkt;
 
+  pkt1 = q->first_pkt;
+  if (pkt1) {
+    q->first_pkt = pkt1->next;
+    if (q->first_pkt == NULL) {
+        q->last_pkt = NULL;
+    }
+    q->length--;
+    pkt = pkt1->pkt;
+    av_free(pkt1);
+  }
+
+  return pkt;
 }
 
 /* http://www.equalarea.com/paul/alsa-audio.html */
@@ -242,23 +253,23 @@ static int prepare_audio(snd_pcm_t *playback_handle, const snd_pcm_format_t form
   return 1;
 }
 
-static int audio_write_packet(struct dechunkiser_ctx * o, AVPacket *op)
+static int audio_write_packet(struct dechunkiser_ctx *o, AVPacket *op)
 {
   int res; 
   AVPacket *pkt, pkt1;
   AVFormatContext * s1=o->outctx;
   int size_out;
   int data_size=AVCODEC_MAX_AUDIO_FRAME_SIZE,len1;
-  uint8_t *outbuf,*buffer_resample;
+  void *outbuf, *buffer_resample;
 
   pkt1 = *op;
   pkt = &pkt1;
 
-  if (pkt->size == 0)
+  if (pkt->size == 0) {
     return 0;
+  }
 
   if (o->playback_handle == NULL) {
-
     res = snd_pcm_open(&o->playback_handle, o->device_name, SND_PCM_STREAM_PLAYBACK, 0);
     if (res  < 0) {
       fprintf (stderr, "cannot open audio device %s (%s)\n", o->device_name, snd_strerror(res)); 
@@ -267,7 +278,7 @@ static int audio_write_packet(struct dechunkiser_ctx * o, AVPacket *op)
     }
   }
 
-  if (o->rsc == NULL){
+  if (o->rsc == NULL) {
     snd_pcm_format_t snd_pcm_fmt;
 
     snd_pcm_fmt = sample_fmt_to_snd_pcm_format(o->outctx->streams[pkt->stream_index]->codec->sample_fmt);
@@ -290,33 +301,35 @@ static int audio_write_packet(struct dechunkiser_ctx * o, AVPacket *op)
   }
 
   while (pkt->size > 0) { 
-    outbuf = av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE*8);
-    buffer_resample = av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE*8);
-    data_size = AVCODEC_MAX_AUDIO_FRAME_SIZE*2;
+    outbuf = av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE * 8);	/* FIXME: Why "* 8"? */
+    buffer_resample = av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE * 8);
+    data_size = AVCODEC_MAX_AUDIO_FRAME_SIZE * 2;		/* FIXME: Shouldn't this be "* 8" too? */
 
-    len1 = avcodec_decode_audio3(s1->streams[pkt->stream_index]->codec, (int16_t *)outbuf, & data_size, pkt);
-
+    len1 = avcodec_decode_audio3(s1->streams[pkt->stream_index]->codec, (int16_t *)outbuf, &data_size, pkt);
     if (len1 < 0) {
       fprintf(stderr, "Error while decoding\n"); 
+
       return 0;
     }
+
     if(data_size > 0) {
-      data_size/= s1->streams[pkt->stream_index]->codec->channels*pow(2,s1->streams[pkt->stream_index]->codec->sample_fmt);
-      size_out=audio_resample(o->rsc,(short *)buffer_resample,(int16_t *)outbuf,data_size); 
+      data_size /= s1->streams[pkt->stream_index]->codec->channels * pow(2, s1->streams[pkt->stream_index]->codec->sample_fmt); // FIXME: Remove the "pow()"
+      size_out = audio_resample(o->rsc, buffer_resample, outbuf, data_size); 
       //size_out/= s1->streams[pkt->stream_index]->codec->channels*pow(2,s1->streams[pkt->stream_index]->codec->sample_fmt);
    
       res = snd_pcm_writei(o->playback_handle, buffer_resample, size_out);
-      if (res <0) { 
+      if (res < 0) { 
         snd_pcm_recover(o->playback_handle, res, 0);
-      } else if(res == size_out){    
-        pkt->size -= len1;  
+      } else if(res == size_out) {	// FIXME: WTF?
+        pkt->size -= len1;
         pkt->data += len1;
       }
     }
     av_free(outbuf);
     av_free(buffer_resample);
   }
-  return 0;
+
+  return 0;				// FIXME: Return size
 }
 
 static struct SwsContext *rescaler_context(AVCodecContext * c)
@@ -332,60 +345,61 @@ static struct SwsContext *rescaler_context(AVCodecContext * c)
 /* FIXME: Return value??? What is it used for? */
 static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
 { 
-  GdkPixmap *screen=o->screen;
+  GdkPixmap *screen = o->screen;
   AVFormatContext *ctx = o->outctx;
-  int res = 1, decoded,height,width;
+  int res = 1, decoded, height, width;
   AVFrame pic;
   int64_t now;
   int64_t difft;
   static AVFrame rgb;
   struct controls *c = o->c1;
-  avcodec_get_frame_defaults(&pic);
-  pic.pkt_pts=pkt.dts;
-  res = avcodec_decode_video2(ctx->streams[pkt.stream_index]->codec,&pic, &decoded, &pkt);
 
+  avcodec_get_frame_defaults(&pic);
+  pic.pkt_pts = pkt.dts;
+  res = avcodec_decode_video2(ctx->streams[pkt.stream_index]->codec, &pic, &decoded, &pkt);
   if (res < 0) {
     return NULL;
   }
+
   if (decoded) {
     now= av_gettime();
-    if(AV_NOPTS_VALUE==pic.pkt_pts){
-      pic.pkt_pts=av_rescale_q(pkt.dts,o->video_time_base,AV_TIME_BASE_Q);
+    if(AV_NOPTS_VALUE == pic.pkt_pts) {
+      pic.pkt_pts = av_rescale_q(pkt.dts, o->video_time_base, AV_TIME_BASE_Q);
     } else {
-      pic.pkt_pts=av_rescale_q(pic.pkt_pts,o->video_time_base,AV_TIME_BASE_Q);
+      pic.pkt_pts = av_rescale_q(pic.pkt_pts, o->video_time_base, AV_TIME_BASE_Q);
     }
-    if(o->pts0==-1){
-      o->pts0=pic.pkt_pts;
-      o->last_video_pts=pic.pkt_pts;
+    if(o->pts0 == -1){
+      o->pts0 = pic.pkt_pts;
+      o->last_video_pts = pic.pkt_pts;
     }
 
-  difft=pic.pkt_pts-o->pts0+o->t0+o->playout_delay-now;
-	if(difft<0){
-		o->consLate++;
-		if(difft<o->ritardoMax)
-			o->ritardoMax=difft;
-	}	else	{
-		o->consLate=0;
-		o->ritardoMax=0;
-	}
-	if(o->consLate>=o->cLimit){
-		o->playout_delay-=o->ritardoMax;
-		o->consLate=0;
-		o->ritardoMax=0;
-	}
+    difft = pic.pkt_pts - o->pts0 + o->t0 + o->playout_delay - now;
+    if(difft < 0){
+      o->consLate++;
+      if (difft < o->maxDelay) {
+        o->maxDelay = difft;
+      }
+    } else {
+      o->consLate = 0;
+      o->maxDelay = 0;
+    }
+    if(o->consLate >= o->cLimit) {
+      o->playout_delay -= o->maxDelay;
+      o->consLate=0;
+      o->maxDelay=0;
+    }
     if(difft>=0){
       usleep(difft);
-    }else{
-   	return NULL;
+    } else {
+      return NULL;
     }
     
-    if(o->last_video_pts<=pic.pkt_pts){
-      o->last_video_pts=pic.pkt_pts;
-      height=ctx->streams[pkt.stream_index]->codec->height;
-      width=ctx->streams[pkt.stream_index]->codec->width;
+    if(o->last_video_pts <= pic.pkt_pts) {
+      o->last_video_pts = pic.pkt_pts;
+      height = ctx->streams[pkt.stream_index]->codec->height;
+      width = ctx->streams[pkt.stream_index]->codec->width;
 
       if (o->swsctx == NULL) { 
-fprintf(stderr, "Doing SWSCTX\n");
         o->swsctx = rescaler_context(ctx->streams[pkt.stream_index]->codec);
         avcodec_get_frame_defaults(&rgb);
         avpicture_alloc((AVPicture*)&rgb, PIX_FMT_RGB24, width, height);
@@ -395,39 +409,47 @@ fprintf(stderr, "Doing SWSCTX\n");
                   height, rgb.data, rgb.linesize);
    
         gdk_draw_rgb_image(screen, c->gc, 0, 0, width, height,
-                           GDK_RGB_DITHER_MAX, rgb.data[0], width*3 );
+                           GDK_RGB_DITHER_MAX, rgb.data[0], width * 3);
       
         gtk_widget_draw(GTK_WIDGET(c->d_area), &c->u_area);
-        return rgb.data[0]; 
+
+        return rgb.data[0]; 		// FIXME!
       }
     }
   }
+
   return NULL;
 }
 
 static void *videothread(void *p)
-{ 
+{
   AVPacket pkt;
   struct dechunkiser_ctx *o = p;
 
   if (gtk_events_pending()) {
     gtk_main_iteration_do(FALSE);
   }
-  for(;!o->end;){
+
+  for(; !o->end;) {
     pthread_mutex_lock(&o->lockvideo);
-    while(o->videoq.length<1){
-      pthread_cond_wait(&o->condvideo,&o->lockvideo);
+    while(o->videoq.length < 1) {
+      pthread_cond_wait(&o->condvideo, &o->lockvideo);
     }
-		if(!o->end){
-    	pkt=dequeue(&o->videoq);
-    	pthread_mutex_unlock(&o->lockvideo);
-    	frame_display(o,pkt);
-        av_free(pkt.data);
-    	av_free_packet(&pkt);
-  	}else{
-			pthread_mutex_unlock(&o->lockvideo);}
-		}
-  while(o->videoq.length) {
+
+    if(!o->end) {
+      pkt = dequeue(&o->videoq);
+      pthread_mutex_unlock(&o->lockvideo);
+      frame_display(o, pkt);
+      av_free(pkt.data);
+      av_free_packet(&pkt);
+    } else {
+      pthread_mutex_unlock(&o->lockvideo);
+    }
+  }
+
+fprintf(stderr, "Video thread exiting\n");
+  while (o->videoq.length) {
+fprintf(stderr, "Video\n");
     pkt = dequeue(&o->videoq);
     av_free(pkt.data);
     av_free_packet(&pkt);
@@ -448,38 +470,39 @@ static void *audiothread(void *p)
     while(o->audioq.length<1){
       pthread_cond_wait(&o->condaudio,&o->lockaudio);
     }
-		if(!o->end){
-    	pkt=dequeue(&o->audioq);
-    	pthread_mutex_unlock(&o->lockaudio);
 
-    	difft=0;
-   		now = av_gettime();
-    	difft=pkt.pts-o->pts0+o->t0+o->playout_delay-now;
+    if(!o->end){
+      pkt = dequeue(&o->audioq);
+      pthread_mutex_unlock(&o->lockaudio);
+      difft = 0;
+      now = av_gettime();
+      difft = pkt.pts - o->pts0 + o->t0 + o->playout_delay - now;
+      if(difft < 0) {
+        o->consLate++;
+        if(difft < o->maxDelay) {
+          o->maxDelay=difft;
+        }
+      } else {
+        o->consLate = 0;
+        o->maxDelay = 0;
+      }
 
-			if(difft<0){
-				o->consLate++;
-				if(difft<o->ritardoMax)
-					o->ritardoMax=difft;
-			}	else	{
-				o->consLate=0;
-				o->ritardoMax=0;
-			}
-			if(o->consLate>=o->cLimit){
-				o->playout_delay-=o->ritardoMax;
-				o->consLate=0;
-				o->ritardoMax=0;
-			}
-    	if(difft>=0){
-    	  usleep(difft);
-    	  audio_write_packet(o, &pkt);
+      if(o->consLate >= o->cLimit) {
+        o->playout_delay -= o->maxDelay;
+        o->consLate = 0;
+        o->maxDelay = 0;
+      }
+      if(difft>=0) {
+        usleep(difft);
+        audio_write_packet(o, &pkt);
+      }
+      av_free(pkt.data);
+      av_free_packet(&pkt);
+    } else {
+      pthread_mutex_unlock(&o->lockaudio);
+    }
+  }
 
-    	}
-        av_free(pkt.data);
-    	av_free_packet(&pkt);
-  	}else{
-			pthread_mutex_unlock(&o->lockaudio);
-		}
-}
   while(o->audioq.length) {
     pkt = dequeue(&o->audioq);
     av_free(pkt.data);
@@ -489,14 +512,14 @@ static void *audiothread(void *p)
   pthread_exit(NULL);
 }
 
-static gint delete_event(GtkWidget * widget, GdkEvent * event, struct dechunkiser_ctx * data)
+static gint delete_event(GtkWidget *widget, GdkEvent *event, struct dechunkiser_ctx *data)
 {
-  data->end=1;
+  data->end = 1;
 
-  return (TRUE);
+  return TRUE;
 }
 
-static gboolean expose_event(GtkWidget * widget, GdkEventExpose * event, struct dechunkiser_ctx * data)
+static gboolean expose_event(GtkWidget *widget, GdkEventExpose *event, struct dechunkiser_ctx *data)
 {
   if ((data->screen != NULL) && (!data->end)) {
     gdk_draw_pixmap(widget->window,
@@ -509,8 +532,7 @@ static gboolean expose_event(GtkWidget * widget, GdkEventExpose * event, struct 
   return TRUE;
 }
 
-static gint configure_event(GtkWidget * widget, GdkEventConfigure * event,
-    struct dechunkiser_ctx * data)
+static gint configure_event(GtkWidget *widget, GdkEventConfigure *event, struct dechunkiser_ctx *data)
 {
   if (!data->screen) {
     data->screen = gdk_pixmap_new(widget->window, widget->allocation.width,
@@ -532,8 +554,9 @@ static void *window_prepare(struct dechunkiser_ctx *o)
   GdkColor black;
   GdkColor white;
   struct controls *c;
-  w=o->width;
-  h=o->height;
+
+  w = o->width;
+  h = o->height;
   c = malloc(sizeof(struct controls));
   if (c == NULL) {
     return NULL;
@@ -549,9 +572,7 @@ static void *window_prepare(struct dechunkiser_ctx *o)
   hbox = gtk_hbox_new(FALSE, 0);
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(vbox));
 
-
- 
-  //drawing area
+  /* drawing area */
   c->d_area = gtk_drawing_area_new();
   gtk_drawing_area_size(GTK_DRAWING_AREA(c->d_area), w, h);
   gtk_signal_connect(GTK_OBJECT(c->d_area), "expose_event",
@@ -561,7 +582,6 @@ static void *window_prepare(struct dechunkiser_ctx *o)
   gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(c->d_area), FALSE, FALSE, 5);
   gtk_widget_show(c->d_area);
 
-
   gtk_box_pack_start(GTK_BOX(vbox), GTK_WIDGET(hbox), FALSE, FALSE, 5);
 
   gtk_widget_show(hbox);
@@ -569,7 +589,6 @@ static void *window_prepare(struct dechunkiser_ctx *o)
   gtk_widget_show(window);
   gtk_signal_connect(GTK_OBJECT(window), "delete_event",
          GTK_SIGNAL_FUNC(delete_event),o);
-
 
   c->u_area.x = 0;
   c->u_area.y = 0;
@@ -602,9 +621,10 @@ static AVFormatContext *format_init(struct dechunkiser_ctx * o)
   return of;
 }
 
-static AVFormatContext *format_gen(struct dechunkiser_ctx * o, const uint8_t * data)
+static AVFormatContext *format_gen(struct dechunkiser_ctx *o, const uint8_t *data)
 {
   uint8_t codec;
+
   codec = data[0];
   if ((codec < 128) && ((o->streams & 0x01) == 0)) {
     int width, height, frame_rate_n, frame_rate_d;
@@ -616,7 +636,6 @@ static AVFormatContext *format_gen(struct dechunkiser_ctx * o, const uint8_t * d
     o->height= height;
     o->video_time_base.den = frame_rate_n;
     o->video_time_base.num = frame_rate_d;
-
   } else if ((codec > 128) && ((o->streams & 0x02) == 0)) {
     uint8_t channels;
     int sample_rate, frame_size;
@@ -628,15 +647,16 @@ static AVFormatContext *format_gen(struct dechunkiser_ctx * o, const uint8_t * d
     o->channels = channels;
     o->frame_size = frame_size;
     o->audio_time_base.num = frame_size;
-    o->audio_time_base.den =sample_rate;
-
-
+    o->audio_time_base.den = sample_rate;
   }
+
   if (o->streams == o->selected_streams) {
     AVCodecContext *c;
+
     o->outctx = format_init(o);
     if (o->streams & 0x01) {
-      AVCodec *vCodec;  
+      AVCodec *vCodec;
+
       av_new_stream(o->outctx, 0);
       c = o->outctx->streams[o->outctx->nb_streams - 1]->codec;
       c->codec_id = o->video_codec_id;
@@ -648,23 +668,24 @@ static AVFormatContext *format_gen(struct dechunkiser_ctx * o, const uint8_t * d
       o->outctx->streams[0]->avg_frame_rate.num = o->video_time_base.den;
       o->outctx->streams[0]->avg_frame_rate.den = o->video_time_base.num;
 
-
       c->pix_fmt = PIX_FMT_YUV420P;
       vCodec = avcodec_find_decoder(o->outctx->streams[o->outctx->nb_streams - 1]->codec->codec_id);
       if(!vCodec) {
-       fprintf (stderr, "Video unsupported codec\n");
+       fprintf(stderr, "Video unsupported codec\n");
+
        return NULL;
       }
       if(avcodec_open(o->outctx->streams[o->outctx->nb_streams - 1]->codec, vCodec)<0){
-       fprintf (stderr, "could not open video codec\n");
-       return NULL; // Could not open codec
+        fprintf(stderr, "could not open video codec\n");
+
+        return NULL; // Could not open codec
       }
-
-
-     o->c1 = window_prepare(o);
+      o->c1 = window_prepare(o);
     }
+
     if (o->streams & 0x02) {
       AVCodec  *aCodec;
+
       av_new_stream(o->outctx, 1);
       c = o->outctx->streams[o->outctx->nb_streams - 1]->codec;
       c->codec_id = o->audio_codec_id;
@@ -675,24 +696,25 @@ static AVFormatContext *format_gen(struct dechunkiser_ctx * o, const uint8_t * d
       c->time_base.num = o->audio_time_base.num;
       c->time_base.den = o->audio_time_base.den;
 
-      aCodec = avcodec_find_decoder( o->outctx->streams[o->outctx->nb_streams - 1]->codec->codec_id);
+      aCodec = avcodec_find_decoder(o->outctx->streams[o->outctx->nb_streams - 1]->codec->codec_id);
       if(!aCodec) {
-       fprintf (stderr, "Audio unsupported codec\n");
-       return NULL;
+        fprintf(stderr, "Audio unsupported codec\n");
+
+        return NULL;
       }
-      if(avcodec_open(o->outctx->streams[o->outctx->nb_streams - 1]->codec, aCodec)<0){
-       fprintf (stderr, "could not open audio codec\n");
-       return NULL; // Could not open codec
+      if (avcodec_open(o->outctx->streams[o->outctx->nb_streams - 1]->codec, aCodec)<0) {
+        fprintf (stderr, "could not open audio codec\n");
+
+        return NULL; // Could not open codec
       }
     }
-
-
 
     o->prev_pts = 0;
     o->prev_dts = 0;
 
     return o->outctx;
   }
+
   return NULL;
 }
 
@@ -700,7 +722,6 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
 {
   struct dechunkiser_ctx *out;
   struct tag *cfg_tags;
-  pthread_attr_t *thAttr = NULL;
 
   out = malloc(sizeof(struct dechunkiser_ctx));
   if (out == NULL) {
@@ -726,13 +747,9 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
   }
   free(cfg_tags); 
 
-  out->end = 0;
   out->playout_delay = 1000000;
   out->pts0 = -1;
-  out->t0 = 0;
-  out->consLate = 0;
   out->cLimit = 30;
-  out->ritardoMax = 0;
   out->device_name = "hw:0";
 
   gtk_init(NULL, NULL);
@@ -741,8 +758,8 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
   pthread_cond_init(&out->condvideo, NULL);
   pthread_mutex_init(&out->lockaudio, NULL);
   pthread_cond_init(&out->condaudio, NULL);
-  pthread_create(&out->tid_video, thAttr, videothread, out);
-  pthread_create(&out->tid_audio, thAttr, audiothread, out);
+  pthread_create(&out->tid_video, NULL, videothread, out);
+  pthread_create(&out->tid_audio, NULL, audiothread, out);
 
   return out;
 }
@@ -752,7 +769,6 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
   int header_size;
   int frames, i, media_type;
   uint8_t *p;
-
 
   if (data[0] == 0) {
     fprintf(stderr, "Error! strange chunk: %x!!!\n", data[0]);
@@ -772,7 +788,7 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
       return;
     }
     
-    if(o->t0==0){
+    if(o->t0 == 0){
       o->t0 = av_gettime();
     }
     av_set_parameters(o->outctx, NULL);
@@ -788,6 +804,7 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
     AVPacket pkt;
     int64_t pts, dts;
     int frame_size;
+
     frame_header_parse(data + header_size + FRAME_HEADER_SIZE * i,
                        &frame_size, &pts, &dts);
 
@@ -817,21 +834,21 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
     p += frame_size;
     pkt.size = frame_size;
 
-		if(pkt.stream_index==0){
-
+    if (pkt.stream_index == 0) {
       pthread_mutex_lock(&o->lockvideo);
-      enqueue(&o->videoq,pkt);
+      enqueue(&o->videoq, pkt);
       pthread_cond_signal(&o->condvideo);
       pthread_mutex_unlock(&o->lockvideo);
     } else {
+	/* FIXME: Why is this pts handling and rescaling here? */
+      if (o->pts0 == -1) {
+        o->pts0 = av_rescale_q(pkt.pts, o->audio_time_base, AV_TIME_BASE_Q);
+      }
 
-      if(o->pts0==-1) o->pts0=av_rescale_q(pkt.pts,o->audio_time_base,AV_TIME_BASE_Q);
-
-      pkt.pts=av_rescale_q(pkt.pts,o->audio_time_base,AV_TIME_BASE_Q);
+      pkt.pts = av_rescale_q(pkt.pts, o->audio_time_base, AV_TIME_BASE_Q);
 
       pthread_mutex_lock(&o->lockaudio);
-
-      enqueue(&o->audioq,pkt);
+      enqueue(&o->audioq, pkt);
       pthread_cond_signal(&o->condaudio);
       pthread_mutex_unlock(&o->lockaudio);
     }
@@ -842,7 +859,7 @@ static void play_close(struct dechunkiser_ctx *s)
 {
   int i;
 
-  s->end=1;
+  s->end = 1;
   pthread_cond_signal(&s->condaudio);
   pthread_cond_signal(&s->condvideo);
   pthread_join(s->tid_video, NULL);
