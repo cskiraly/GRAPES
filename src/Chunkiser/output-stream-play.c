@@ -240,14 +240,18 @@ static int prepare_audio(snd_pcm_t *playback_handle, const snd_pcm_format_t form
   return 1;
 }
 
-static int audio_write_packet(struct dechunkiser_ctx * o ,AVPacket * pkt)
+static int audio_write_packet(struct dechunkiser_ctx * o, AVPacket *op)
 {
   int res; 
+  AVPacket *pkt, pkt1;
   AVFormatContext * s1=o->outctx;
   snd_pcm_t * playback_handle=o->playback_handle;
   int size_out;
   int data_size=AVCODEC_MAX_AUDIO_FRAME_SIZE,len1;
   uint8_t *outbuf,*buffer_resample;
+
+  pkt1 = *op;
+  pkt = &pkt1;
 
   if (pkt->size == 0)
     return 0;
@@ -406,10 +410,17 @@ static void *videothread(void *p)
     	pkt=dequeue(&o->videoq);
     	pthread_mutex_unlock(&o->lockvideo);
     	frame_display(o,pkt);
+        av_free(pkt.data);
     	av_free_packet(&pkt);
   	}else{
 			pthread_mutex_unlock(&o->lockvideo);}
 		}
+  while(o->videoq.length) {
+    pkt = dequeue(&o->videoq);
+    av_free(pkt.data);
+    av_free_packet(&pkt);
+  }
+
   pthread_exit(NULL);
 }
 
@@ -451,11 +462,17 @@ static void *audiothread(void *p)
     	  audio_write_packet(o, &pkt);
 
     	}
+        av_free(pkt.data);
     	av_free_packet(&pkt);
   	}else{
 			pthread_mutex_unlock(&o->lockaudio);
 		}
 }
+  while(o->audioq.length) {
+    pkt = dequeue(&o->audioq);
+    av_free(pkt.data);
+    av_free_packet(&pkt);
+  }
 
   pthread_exit(NULL);
 }
@@ -837,6 +854,7 @@ static void play_close(struct dechunkiser_ctx *s)
   }
  
   for (i = 0; i < s->outctx->nb_streams; i++) {
+    avcodec_close(s->outctx->streams[i]->codec);
     av_metadata_free(&s->outctx->streams[i]->metadata);
     av_free(s->outctx->streams[i]->codec);
     av_free(s->outctx->streams[i]->info);
