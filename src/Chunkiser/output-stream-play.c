@@ -69,6 +69,7 @@ struct dechunkiser_ctx {
   int cLimit;
   int consLate;
   int64_t ritardoMax;
+  struct SwsContext *swsctx;
 };
 
 struct controls {
@@ -334,7 +335,6 @@ static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
   GdkPixmap *screen=o->screen;
   AVFormatContext *ctx = o->outctx;
   int res = 1, decoded,height,width;
-  static struct SwsContext *swsctx;
   AVFrame pic;
   int64_t now;
   int64_t difft;
@@ -384,13 +384,13 @@ static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
       height=ctx->streams[pkt.stream_index]->codec->height;
       width=ctx->streams[pkt.stream_index]->codec->width;
 
-      if (swsctx == NULL) { 
-      swsctx = rescaler_context(ctx->streams[pkt.stream_index]->codec);
-      avcodec_get_frame_defaults(&rgb);
-      avpicture_alloc((AVPicture*)&rgb,PIX_FMT_RGB24,width,height);
+      if (o->swsctx == NULL) { 
+        o->swsctx = rescaler_context(ctx->streams[pkt.stream_index]->codec);
+        avcodec_get_frame_defaults(&rgb);
+        avpicture_alloc((AVPicture*)&rgb, PIX_FMT_RGB24, width, height);
       }
-      if (swsctx) {
-        sws_scale(swsctx,(const uint8_t* const*) pic.data, pic.linesize, 0,
+      if (o->swsctx) {
+        sws_scale(o->swsctx,(const uint8_t* const*) pic.data, pic.linesize, 0,
                   height, rgb.data, rgb.linesize);
    
         gdk_draw_rgb_image(screen, c->gc, 0, 0, width, height,
@@ -732,7 +732,6 @@ static struct dechunkiser_ctx *play_init(const char * fname, const char * config
   out->consLate = 0;
   out->cLimit = 30;
   out->ritardoMax = 0;
-  out->playback_handle = NULL;
   out->device_name = "hw:0";
 
   gtk_init(NULL, NULL);
@@ -870,6 +869,9 @@ static void play_close(struct dechunkiser_ctx *s)
   free(s->outctx);
   //tobefreed c1->d_area, c1->gc
   //gtk_widget_destroy(window);
+  if (s->swsctx) {
+    sws_freeContext(s->swsctx);
+  }
   free(s->c1);
   free(s);
 }
