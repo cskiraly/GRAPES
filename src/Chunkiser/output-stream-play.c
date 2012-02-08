@@ -888,9 +888,6 @@ static void play_close(struct dechunkiser_ctx *s)
   if (s->swsctx) {
     sws_freeContext(s->swsctx);
   }
-  if (s->rsc) {
-    audio_resample_close(s->rsc);
-  }
   free(s->c1);
   free(s);
 }
