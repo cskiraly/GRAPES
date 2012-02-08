@@ -21,6 +21,9 @@
 #include "grapes_msg_types.h"
 
 #define DEFAULT_CACHE_SIZE 10
+#define DEFAULT_BOOTSTRAP_CYCLES 5
+#define DEFAULT_BOOTSTRAP_PERIOD 2*1000*1000
+#define DEFAULT_PERIOD 10*1000*1000
 
 struct peersampler_context{
   uint64_t currtime;
@@ -29,6 +32,7 @@ struct peersampler_context{
   struct peer_cache *local_cache;
   bool bootstrap;
   int bootstrap_period;
+  int bootstrap_cycles;
   int period;
   
   struct peer_cache *flying_cache;
@@ -55,8 +59,6 @@ static struct peersampler_context* cyclon_context_init(void)
 
   //Initialize context with default values
   con->bootstrap = true;
-  con->bootstrap_period = 2000000;
-  con->period = 10000000;
   con->currtime = gettime();
 
   return con;
@@ -94,6 +96,18 @@ static struct peersampler_context* cyclon_init(struct nodeID *myID, const void *
   res = config_value_int(cfg_tags, "sent_entries", &(con->sent_entries));
   if (!res) {
     con->sent_entries = con->cache_size / 2;
+  }
+  res = config_value_int(cfg_tags, "period", &con->period);
+  if (!res) {
+    con->period = DEFAULT_PERIOD;
+  }
+  res = config_value_int(cfg_tags, "bootstrap_period", &con->bootstrap_period);
+  if (!res) {
+    con->bootstrap_period = DEFAULT_BOOTSTRAP_PERIOD;
+  }
+  res = config_value_int(cfg_tags, "bootstrap_cycles", &con->bootstrap_cycles);
+  if (!res) {
+    con->bootstrap_cycles = DEFAULT_BOOTSTRAP_CYCLES;
   }
   free(cfg_tags);
 
@@ -139,7 +153,11 @@ static int cyclon_parse_data(struct peersampler_context *context, const uint8_t 
       return -1;
     }
 
-    context->bootstrap = false;
+    if (context->bootstrap_cycles) {
+      if (--context->bootstrap_cycles == 0) {
+        context->bootstrap = false;
+      }
+    }
 
     remote_cache = entries_undump(buff + sizeof(struct topo_header), len - sizeof(struct topo_header));
     if (h->type == CYCLON_QUERY) {
