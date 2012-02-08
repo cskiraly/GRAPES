@@ -27,6 +27,8 @@ static int timed;
 static int cycle;
 static struct timeval tnext;
 
+static int verbose;
+
 static void help(const char *name)
 {
   fprintf(stderr, "Usage: %s [options] <input> <output>\n", name);
@@ -175,7 +177,7 @@ static void in_wait(const int *fd, uint64_t ts)
       gettimeofday(&tfirst, NULL);
       tsfirst = ts;
     }
-printf("Sleep %llu\n", ts - tsfirst + cycle);
+    if (verbose) printf("Sleep %llu\n", ts - tsfirst + cycle);
     tadd.tv_sec = (ts - tsfirst + cycle) / 1000000;
     tadd.tv_usec = (ts - tsfirst + cycle) % 1000000;
     timeradd(&tfirst, &tadd, &tnext);
@@ -242,7 +244,7 @@ int main(int argc, char *argv[])
     c.id = id;
     res = chunkise(input, &c);
     if (res > 0) {
-      fprintf(stderr,"chunk %d: %d %llu\n", id++, c.size, c.timestamp);
+      if (verbose) fprintf(stderr,"chunk %d: %d %llu\n", id++, c.size, c.timestamp);
       chunk_write(output, &c);
     } else if (res < 0) {
       done = 1;
