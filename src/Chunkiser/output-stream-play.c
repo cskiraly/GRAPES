@@ -181,7 +181,7 @@ static AVPacket dequeue(struct PacketQueue *q)
 }
 
 /* http://www.equalarea.com/paul/alsa-audio.html */
-static int prepare_audio(snd_pcm_t *playback_handle, const snd_pcm_format_t format, int channels, int *freq)
+static int prepare_audio(snd_pcm_t *playback_handle, const snd_pcm_format_t format, int *channels, int *freq)
 {
   int err;
   snd_pcm_hw_params_t *hw_params;
@@ -225,7 +225,7 @@ static int prepare_audio(snd_pcm_t *playback_handle, const snd_pcm_format_t form
     return -5;
   }
 
-  err = snd_pcm_hw_params_set_channels(playback_handle, hw_params, channels);
+  err = snd_pcm_hw_params_set_channels_near(playback_handle, hw_params, channels);
   if (err < 0) {
     fprintf (stderr, "cannot set channel count (%s)\n", snd_strerror(err)); 
     snd_pcm_hw_params_free(hw_params);
@@ -284,8 +284,8 @@ static int audio_write_packet(struct dechunkiser_ctx *o, AVPacket pkt)
       return -2;
     }
     
-    if (prepare_audio(o->playback_handle, snd_pcm_fmt, o->channels, &o->sample_rate) >= 0) {
-      o->rsc = av_audio_resample_init(o->outctx->streams[pkt.stream_index]->codec->channels,
+    if (prepare_audio(o->playback_handle, snd_pcm_fmt, &o->channels, &o->sample_rate) >= 0) {
+      o->rsc = av_audio_resample_init(o->channels,
                                       o->outctx->streams[pkt.stream_index]->codec->channels,
                                       o->sample_rate,
                                       o->outctx->streams[pkt.stream_index]->codec->sample_rate,
