@@ -253,19 +253,15 @@ static int prepare_audio(snd_pcm_t *playback_handle, const snd_pcm_format_t form
   return 1;
 }
 
-static int audio_write_packet(struct dechunkiser_ctx *o, AVPacket *op)
+static int audio_write_packet(struct dechunkiser_ctx *o, AVPacket pkt)
 {
   int res; 
-  AVPacket *pkt, pkt1;
   AVFormatContext * s1=o->outctx;
   int size_out;
   int data_size=AVCODEC_MAX_AUDIO_FRAME_SIZE,len1;
   void *outbuf, *buffer_resample;
 
-  pkt1 = *op;
-  pkt = &pkt1;
-
-  if (pkt->size == 0) {
+  if (pkt.size == 0) {
     return 0;
   }
 
@@ -281,7 +277,7 @@ static int audio_write_packet(struct dechunkiser_ctx *o, AVPacket *op)
   if (o->rsc == NULL) {
     snd_pcm_format_t snd_pcm_fmt;
 
-    snd_pcm_fmt = sample_fmt_to_snd_pcm_format(o->outctx->streams[pkt->stream_index]->codec->sample_fmt);
+    snd_pcm_fmt = sample_fmt_to_snd_pcm_format(o->outctx->streams[pkt.stream_index]->codec->sample_fmt);
     if (snd_pcm_fmt==SND_PCM_FORMAT_UNKNOWN){
       fprintf (stderr, "sample format not supported\n");
 
@@ -289,23 +285,23 @@ static int audio_write_packet(struct dechunkiser_ctx *o, AVPacket *op)
     }
     
     if (prepare_audio(o->playback_handle, snd_pcm_fmt, o->channels, &o->sample_rate) >= 0) {
-      o->rsc = av_audio_resample_init(o->outctx->streams[pkt->stream_index]->codec->channels,
-                                      o->outctx->streams[pkt->stream_index]->codec->channels,
+      o->rsc = av_audio_resample_init(o->outctx->streams[pkt.stream_index]->codec->channels,
+                                      o->outctx->streams[pkt.stream_index]->codec->channels,
                                       o->sample_rate,
-                                      o->outctx->streams[pkt->stream_index]->codec->sample_rate,
-                                      o->outctx->streams[pkt->stream_index]->codec->sample_fmt,
-                                      o->outctx->streams[pkt->stream_index]->codec->sample_fmt, 16, 10, 0, 0.8);
+                                      o->outctx->streams[pkt.stream_index]->codec->sample_rate,
+                                      o->outctx->streams[pkt.stream_index]->codec->sample_fmt,
+                                      o->outctx->streams[pkt.stream_index]->codec->sample_fmt, 16, 10, 0, 0.8);
     } else {
       return -2;
     }
   }
 
-  while (pkt->size > 0) { 
+  while (pkt.size > 0) { 
     outbuf = av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE * 8);	/* FIXME: Why "* 8"? */
     buffer_resample = av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE * 8);
     data_size = AVCODEC_MAX_AUDIO_FRAME_SIZE * 2;		/* FIXME: Shouldn't this be "* 8" too? */
 
-    len1 = avcodec_decode_audio3(s1->streams[pkt->stream_index]->codec, (int16_t *)outbuf, &data_size, pkt);
+    len1 = avcodec_decode_audio3(s1->streams[pkt.stream_index]->codec, (int16_t *)outbuf, &data_size, &pkt);
     if (len1 < 0) {
       fprintf(stderr, "Error while decoding\n"); 
 
@@ -313,7 +309,7 @@ static int audio_write_packet(struct dechunkiser_ctx *o, AVPacket *op)
     }
 
     if(data_size > 0) {
-      data_size /= s1->streams[pkt->stream_index]->codec->channels * pow(2, s1->streams[pkt->stream_index]->codec->sample_fmt); // FIXME: Remove the "pow()"
+      data_size /= s1->streams[pkt.stream_index]->codec->channels * pow(2, s1->streams[pkt.stream_index]->codec->sample_fmt); // FIXME: Remove the "pow()"
       size_out = audio_resample(o->rsc, buffer_resample, outbuf, data_size); 
       //size_out/= s1->streams[pkt->stream_index]->codec->channels*pow(2,s1->streams[pkt->stream_index]->codec->sample_fmt);
    
@@ -321,8 +317,8 @@ static int audio_write_packet(struct dechunkiser_ctx *o, AVPacket *op)
       if (res < 0) { 
         snd_pcm_recover(o->playback_handle, res, 0);
       } else if(res == size_out) {	// FIXME: WTF?
-        pkt->size -= len1;
-        pkt->data += len1;
+        pkt.size -= len1;
+        pkt.data += len1;
       }
     }
     av_free(outbuf);
@@ -492,7 +488,7 @@ static void *audiothread(void *p)
       }
       if(difft>=0) {
         usleep(difft);
-        audio_write_packet(o, &pkt);
+        audio_write_packet(o, pkt);
       }
       av_free(pkt.data);
       av_free_packet(&pkt);
