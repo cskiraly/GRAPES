@@ -65,7 +65,7 @@ chunkiser_test: ../net_helper$(NH_INCARNATION).o
 ifdef FFDIR
 chunkiser_test: CFLAGS += -pthread
 chunkiser_test: LDFLAGS += -pthread -L$(FFDIR)/libavutil -L$(FFDIR)/libavcore -L$(FFDIR)/libavcodec -L$(FFDIR)/libavformat -L$(FFDIR)/libswscale
-chunkiser_test: LDLIBS += -lm -lavformat -lavcodec -lswscale -lavutil
+chunkiser_test: LDLIBS += -lavformat -lavcodec -lswscale -lavutil -lm
 chunkiser_test: LDLIBS += $(call ld-option, -lavcore)
 chunkiser_test: LDLIBS += $(call ld-option, -lz)
 chunkiser_test: LDLIBS += $(call ld-option, -lbz2)
