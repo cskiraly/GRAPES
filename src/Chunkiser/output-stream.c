@@ -7,6 +7,7 @@
 #include "chunkiser.h"
 #include "dechunkiser_iface.h"
 
+extern struct dechunkiser_iface out_play;
 extern struct dechunkiser_iface out_avf;
 extern struct dechunkiser_iface out_raw;
 extern struct dechunkiser_iface out_udp;
@@ -46,6 +47,15 @@ struct output_stream *out_stream_init(const char *fname, const char *config)
     } else if (type && !strcmp(type, "avf")) {
 #ifdef AVF
       res->out = &out_avf;
+#else
+      free(res);
+      free(cfg_tags);
+
+      return NULL;
+#endif
+    } else if (type && !strcmp(type, "play")) {
+#ifdef GTK
+      res->out = &out_play;
 #else
       free(res);
       free(cfg_tags);
