@@ -338,6 +338,33 @@ static struct SwsContext *rescaler_context(AVCodecContext * c)
                         SWS_BICUBIC, NULL, NULL, NULL);
 }
 
+static int64_t synchronise(struct dechunkiser_ctx *o, int64_t pts)
+{
+  int64_t now, difft;
+
+  now = av_gettime();
+  difft = pts - o->pts0 + o->t0 + o->playout_delay - now;
+  if (difft < 0) {
+    o->consLate++;
+    if (difft < o->maxDelay) {
+      o->maxDelay = difft;
+    }
+  } else {
+    o->consLate = 0;
+    o->maxDelay = 0;
+  }
+  if (o->consLate >= o->cLimit) {
+    o->playout_delay -= o->maxDelay;
+    o->consLate = 0;
+    o->maxDelay = 0;
+  }
+  if (difft >= 0) {
+    usleep(difft);
+  }
+
+  return difft;
+}
+
 /* FIXME: Return value??? What is it used for? */
 static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
 { 
@@ -345,8 +372,6 @@ static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
   AVFormatContext *ctx = o->outctx;
   int res = 1, decoded, height, width;
   AVFrame pic;
-  int64_t now;
-  int64_t difft;
   static AVFrame rgb;
   struct controls *c = o->c1;
 
@@ -368,25 +393,7 @@ static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
       o->last_video_pts = pic.pkt_pts;
     }
 
-    now = av_gettime();
-    difft = pic.pkt_pts - o->pts0 + o->t0 + o->playout_delay - now;
-    if (difft < 0) {
-      o->consLate++;
-      if (difft < o->maxDelay) {
-        o->maxDelay = difft;
-      }
-    } else {
-      o->consLate = 0;
-      o->maxDelay = 0;
-    }
-    if (o->consLate >= o->cLimit) {
-      o->playout_delay -= o->maxDelay;
-      o->consLate = 0;
-      o->maxDelay = 0;
-    }
-    if (difft >= 0) {
-      usleep(difft);
-    } else {
+    if (synchronise(o, pic.pkt_pts) < 0) {
       return NULL;
     }
     
@@ -455,8 +462,6 @@ static void *videothread(void *p)
 static void *audiothread(void *p)
 {
   AVPacket pkt;
-  int64_t difft;
-  int64_t now;
   struct dechunkiser_ctx *o = p;
 
   for(;!o->end;){
@@ -473,24 +478,7 @@ static void *audiothread(void *p)
         o->pts0 = pkt.pts;
       }
 
-      now = av_gettime();
-      difft = pkt.pts - o->pts0 + o->t0 + o->playout_delay - now;
-      if (difft < 0) {
-        o->consLate++;
-        if (difft < o->maxDelay) {
-          o->maxDelay = difft;
-        }
-      } else {
-        o->consLate = 0;
-        o->maxDelay = 0;
-      }
-      if (o->consLate >= o->cLimit) {
-        o->playout_delay -= o->maxDelay;
-        o->consLate = 0;
-        o->maxDelay = 0;
-      }
-      if (difft >= 0) {
-        usleep(difft);
+      if (synchronise(o, pkt.pts) >= 0) {
         audio_write_packet(o, pkt);
       }
       av_free(pkt.data);
