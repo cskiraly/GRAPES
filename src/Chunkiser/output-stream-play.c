@@ -358,19 +358,19 @@ static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
   }
 
   if (decoded) {
-    now= av_gettime();
     if(AV_NOPTS_VALUE == pic.pkt_pts) {
       pic.pkt_pts = av_rescale_q(pkt.dts, o->video_time_base, AV_TIME_BASE_Q);
     } else {
       pic.pkt_pts = av_rescale_q(pic.pkt_pts, o->video_time_base, AV_TIME_BASE_Q);
     }
-    if(o->pts0 == -1){
+    if (o->pts0 == -1){
       o->pts0 = pic.pkt_pts;
       o->last_video_pts = pic.pkt_pts;
     }
 
+    now = av_gettime();
     difft = pic.pkt_pts - o->pts0 + o->t0 + o->playout_delay - now;
-    if(difft < 0){
+    if (difft < 0) {
       o->consLate++;
       if (difft < o->maxDelay) {
         o->maxDelay = difft;
@@ -379,12 +379,12 @@ static uint8_t *frame_display(struct dechunkiser_ctx *o, AVPacket pkt)
       o->consLate = 0;
       o->maxDelay = 0;
     }
-    if(o->consLate >= o->cLimit) {
+    if (o->consLate >= o->cLimit) {
       o->playout_delay -= o->maxDelay;
-      o->consLate=0;
-      o->maxDelay=0;
+      o->consLate = 0;
+      o->maxDelay = 0;
     }
-    if(difft>=0){
+    if (difft >= 0) {
       usleep(difft);
     } else {
       return NULL;
@@ -468,25 +468,23 @@ static void *audiothread(void *p)
     if(!o->end){
       pkt = dequeue(&o->audioq);
       pthread_mutex_unlock(&o->lockaudio);
-      difft = 0;
       now = av_gettime();
       difft = pkt.pts - o->pts0 + o->t0 + o->playout_delay - now;
-      if(difft < 0) {
+      if (difft < 0) {
         o->consLate++;
-        if(difft < o->maxDelay) {
-          o->maxDelay=difft;
+        if (difft < o->maxDelay) {
+          o->maxDelay = difft;
         }
       } else {
         o->consLate = 0;
         o->maxDelay = 0;
       }
-
-      if(o->consLate >= o->cLimit) {
+      if (o->consLate >= o->cLimit) {
         o->playout_delay -= o->maxDelay;
         o->consLate = 0;
         o->maxDelay = 0;
       }
-      if(difft>=0) {
+      if (difft >= 0) {
         usleep(difft);
         audio_write_packet(o, pkt);
       }
@@ -809,12 +807,7 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
 
     if (pts != -1) {
       pts += (pts < o->prev_pts - ((1LL << 31) - 1)) ? ((o->prev_pts >> 32) + 1) << 32 : (o->prev_pts >> 32) << 32;
-      //dprintf(" PTS2: %d\n", pts);
       o->prev_pts = pts;
-      //dprintf("Frame %d has size %d --- PTS: %lld DTS: %lld\n", i, frame_size,
-      //                                       av_rescale_q(pts, outctx->streams[0]->codec->time_base, AV_TIME_BASE_Q),
-      //                                       av_rescale_q(dts, outctx->streams[0]->codec->time_base, AV_TIME_BASE_Q));
-
       pkt.pts = pts;
     } else {
       pkt.pts = AV_NOPTS_VALUE;
@@ -823,8 +816,8 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
     o->prev_dts = dts;
     pkt.dts = dts;
     // pkt.data = p;
-    pkt.data = av_mallocz(frame_size+FF_INPUT_BUFFER_PADDING_SIZE);
-    memcpy(pkt.data,p,frame_size);
+    pkt.data = av_mallocz(frame_size + FF_INPUT_BUFFER_PADDING_SIZE);
+    memcpy(pkt.data, p, frame_size);
     p += frame_size;
     pkt.size = frame_size;
 
