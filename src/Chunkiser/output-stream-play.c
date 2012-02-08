@@ -468,6 +468,11 @@ static void *audiothread(void *p)
     if(!o->end){
       pkt = dequeue(&o->audioq);
       pthread_mutex_unlock(&o->lockaudio);
+      pkt.pts = av_rescale_q(pkt.pts, o->audio_time_base, AV_TIME_BASE_Q);
+      if (o->pts0 == -1) {
+        o->pts0 = pkt.pts;
+      }
+
       now = av_gettime();
       difft = pkt.pts - o->pts0 + o->t0 + o->playout_delay - now;
       if (difft < 0) {
@@ -827,13 +832,6 @@ static void play_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int siz
       pthread_cond_signal(&o->condvideo);
       pthread_mutex_unlock(&o->lockvideo);
     } else {
-	/* FIXME: Why is this pts handling and rescaling here? */
-      if (o->pts0 == -1) {
-        o->pts0 = av_rescale_q(pkt.pts, o->audio_time_base, AV_TIME_BASE_Q);
-      }
-
-      pkt.pts = av_rescale_q(pkt.pts, o->audio_time_base, AV_TIME_BASE_Q);
-
       pthread_mutex_lock(&o->lockaudio);
       enqueue(&o->audioq, pkt);
       pthread_cond_signal(&o->condaudio);
