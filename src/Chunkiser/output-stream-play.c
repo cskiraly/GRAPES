@@ -447,9 +447,7 @@ static void *videothread(void *p)
     }
   }
 
-fprintf(stderr, "Video thread exiting\n");
   while (o->videoq.length) {
-fprintf(stderr, "Video\n");
     pkt = dequeue(&o->videoq);
     av_free(pkt.data);
     av_free_packet(&pkt);
