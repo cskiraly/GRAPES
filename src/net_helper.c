@@ -236,8 +236,6 @@ void bind_msg_type (uint8_t msgtype)
 {
 }
 
-void reg_message_send(int size, uint8_t type);
-
 struct my_hdr_t {
   uint8_t m_seq;
   uint8_t frag_seq;
@@ -250,9 +248,6 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
   static struct my_hdr_t my_hdr;
   struct iovec iov[2];
   int res;
-
-  if (buffer_size <= 0) return;
-  reg_message_send(buffer_size, buffer_ptr[0]);
 
   iov[0].iov_base = &my_hdr;
   iov[0].iov_len = sizeof(struct my_hdr_t);
@@ -287,8 +282,6 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
   return res;
 }
 
-void reg_message_recv(int size, uint8_t type);
-
 int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
 {
   int res, recv, m_seq, frag_seq;
@@ -296,7 +289,6 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
   static struct msghdr msg;
   static struct my_hdr_t my_hdr;
   struct iovec iov[2];
-  uint8_t *buffer_ptr_orig = buffer_ptr;
 
   iov[0].iov_base = &my_hdr;
   iov[0].iov_len = sizeof(struct my_hdr_t);
@@ -337,8 +329,6 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
   } while ((my_hdr.frag_seq < my_hdr.frags) && (buffer_size > 0));
   memcpy(&(*remote)->addr, &raddr, msg.msg_namelen);
   (*remote)->fd = -1;
-
-  reg_message_recv(recv, buffer_ptr_orig[0]);
 
   return recv;
 }
