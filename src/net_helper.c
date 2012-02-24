@@ -26,6 +26,7 @@
 #define MAX_MSG_SIZE 1024 * 60
 
 struct nodeID {
+    /* TODO: use internally sock_data_t */
   struct sockaddr_in addr;
   int fd;
 };
@@ -189,9 +190,14 @@ struct nodeID *create_node(const char *IPaddr, int port)
 
   s = malloc(sizeof(struct nodeID));
   memset(s, 0, sizeof(struct nodeID));
+
+  /* TODO: this can be replaced with sock_data_init
+   * res = sock_data_init(IPaddr, port)
+   */
   s->addr.sin_family = AF_INET;
   s->addr.sin_port = htons(port);
   res = inet_aton(IPaddr, &s->addr.sin_addr);
+
   if (res == 0) {
     free(s);
 
@@ -356,11 +362,13 @@ struct nodeID *nodeid_dup(struct nodeID *s)
   return res;
 }
 
+/* TODO: use sock_data_equal */
 int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 {
   return (memcmp(&s1->addr, &s2->addr, sizeof(struct sockaddr_in)) == 0);
 }
 
+/* TODO: use sock_data_cmp */
 int nodeid_cmp(const struct nodeID *s1, const struct nodeID *s2)
 {
   return memcmp(&s1->addr, &s2->addr, sizeof(struct sockaddr_in));
@@ -393,8 +401,20 @@ void nodeid_free(struct nodeID *s)
   free(s);
 }
 
-const char *node_ip(const struct nodeID *s)
-{
+/* TODO: use sock_data_str_ip
+ *
+ * Also I think that this kind of functions (there are a certain number
+ * around in the implementation, this is just an instance of the problem)
+ * are seriously killing one of the aims of this library
+ *
+ * (One of the design goals of the GRAPES library is not to force any
+ * particular structure in the applications using it, and it should be
+ * possible to use its APIs in either multi-threaded programs,
+ * multi-process applications, single-threaded (event based)
+ * architectures, etc...  Moreover, there should not be any dependency on
+ * external libraries, and the code should be fairly portable.)
+ */
+const char *node_ip(const struct nodeID *s) {
   static char ip[64];
 
   sprintf(ip, "%s", inet_ntoa(s->addr.sin_addr));
