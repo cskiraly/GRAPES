@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdlib.h>
 
 #include "net_helper.h"
 #include "net_helper_all.h"
@@ -86,6 +87,7 @@ struct nodeID *net_helper_init (const char *IPaddr, int port,
     if (cfg_tags = config_parse(config)) {
         config_value_int_default(cfg_tags, CONF_KEY_BACKLOG, &backlog,
                                  DEFAULT_BACKLOG);
+        free(cfg_tags);
     }
 
     if (tcp_serve(&this->data, backlog, errno) < 0) {
