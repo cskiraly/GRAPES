@@ -8,10 +8,18 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "net_helper.h"
 #include "net_helper_all.h"
 #include "config.h"
+
+/* -- Internal functions ---------------------------------------------- */
+
+static int tcp_connect (sock_data_t *sd, int *e);
+static int tcp_serve (sock_data_t *sd, int backlog, int *e);
+
+/* -- Constants ------------------------------------------------------- */
 
 static const char *   CONF_KEY_BACKLOG = "tcp_backlog";
 static const unsigned DEFAULT_BACKLOG = 50;
@@ -23,7 +31,7 @@ struct nodeID {
     struct {
         unsigned self : 1;
     } conf;
-}
+};
 
 typedef struct nodeID nodeid_t;
 
@@ -71,33 +79,35 @@ void nodeid_free (struct nodeID *s)
     free(s);
 }
 
-struct nodeID *net_helper_init (const char *IPaddr, int port,
-                                const char *config);
+struct nodeID * net_helper_init (const char *IPaddr, int port,
+                                 const char *config)
 {
     nodeid_t *this;
     struct tag *cfg_tags;
     int backlog;
-    int errno;
+    int e;
 
     this = create_node(IPaddr, port);
     if (this == NULL) return NULL;
     this->conf.self = 1;
 
     backlog = DEFAULT_BACKLOG;
-    if (cfg_tags = config_parse(config)) {
+    if (config && (cfg_tags = config_parse(config))) {
         config_value_int_default(cfg_tags, CONF_KEY_BACKLOG, &backlog,
                                  DEFAULT_BACKLOG);
         free(cfg_tags);
+        fprintf(stderr, "Backlog change\n");
     }
+    fprintf(stderr, "Backlog value: %i\n", backlog);
 
-    if (tcp_serve(&this->data, backlog, errno) < 0) {
-        fprintf(stderr, "net-helper: creating server errno %d: %s\n",
-                error, strerror(error));
-        nodeid_free(self);
+    if (tcp_serve(&this->data, backlog, &e) < 0) {
+        fprintf(stderr, "net-helper: creating server errno %d: %s\n", e,
+                strerror(e));
+        nodeid_free(this);
         return NULL;
     }
 
-    return self;
+    return this;
 }
 
 void bind_msg_type(uint8_t msgtype)
@@ -135,12 +145,19 @@ const char *node_ip(const struct nodeID *s)
 {
 }
 
-/* -- Internal management --------------------------------------------- */
+/* -- Internal functions ---------------------------------------------- */
 
+/* Returns 0 on success, non-0 on failure. Upon failure `e` is setted to
+ * errno */
 static
 int tcp_connect (sock_data_t *sd, int *e)
 {
     int fd;
+
+    if (sd->fd != -1) {
+        /* Already connected */
+        return 0;
+    }
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
@@ -148,7 +165,8 @@ int tcp_connect (sock_data_t *sd, int *e)
         return -1;
     }
 
-    if (connect(fd, &sd->addr, sizeof(struct sockaddr_in)) == -1) {
+    if (connect(fd, (struct sockaddr *) &sd->addr,
+            sizeof(struct sockaddr_in)) == -1) {
         *e = errno;
         close(fd);
         return -2;
@@ -170,7 +188,8 @@ int tcp_serve (sock_data_t *sd, int backlog, int *e)
         return -1;
     }
 
-    if (bind(fd, &sd->addr, sizeof(struct sockaddr_in)) == -1) {
+    if (bind(fd, (struct sockaddr *) &sd->addr, sizeof(struct
+            sockaddr_in)) == -1) {
         *e = errno;
         close(fd);
         return -2;
