@@ -2,6 +2,8 @@
 #define NET_HELPER_H
 
 #include <sys/time.h>
+#include <stdint.h>
+#include <stddef.h>
 
 /**
 * @file net_helper.h
