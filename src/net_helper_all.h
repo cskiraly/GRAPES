@@ -1,5 +1,6 @@
 /*
- *  Copyright (c) 2012 Giovanni Simoni
+ *  Copyright (c) 2012 Arber Fama,
+ *                     Giovanni Simoni
  *
  *  This is free software; see lgpl-2.1.txt
  */

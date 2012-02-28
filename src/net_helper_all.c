@@ -1,3 +1,10 @@
+/*
+ *  Copyright (c) 2012 Arber Fama,
+ *                     Giovanni Simoni
+ *
+ *  This is free software; see lgpl-2.1.txt
+ */
+
 #include "net_helper_all.h"
 
 int wait4data(const struct nodeID *s, struct timeval *tout, int *user_fds)
