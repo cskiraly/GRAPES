@@ -37,17 +37,10 @@ int sock_data_cmp (const sock_data_t *s1, const sock_data_t *s2)
     return memcmp(&s1->addr, &s2->addr, sizeof(struct sockaddr_in));
 }
 
-static inline 
+static inline
 int sock_data_equal (const sock_data_t *s1, const sock_data_t *s2)
 {
     return sock_data_cmp(s1, s2) == 0;
-}
-
-static inline
-const char * sock_data_ipstring (const sock_data_t *s, char * strrep)
-{
-    return inet_ntop(AF_INET, (const void *) &s->addr, strrep,
-                     INET_ADDRSTRLEN);
 }
 
 static inline
@@ -61,8 +54,15 @@ int sock_data_init (sock_data_t *s, const char *IPaddr, int port)
         return 1;
     } else {
         /* NOTE: returns 0 on error */
-        return inet_aton(IPaddr, &s->addr.sin_addr);
+        return inet_pton(AF_INET, IPaddr, &s->addr.sin_addr);
     }
+}
+
+static inline
+const char * sock_data_ipstring (const sock_data_t *s, char * strrep)
+{
+    return inet_ntop(AF_INET, (const void *) &s->addr.sin_addr, strrep,
+                     INET_ADDRSTRLEN);
 }
 
 #endif // NET_HELPER_ALL_H

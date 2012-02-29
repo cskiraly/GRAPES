@@ -148,8 +148,6 @@ const char *node_ip(const struct nodeID *s)
 
 /* -- Internal functions ---------------------------------------------- */
 
-/* Returns 0 on success, non-0 on failure. Upon failure `e` is setted to
- * errno */
 static
 int tcp_connect (sock_data_t *sd, int *e)
 {
@@ -162,17 +160,16 @@ int tcp_connect (sock_data_t *sd, int *e)
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
-        *e = errno;
+        if (e) *e = errno;
         return -1;
     }
 
     if (connect(fd, (struct sockaddr *) &sd->addr,
             sizeof(struct sockaddr_in)) == -1) {
-        *e = errno;
+        if (e) *e = errno;
         close(fd);
         return -2;
     }
-
     sd->fd = fd;
 
     return 0;
@@ -185,22 +182,23 @@ int tcp_serve (sock_data_t *sd, int backlog, int *e)
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
-        *e = errno;
+        if (e) *e = errno;
         return -1;
     }
 
-    if (bind(fd, (struct sockaddr *) &sd->addr, sizeof(struct
-            sockaddr_in)) == -1) {
-        *e = errno;
+    if (bind(fd, (struct sockaddr *) &sd->addr,
+            sizeof(struct sockaddr_in))) {
+        if (e) *e = errno;
         close(fd);
         return -2;
     }
 
     if (listen(fd, backlog) == -1) {
-        *e = errno;
+        if (e) *e = errno;
         close(fd);
         return -3;
     }
+    sd->fd = fd;
 
     return 0;
 }
