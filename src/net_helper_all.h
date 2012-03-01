@@ -1,5 +1,6 @@
 /*
- *  Copyright (c) 2012 Giovanni Simoni
+ *  Copyright (c) 2012 Arber Fama,
+ *                     Giovanni Simoni
  *
  *  This is free software; see lgpl-2.1.txt
  */
@@ -8,6 +9,7 @@
 #define NET_HELPER_ALL_H
 
 #include <stdio.h>
+#include <string.h>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -42,9 +44,10 @@ int sock_data_equal (const sock_data_t *s1, const sock_data_t *s2)
 }
 
 static inline
-void sock_data_ipstring (const sock_data_t *s, char * strrep)
+const char * sock_data_ipstring (const sock_data_t *s, char * strrep)
 {
-    sprintf(ip, "%s", inet_ntoa(s->addr.sin_addr));
+    return inet_ntop(AF_INET, (const void *) &s->addr, strrep,
+                     INET_ADDRSTRLEN);
 }
 
 static inline
@@ -54,7 +57,7 @@ int sock_data_init (sock_data_t *s, const char *IPaddr, int port)
     s->addr.sin_port = htons(port);
     s->fd = -1;
     if (IPaddr == NULL) {
-        s->addr.sin_addr = INADDR_ANY;
+        s->addr.sin_addr.s_addr = INADDR_ANY;
         return 1;
     } else {
         /* NOTE: returns 0 on error */
