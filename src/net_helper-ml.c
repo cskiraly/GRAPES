@@ -191,6 +191,9 @@ static int next_S() {
  * @param errorstatus
  */
 static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
+	static int stun_retry_cnt = 0;
+	int stun_retries = 2;	//set number of retries (0: no retry)
+
 	switch (errorstatus) {
 	case 0:
 		me->addr = malloc(SOCKETID_SIZE);
@@ -217,9 +220,11 @@ static void init_myNodeID_cb (socketID_handle local_socketID,int errorstatus) {
 		exit(1);
 		break;
 	case 2:
-	    fprintf(stderr,"Net-helper init : NAT traversal timeout while creating socket\n");
-	    fprintf(stderr,"Net-helper init : Retrying without STUN\n");
-	    mlSetStunServer(0,NULL);
+		fprintf(stderr,"Net-helper init : NAT traversal timeout while creating socket\n");
+		if (++stun_retry_cnt > stun_retries) {
+			fprintf(stderr,"Net-helper init : Retrying without STUN\n");
+			mlSetStunServer(0,NULL);
+		}
 	    break;
 	default :	// should never happen
 		//
@@ -327,8 +332,8 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 		sprintf(str,"!Unknown!");
 	if (arg->nrMissingBytes || !arg->firstPacketArrived) {
 	    fprintf(stderr, "Net-helper : corrupted message arrived from %s\n",str);
-/**/    fprintf(stderr, "\tMessage # %d -- Message type: %hhd -- Missing # %d bytes%s\n",
-			recv_counter, buffer[0],arg->nrMissingBytes, arg->firstPacketArrived?"":", Missing first!");
+	    fprintf(stderr, "\tMessage # %d -- Missing # %d bytes%s\n",
+			recv_counter, arg->nrMissingBytes, arg->firstPacketArrived?"":", Missing first!");
 	}
 	else {
 	//	fprintf(stderr, "Net-helper : message arrived from %s\n",str);
@@ -359,7 +364,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int s, i;
 	struct tag *cfg_tags;
 	const char *res;
-	const char *stun_server = "stun.ekiga.net";
+	const char *stun_server = "130.192.9.140";	//rucola.polito.it
 	int stun_port = 3478;
 	const char *repo_address = NULL;
 	int publish_interval = 60;
@@ -489,6 +494,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 {
 	msgData_cb *p;
 	int current;
+        int index;
 	send_params params = {0,0,0,0};
 
 	if (buffer_size <= 0) {
@@ -497,7 +503,7 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 	}
 
 	// if buffer is full, discard the message and return an error flag
-	int index = next_S();
+	index = next_S();
 	if (index<0) {
 		// free(buffer_ptr);
 		fprintf(stderr,"Net-helper: send buffer full\n ");
@@ -697,6 +703,11 @@ struct nodeID *nodeid_dup(struct nodeID *s)
 int nodeid_equal(const struct nodeID *s1, const struct nodeID *s2)
 {
 	return (mlCompareSocketIDs(s1->addr,s2->addr) == 0);
+}
+
+int nodeid_cmp(const struct nodeID *s1, const struct nodeID *s2)
+{
+	return mlCompareSocketIDs(s1->addr,s2->addr);
 }
 
 int nodeid_dump(uint8_t *b, const struct nodeID *s, size_t max_write_size)

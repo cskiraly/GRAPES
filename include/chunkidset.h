@@ -139,4 +139,6 @@ uint32_t chunkID_set_get_earliest(const struct chunkID_set *h);
   */
 uint32_t chunkID_set_get_latest(const struct chunkID_set *h);
 
+void chunkID_set_trim(struct chunkID_set *h, int size);
+
 #endif	/* CHUNKIDSET_H */

@@ -11,11 +11,6 @@
 #define MAX(A,B)    ((A)>(B) ? (A) : (B))
 #define MIN(A,B)    ((A)<(B) ? (A) : (B))
 
-/**
-  * casted evaluator for generic use in generic selector functions
-  */
-typedef double (*evaluateFunction)(void*);
-
 struct iw {
   int index;
   double weight;
@@ -74,13 +69,15 @@ void selectWeighted(size_t size,unsigned char *base, size_t nmemb, double(*weigh
   double w_sum=0;
   double selected_index[nmemb];
   int s=0;
-  int s_max = MIN (*selected_len, nmemb);;
+  int s_max = MIN (*selected_len, nmemb);
+  int zeros = 0;
 
   // calculate weights
   for (i=0; i<nmemb; i++){
      weights[i] = weight(base + size*i);
      // weights should not be negative
      weights[i] = MAX (weights[i], 0);
+     if (weights[i] == 0) zeros += 1;
      w_sum += weights[i];
   }
 
@@ -90,6 +87,8 @@ void selectWeighted(size_t size,unsigned char *base, size_t nmemb, double(*weigh
       weights[i] = 1;
       w_sum += weights[i];
     }
+  } else { //exclude 0 weight from selection
+    s_max = MIN (s_max, nmemb - zeros);
   }
 
   while (s < s_max) {
@@ -267,6 +266,12 @@ void toPairs(schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t 
 }
 
 /*----------------- scheduler_la implementations --------------*/
+void schedSelectChunksForPeers(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
+                     schedChunkID *selected, size_t *selected_len,	//out, inout
+                     filterFunction filter,
+                     chunkEvaluateFunction evaluate){
+   selectChunksForPeers(ordering, peers, peers_len, chunks, chunks_len, selected, selected_len, filter, evaluate);
+}
 
 void schedSelectPeerFirst(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len, 	//in
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
@@ -334,3 +339,17 @@ void schedSelectComposed(SchedOrdering ordering, schedPeerID *peers, size_t peer
   schedSelectHybrid(ordering,peers,peers_len,chunks,chunks_len,selected,selected_len,filter,combinedWeight);
 
 }
+
+void schedSelectPeersForChunks(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len,        //in
+                     schedPeerID *selected, size_t *selected_len,       //out, inout
+                     filterFunction filter,
+                     peerEvaluateFunction evaluate){
+   selectPeersForChunks(ordering, peers, peers_len, chunks, chunks_len,        //in
+                     selected, selected_len,       //out, inout
+                     filter,
+                      evaluate);
+}
+
+
+
+

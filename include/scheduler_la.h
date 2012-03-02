@@ -129,6 +129,17 @@ void schedSelectComposed(SchedOrdering ordering, schedPeerID  *peers, size_t pee
                      filterFunction filter,
                      peerEvaluateFunction peerevaluate, chunkEvaluateFunction chunkevaluate, double2op weightcombine);
 
+/*---PeersForChunks----------------*/
+/** 
+  * @brief Added by Arpad without knowing what he is doing
+   Documentation: see above
+
+  */
+void schedSelectPeersForChunks(SchedOrdering ordering, schedPeerID *peers, size_t peers_len, schedChunkID *chunks, size_t chunks_len,        //in
+                     schedPeerID *selected, size_t *selected_len,       //out, inout
+                     filterFunction filter,
+                     peerEvaluateFunction evaluate);
+
 /*---Hybrid----------------*/
 
 /**
@@ -141,5 +152,17 @@ void schedSelectHybrid(SchedOrdering ordering, schedPeerID  *peers, size_t peers
                      struct PeerChunk *selected, size_t *selected_len,	//out, inout
                      filterFunction filter,
                      pairEvaluateFunction pairevaluate);
+
+
+/*---selector function----------------*/
+/**
+  * casted evaluator for generic use in generic selector functions
+  */
+typedef double (*evaluateFunction)(void*);
+
+/**
+  * Select best N of K with the given ordering method
+  */
+void selectWithOrdering(SchedOrdering ordering, size_t size, unsigned char *base, size_t nmemb, double(*evaluate)(void *), unsigned char *selected,size_t *selected_len);
 
 #endif /* SCHEDULER_LA_H */

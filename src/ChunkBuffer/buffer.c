@@ -44,7 +44,7 @@ static void chunk_free(struct chunk *c)
     c->id = -1;
 }
 
-static int remove_oldest_chunk(struct chunk_buffer *cb, int id)
+static int remove_oldest_chunk(struct chunk_buffer *cb, int id, uint64_t ts)
 {
   int i, min, pos_min;
 
@@ -67,7 +67,11 @@ static int remove_oldest_chunk(struct chunk_buffer *cb, int id)
 
     return pos_min;
   }
-
+  // check for ID looparound and other anomalies
+  if (cb->buffer[pos_min].timestamp < ts) {
+    cb_clear(cb);
+    return 0;
+  }
   return E_CB_OLD;
 }
 
@@ -115,7 +119,7 @@ int cb_add_chunk(struct chunk_buffer *cb, const struct chunk *c)
   int i;
 
   if (cb->num_chunks == cb->size) {
-    i = remove_oldest_chunk(cb, c->id);
+    i = remove_oldest_chunk(cb, c->id, c->timestamp);
   } else {
     i = 0;
   }

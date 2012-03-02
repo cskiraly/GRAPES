@@ -54,7 +54,7 @@ struct tag *config_parse(const char *cfg)
         return NULL;
       }
       memcpy(res[i++].value, p1 + 1, p - p1 - 1);
-      p++;
+      if (*p) p++;
     } else {
       p = NULL;
     }
@@ -112,4 +112,34 @@ int config_value_double(const struct tag *cfg_values, const char *value, double 
   *res = strtod(str_res, NULL);
 
   return 1;
+}
+
+const char *config_value_str_default(const struct tag *cfg_values, const char *value, const char *default_value)
+{
+  const char *res;
+
+  res = config_value_str(cfg_values, value);
+  return res ? res : default_value;
+}
+
+int config_value_int_default(const struct tag *cfg_values, const char *value, int *res, int default_value)
+{
+  int r;
+
+  r = config_value_int(cfg_values, value, res);
+  if (!r) {
+    *res = default_value;
+  }
+  return r;
+}
+
+int config_value_double_default(const struct tag *cfg_values, const char *value, double *res, double default_value)
+{
+  int r;
+
+  r = config_value_double(cfg_values, value, res);
+  if (!r) {
+    *res = default_value;
+  }
+  return r;
 }

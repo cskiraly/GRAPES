@@ -27,7 +27,7 @@ static void close(struct chunkiser_ctx *s)
   free(s);
 }
 
-static uint8_t *chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts)
+static uint8_t *chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts, void **attr, int *attr_size)
 {
   sprintf(s->buff, "Chunk %d", id);
   *ts = 40 * id * 1000;

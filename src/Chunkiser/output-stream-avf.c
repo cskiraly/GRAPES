@@ -9,6 +9,7 @@
 #include <string.h>
 
 //#include "dbg.h"
+#include "libav-compat.h"
 #include "int_coding.h"
 #include "payload.h"
 #include "config.h"
@@ -170,7 +171,7 @@ static struct dechunkiser_ctx *avf_init(const char *fname, const char *config)
   memset(out, 0, sizeof(struct dechunkiser_ctx));
   out->output_format = strdup("nut");
   out->selected_streams = 0x01;
-  if (fname) {
+  if (fname && fname[0]) {
     out->output_file = strdup(fname);
   } else {
     out->output_file = strdup("/dev/stdout");
@@ -218,7 +219,7 @@ static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
   if (o->outctx == NULL) {
     o->outctx = format_gen(o, data);
     if (o->outctx == NULL) {
-      fprintf(stderr, "Format init failed\n");
+//      fprintf(stderr, "Format init failed\n");
 
       return;
     }
