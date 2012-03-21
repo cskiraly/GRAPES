@@ -37,10 +37,6 @@ typedef struct {
 
 typedef struct nodeID {
     struct sockaddr_in addr;
-    struct {
-        char ip[INET_ADDRSTRLEN];           // ip address
-        char ip_port[INET_ADDRSTRLEN + 6];  // ip:port 2^16 -> 5 cyphers.
-    } repr;                         // reentrant string representations
     local_info_t *local;            // non-NULL only for local node
 } nodeid_t;
 
@@ -113,13 +109,10 @@ struct nodeID *create_node (const char *IPaddr, int port)
     ret->addr.sin_family = AF_INET;
     ret->addr.sin_port = htons(port);
 
-    /* Initialization of string representation */
     if (IPaddr == NULL) {
         /* In case of server, specifying NULL will allow anyone to
          * connect. */
         ret->addr.sin_addr.s_addr = INADDR_ANY;
-        inet_ntop(AF_INET, (const void *)&ret->addr.sin_addr,
-                  ret->repr.ip, INET_ADDRSTRLEN);
     } else {
         if (inet_pton(AF_INET, IPaddr,
                       (void *)&ret->addr.sin_addr) == 0) {
@@ -127,9 +120,7 @@ struct nodeID *create_node (const char *IPaddr, int port)
             free(ret);
             return NULL;
         }
-        strcpy(ret->repr.ip, IPaddr);
     }
-    sprintf(ret->repr.ip_port, "%s:%hu", ret->repr.ip, (uint16_t)port);
 
     /* The `local` pointer must be NULL for all instances except for an
      * instance initializated through `net_helper_init` */
@@ -313,20 +304,11 @@ int wait4data(const struct nodeID *self, struct timeval *tout,
 
 struct nodeID *nodeid_undump (const uint8_t *b, int *len)
 {
-    nodeid_t *ret = malloc(sizeof(nodeid_t));
-    if (ret == NULL) {
+    if (*len < sizeof(struct sockaddr_in)) {
         return NULL;
     }
-
-    memcpy((void *)&ret->addr, (const void *)b,
-            sizeof(struct sockaddr_in));
-    inet_ntop(AF_INET, (const void *)b, ret->repr.ip,
-              sizeof(struct sockaddr_in));
-    sprintf(ret->repr.ip_port, "%s:%hu", ret->repr.ip,
-            ntohs(ret->addr.sin_port));
-    ret->local = NULL;
-
-    return ret;
+    *len = sizeof(struct sockaddr_in);
+    return addr_to_nodeid((const struct sockaddr_in *)b);
 }
 
 int nodeid_dump (uint8_t *b, const struct nodeID *s,
@@ -341,14 +323,27 @@ int nodeid_dump (uint8_t *b, const struct nodeID *s,
     return sizeof(struct sockaddr_in);
 }
 
-const char *node_ip(const struct nodeID *s)
+int node_ip(const struct nodeID *s, char *ip, int len)
 {
-    return s->repr.ip;
+    if (len < INET_ADDRSTRLEN) {
+        return -1;
+    }
+
+    inet_ntop(AF_INET, (const void *)&s->addr.sin_addr, ip,
+              INET_ADDRSTRLEN);
+    return 0;
 }
 
-const char *node_addr (const struct nodeID *s)
+int node_addr(const struct nodeID *s, char *addr, int len)
 {
-    return s->repr.ip_port;
+    if (len < INET_ADDRSTRLEN + 6) {  // 2^16 + ':' = 5 cyphers + 1 char
+        return -1;
+    }
+
+    inet_ntop(AF_INET, (const void *)&s->addr.sin_addr, addr,
+              INET_ADDRSTRLEN);
+    sprintf(addr + strlen(addr), ":%hu", ntohs(s->addr.sin_port));
+    return 0;
 }
 
 /* -- Internal functions --------------------------------------------- */
@@ -527,10 +522,6 @@ nodeid_t * addr_to_nodeid (const struct sockaddr_in *addr)
     ret->local = NULL;
     memcpy((void *)&ret->addr, (const void *)addr,
            sizeof(struct sockaddr_in));
-    inet_ntop(AF_INET, (const void *)&ret->addr.sin_addr,
-              ret->repr.ip, INET_ADDRSTRLEN);
-    sprintf(ret->repr.ip_port, "%s:%hu", ret->repr.ip,
-            ntohs(addr->sin_port));
 
     return ret;
 }
