@@ -194,7 +194,6 @@ void bind_msg_type(uint8_t msgtype) {}
 int send_to_peer(const struct nodeID *self, struct nodeID *to,
                  const uint8_t *buffer_ptr, int buffer_size)
 {
-    int retry;
     ssize_t sent;
     int peer_fd;
     local_info_t *local;
