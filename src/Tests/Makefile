@@ -7,6 +7,7 @@ CFGDIR ?= ..
 
 NH_INCARNATION ?= udp
 NET_HELPER = ../net_helper-$(NH_INCARNATION)
+.PHONY : $(NET_HELPER).o
 
 TESTS = topology_test \
         topology_test_attr \
@@ -40,6 +41,9 @@ LDLIBS += -ldl
 endif
 
 all: $(TESTS)
+
+$(NET_HELPER).o:
+	$(MAKE) -C .. net_helper-$(NH_INCARNATION).o
 
 include $(BASE)/src/utils.mak
 
@@ -111,3 +115,5 @@ test_queue: CFLAGS += -I$(BASE)/src/Utils
 clean::
 	rm -f $(TESTS)
 	rm -f $(DEPENDENCIES)
+
+

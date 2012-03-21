@@ -1,4 +1,5 @@
 *.o
+*.o.part
 lib*.a
 *.swp
 *.d
