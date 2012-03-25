@@ -28,10 +28,11 @@ static void node0 ()
     sleep(3);
 
     printf("node0 - sending chip\n");
-
-    N = send_to_peer(self, other, "hello", strlen("hello") + 1);
+    N = send_to_peer(self, other, "hello", sizeof("hello"));
     printf("node0 - sent %i bytes. Are they coming back?\n", (int)N);
 
+    N = recv_from_peer(self, &remote, (void *)buffer, BUFSIZE);
+    printf("node0 - recv %i bytes: \"%s\"\n", (int)N, buffer);
     N = recv_from_peer(self, &remote, (void *)buffer, BUFSIZE);
     printf("node0 - recv %i bytes: \"%s\"\n", (int)N, buffer);
 
@@ -67,7 +68,7 @@ static void node1 ()
     assert(buffer[N-1] == 0);
     printf("node1 - Received: \"%s\", now sending twice\n", buffer);
 
-    send_to_peer(self, remote, (void *)buffer, N-1);
+    send_to_peer(self, remote, (void *)buffer, N);
     send_to_peer(self, other, (void *)buffer, N);
 
     nodeid_free(self);

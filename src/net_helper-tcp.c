@@ -20,6 +20,7 @@
 #include "config.h"
 #include "NetHelper/fair.h"
 #include "NetHelper/dictionary.h"
+#include "NetHelper/esc.h"
 
 // FIXME : remove
 #include <stdio.h>
@@ -212,7 +213,7 @@ int send_to_peer(const struct nodeID *self, struct nodeID *to,
         return -1;
     }
 
-    sent = send(peer_fd, buffer_ptr, buffer_size, MSG_DONTWAIT);
+    sent = esc_send(peer_fd, buffer_ptr, buffer_size, MSG_DONTWAIT);
     if (sent == -1 && !would_block(errno)) {
         print_err(errno, "sending");
     }
@@ -247,15 +248,12 @@ int recv_from_peer(const struct nodeID *self, struct nodeID **remote,
         return -1;
     }
 
-    retval = recv(peer->fd, buffer_ptr, buffer_size, 0);
-    switch (retval) {
-        case -1:
+    retval = esc_recv(peer->fd, buffer_ptr, buffer_size, 0);
+    if (retval <= 0) {
+        if (retval < 0) {
             print_err(errno, "receiving");
-        case 0:
-            close(peer->fd);
-            break;
-        default:
-            break;
+        }
+        close(peer->fd);
     }
     peer->fd = -1;
     return retval;
