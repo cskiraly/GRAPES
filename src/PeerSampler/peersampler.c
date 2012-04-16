@@ -29,7 +29,7 @@ struct psample_context* psample_init(struct nodeID *myID, const void *metadata, 
   tc = malloc(sizeof(struct psample_context));
   if (!tc) return NULL;
 
-  tc->ps = &cyclon;
+  tc->ps = &ncastplus;
   cfg_tags = config_parse(config);
   proto = config_value_str(cfg_tags, "protocol");
   if (proto) {
