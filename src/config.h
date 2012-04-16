@@ -2,6 +2,10 @@
 #define CONFIG_H
 struct tag;
 
+/*
+ * earlier name-value pairs in the config string take precedence
+ */
+
 struct tag *config_parse(const char *cfg);
 int config_value_int(const struct tag *cfg_values, const char *value, int *res);
 int config_value_int_default(const struct tag *cfg_values, const char *value, int *res, int default_value);
