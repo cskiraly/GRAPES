@@ -15,7 +15,7 @@ NET_HELPERS = $(addsuffix .o, $(basename $(wildcard net_helper-*.c)))
 
 .PHONY: $(OBJ_LSTS)
 
-all: libgrapes.a
+all: libgrapes.a net_helper-tcp.o
 
 $(OBJ_LSTS):
 	$(MAKE) -C $(dir $@) objs.lst FFDIR=$(FFDIR) GTK=$(GTK)
