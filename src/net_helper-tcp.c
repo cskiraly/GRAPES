@@ -311,8 +311,6 @@ struct nodeID *nodeid_undump (const uint8_t *b, int *len)
 int nodeid_dump (uint8_t *b, const struct nodeID *s,
                  size_t max_write_size)
 {
-    assert(s->local == NULL);   // TODO: remove after testing
-
     if (max_write_size < sizeof(struct sockaddr_in)) {
         return -1;
     }
