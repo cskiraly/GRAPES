@@ -320,7 +320,7 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
       exit(-1);
   }
   data[header_size - 1] = 1;
-  frame_header_fill(data + header_size, *size - header_size - FRAME_HEADER_SIZE, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
+  frame_header_fill(data + header_size, pkt.size, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
 
   memcpy(data + header_size + FRAME_HEADER_SIZE, pkt.data, pkt.size);
   *ts = av_rescale_q(pkt.dts, s->s->streams[pkt.stream_index]->time_base, AV_TIME_BASE_Q);
