@@ -15,6 +15,8 @@
 #include "chunkiser_iface.h"
 
 #define STATIC_BUFF_SIZE 1000 * 1024
+#define VFRAMES_DEFAULT 1
+#define AFRAMES_DEFAULT 1
 struct chunkiser_ctx {
   AVFormatContext *s;
   int loop;	//loop on input file infinitely
@@ -22,6 +24,14 @@ struct chunkiser_ctx {
   int64_t last_ts;
   int64_t base_ts;
   AVBitStreamFilterContext *bsf[MAX_STREAMS];
+  int v_frames_max;
+  int v_frames;
+  uint8_t *v_data;
+  int v_size;
+  int a_frames_max;
+  int a_frames;
+  uint8_t *a_data;
+  int a_size;
 };
 
 static uint8_t codec_type(enum CodecID cid)
@@ -179,6 +189,8 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
         video_streams = 0;
       }
     }
+    config_value_int(cfg_tags, "vframes", &desc->v_frames_max);
+    config_value_int(cfg_tags, "aframes", &desc->a_frames_max);
   }
   free(cfg_tags);
   for (i = 0; i < desc->s->nb_streams; i++) {
@@ -208,6 +220,16 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
 
   dump_format(desc->s, 0, fname, 0);
 
+  //initialize buffers
+  desc->v_frames_max = VFRAMES_DEFAULT;
+  desc->v_frames = 0;
+  desc->v_data = NULL;
+  desc->v_size = 0;
+  desc->a_frames_max = AFRAMES_DEFAULT;
+  desc->a_frames = 0;
+  desc->a_data = NULL;
+  desc->a_size = 0;
+
   return desc;
 }
 
@@ -221,6 +243,11 @@ static void avf_close(struct chunkiser_ctx *s)
     }
   }
   av_close_input_file(s->s);
+
+  //free buffers
+  free(s->v_data);
+  free(s->a_data);
+
   free(s);
 }
 
@@ -288,8 +315,13 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
   AVPacket pkt;
   AVRational new_tb;
   int res;
-  uint8_t *data;
+  uint8_t **data;
   int header_size;
+  int *frames;
+  int *chunksize;
+  int frames_max;
+  uint8_t *frame_pos;
+  uint8_t *ret;
 
   res = av_read_frame(s->s, &pkt);
   if (res < 0) {
@@ -337,10 +369,36 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
     pkt= new_pkt;
   }
 
+  switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
+    case CODEC_TYPE_VIDEO:
+      frames = &s->v_frames;
+      data = &s->v_data;
+      chunksize = &s->v_size;
+      frames_max = s->v_frames_max;
+      break;
+    case CODEC_TYPE_AUDIO:
+      frames = &s->a_frames;
+      data = &s->a_data;
+      chunksize = &s->a_size;
+      frames_max = s->a_frames_max;
+      break;
+    default:
+      /* Cannot arrive here... */
+      fprintf(stderr, "Internal chunkiser error!\n");
+      exit(-1);
+  }
+
   header_size = get_header_size(s->s->streams[pkt.stream_index]);
-  *size = pkt.size + header_size + FRAME_HEADER_SIZE;
-  data = malloc(*size);
-  if (data == NULL) {
+  if (!*frames) {
+    *chunksize = pkt.size + header_size + FRAME_HEADER_SIZE;
+    *data = malloc(*chunksize);
+    // we will fill the header at the end
+  } else {
+    *chunksize += pkt.size + FRAME_HEADER_SIZE;
+    *data = realloc(*data, *chunksize);
+  }
+
+  if (*data == NULL) {
     *size = -1;
     av_free_packet(&pkt);
 
@@ -348,12 +406,11 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
   }
 
   new_tb = get_new_tb(s->s->streams[pkt.stream_index]);
-  header_fill(data, s->s->streams[pkt.stream_index]);
+  frame_pos = *data + *chunksize - pkt.size - FRAME_HEADER_SIZE;
+  frame_header_fill(frame_pos, pkt.size, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
+  memcpy(frame_pos + FRAME_HEADER_SIZE, pkt.data, pkt.size);
+  (*frames)++;
 
-  data[header_size - 1] = 1;
-  frame_header_fill(data + header_size, pkt.size, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
-
-  memcpy(data + header_size + FRAME_HEADER_SIZE, pkt.data, pkt.size);
   *ts = av_rescale_q(pkt.dts, s->s->streams[pkt.stream_index]->time_base, AV_TIME_BASE_Q);
   //dprintf("pkt.dts=%ld TS1=%lu" , pkt.dts, *ts);
   *ts += s->base_ts;
@@ -361,7 +418,20 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
   s->last_ts = *ts;
   av_free_packet(&pkt);
 
-  return data;
+  if (*frames == frames_max) {
+    header_fill(*data, s->s->streams[pkt.stream_index]);
+    (*data)[header_size - 1] = *frames;
+    ret = *data;
+    *size = *chunksize;
+    *frames = 0;
+    *data = NULL;
+    *chunksize = 0;
+  } else {
+    *size = 0;
+    ret = NULL;
+  }
+
+  return ret;
 }
 
 #if 0
