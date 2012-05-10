@@ -234,14 +234,14 @@ static void avf_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
     return;		/* Received a chunk for a non-selected stream */
   }
   frames = data[header_size - 1];
-  p = data + header_size + FRAME_HEADER_SIZE * frames;
+  p = data + header_size;
   for (i = 0; i < frames; i++) {
     AVPacket pkt;
     int64_t pts, dts;
     int frame_size;
 
-    frame_header_parse(data + header_size + FRAME_HEADER_SIZE * i,
-                       &frame_size, &pts, &dts);
+    frame_header_parse(p, &frame_size, &pts, &dts);
+    p += FRAME_HEADER_SIZE;
     //dprintf("Frame %d PTS1: %d\n", i, pts);
     av_init_packet(&pkt);
     pkt.stream_index = (media_type == 2) && (((o->streams & 0x01) == 0x01));
