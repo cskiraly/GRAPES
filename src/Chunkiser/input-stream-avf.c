@@ -173,6 +173,15 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
   desc->last_ts = 0;
   desc->base_ts = 0;
   desc->loop = 0;
+  //initialize buffers
+  desc->v_frames_max = VFRAMES_DEFAULT;
+  desc->v_frames = 0;
+  desc->v_data = NULL;
+  desc->v_size = 0;
+  desc->a_frames_max = AFRAMES_DEFAULT;
+  desc->a_frames = 0;
+  desc->a_data = NULL;
+  desc->a_size = 0;
   cfg_tags = config_parse(config);
   if (cfg_tags) {
     const char *media;
@@ -222,15 +231,6 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
 
   dump_format(desc->s, 0, fname, 0);
 
-  //initialize buffers
-  desc->v_frames_max = VFRAMES_DEFAULT;
-  desc->v_frames = 0;
-  desc->v_data = NULL;
-  desc->v_size = 0;
-  desc->a_frames_max = AFRAMES_DEFAULT;
-  desc->a_frames = 0;
-  desc->a_data = NULL;
-  desc->a_size = 0;
 
   return desc;
 }
