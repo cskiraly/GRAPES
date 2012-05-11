@@ -224,6 +224,33 @@ static void avf_close(struct chunkiser_ctx *s)
   free(s);
 }
 
+static AVRational header_fill(uint8_t *data, AVStream *stream)
+{
+  AVRational new_tb;
+
+  switch (stream->codec->codec_type) {
+    case CODEC_TYPE_VIDEO:
+      video_header_fill(data, stream);
+      new_tb.den = stream->avg_frame_rate.num;
+      new_tb.num = stream->avg_frame_rate.den;
+      if (new_tb.num == 0) {
+        new_tb.den = stream->r_frame_rate.num;
+        new_tb.num = stream->r_frame_rate.den;
+      }
+      break;
+    case CODEC_TYPE_AUDIO:
+      audio_header_fill(data, stream);
+      new_tb = (AVRational){stream->codec->frame_size, stream->codec->sample_rate};
+      break;
+    default:
+      /* Cannot arrive here... */
+      fprintf(stderr, "Internal chunkiser error!\n");
+      exit(-1);
+  }
+
+  return new_tb;
+}
+
 static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts)
 {
   AVPacket pkt;
@@ -298,25 +325,9 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
 
     return NULL;
   }
-  switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
-    case CODEC_TYPE_VIDEO:
-      video_header_fill(data, s->s->streams[pkt.stream_index]);
-      new_tb.den = s->s->streams[pkt.stream_index]->avg_frame_rate.num;
-      new_tb.num = s->s->streams[pkt.stream_index]->avg_frame_rate.den;
-      if (new_tb.num == 0) {
-        new_tb.den = s->s->streams[pkt.stream_index]->r_frame_rate.num;
-        new_tb.num = s->s->streams[pkt.stream_index]->r_frame_rate.den;
-      }
-      break;
-    case CODEC_TYPE_AUDIO:
-      audio_header_fill(data, s->s->streams[pkt.stream_index]);
-      new_tb = (AVRational){s->s->streams[pkt.stream_index]->codec->frame_size, s->s->streams[pkt.stream_index]->codec->sample_rate};
-      break;
-    default:
-      /* Cannot arrive here... */
-      fprintf(stderr, "Internal chunkiser error!\n");
-      exit(-1);
-  }
+
+  new_tb = header_fill(data, s->s->streams[pkt.stream_index]);
+
   data[header_size - 1] = 1;
   frame_header_fill(data + header_size, pkt.size, &pkt, s->s->streams[pkt.stream_index], new_tb, s->base_ts);
 
