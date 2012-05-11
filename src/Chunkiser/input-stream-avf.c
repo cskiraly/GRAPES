@@ -251,6 +251,24 @@ static AVRational header_fill(uint8_t *data, AVStream *stream)
   return new_tb;
 }
 
+static int get_header_size(AVStream *stream)
+{
+  switch (stream->codec->codec_type) {
+    case CODEC_TYPE_VIDEO:
+      return VIDEO_PAYLOAD_HEADER_SIZE;
+      break;
+    case CODEC_TYPE_AUDIO:
+      return AUDIO_PAYLOAD_HEADER_SIZE;
+      break;
+    default:
+      /* Cannot arrive here... */
+      fprintf(stderr, "Internal chunkiser error!\n");
+      exit(-1);
+  }
+
+  return -1;
+}
+
 static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_t *ts)
 {
   AVPacket pkt;
@@ -305,18 +323,7 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
     pkt= new_pkt;
   }
 
-  switch (s->s->streams[pkt.stream_index]->codec->codec_type) {
-    case CODEC_TYPE_VIDEO:
-      header_size = VIDEO_PAYLOAD_HEADER_SIZE;
-      break;
-    case CODEC_TYPE_AUDIO:
-      header_size = AUDIO_PAYLOAD_HEADER_SIZE;
-      break;
-    default:
-      /* Cannot arrive here... */
-      fprintf(stderr, "Internal chunkiser error!\n");
-      exit(-1);
-  }
+  header_size = get_header_size(s->s->streams[pkt.stream_index]);
   *size = pkt.size + header_size + FRAME_HEADER_SIZE;
   data = malloc(*size);
   if (data == NULL) {
