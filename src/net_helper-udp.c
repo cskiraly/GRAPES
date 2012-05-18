@@ -17,6 +17,8 @@
 
 #include "net_helper.h"
 
+#define MAX_MSG_SIZE 1024 * 60
+
 struct nodeID {
   struct sockaddr_in addr;
   int fd;
@@ -115,29 +117,39 @@ void bind_msg_type (uint8_t msgtype)
 {
 }
 
+struct my_hdr_t {
+  uint8_t m_seq;
+  uint8_t frag_seq;
+  uint8_t frags;
+} __attribute__((packed));
+
 int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
   struct msghdr msg = {0};
-  uint8_t my_hdr;
+  static struct my_hdr_t my_hdr;
   struct iovec iov[2];
   int res;
 
   iov[0].iov_base = &my_hdr;
-  iov[0].iov_len = 1;
+  iov[0].iov_len = sizeof(struct my_hdr_t);
   msg.msg_name = &to->addr;
   msg.msg_namelen = sizeof(struct sockaddr_in);
   msg.msg_iovlen = 2;
   msg.msg_iov = iov;
 
+  my_hdr.m_seq++;
+  my_hdr.frags = (buffer_size / (MAX_MSG_SIZE)) + 1;
+  my_hdr.frag_seq = 0;
+
   do {
     iov[1].iov_base = buffer_ptr;
-    if (buffer_size > 1024 * 60) {
-      iov[1].iov_len = 1024 * 60;
-      my_hdr = 0;
+    if (buffer_size > MAX_MSG_SIZE) {
+      iov[1].iov_len = MAX_MSG_SIZE;
     } else {
       iov[1].iov_len = buffer_size;
-      my_hdr = 1;
     }
+    my_hdr.frag_seq++;
+
     buffer_size -= iov[1].iov_len;
     buffer_ptr += iov[1].iov_len;
     res = sendmsg(from->fd, &msg, 0);
@@ -153,14 +165,14 @@ int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *bu
 
 int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *buffer_ptr, int buffer_size)
 {
-  int res, recv;
+  int res, recv, m_seq, frag_seq;
   struct sockaddr_in raddr;
   struct msghdr msg = {0};
-  uint8_t my_hdr;
+  static struct my_hdr_t my_hdr;
   struct iovec iov[2];
 
   iov[0].iov_base = &my_hdr;
-  iov[0].iov_len = 1;
+  iov[0].iov_len = sizeof(struct my_hdr_t);
   msg.msg_name = &raddr;
   msg.msg_namelen = sizeof(struct sockaddr_in);
   msg.msg_iovlen = 2;
@@ -172,18 +184,30 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
   }
 
   recv = 0;
+  m_seq = -1;
+  frag_seq = 0;
   do {
     iov[1].iov_base = buffer_ptr;
-    if (buffer_size > 1024 * 60) {
-      iov[1].iov_len = 1024 * 60;
+    if (buffer_size > MAX_MSG_SIZE) {
+      iov[1].iov_len = MAX_MSG_SIZE;
     } else {
       iov[1].iov_len = buffer_size;
     }
     buffer_size -= iov[1].iov_len;
     buffer_ptr += iov[1].iov_len;
     res = recvmsg(local->fd, &msg, 0);
-    recv += (res - 1);
-  } while ((my_hdr == 0) && (buffer_size > 0));
+    recv += (res - sizeof(struct my_hdr_t));
+    if (m_seq != -1 && my_hdr.m_seq != m_seq) {
+      return -1;
+    } else {
+      m_seq = my_hdr.m_seq;
+    }
+    if (my_hdr.frag_seq != frag_seq + 1) {
+      return -1;
+    } else {
+     frag_seq++;
+    }
+  } while ((my_hdr.frag_seq < my_hdr.frags) && (buffer_size > 0));
   memcpy(&(*remote)->addr, &raddr, msg.msg_namelen);
   (*remote)->fd = -1;
 
