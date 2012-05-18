@@ -3,9 +3,13 @@
  *
  *  This is free software; see gpl-3.0.txt
  */
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#else
+#include <winsock2.h>
+#endif
 #include <unistd.h>
 #include <stdint.h>
 #include <limits.h>
@@ -19,6 +23,19 @@
 #include "dechunkiser_iface.h"
 
 #define UDP_PORTS_NUM_MAX 10
+
+#ifdef _WIN32
+static int inet_aton(const char *cp, struct in_addr *addr)
+{
+    if( cp==NULL || addr==NULL )
+    {
+        return(0);
+    }
+
+    addr->s_addr = inet_addr(cp);
+    return (addr->s_addr == INADDR_NONE) ? 0 : 1;
+}
+#endif
 
 struct dechunkiser_ctx {
   int outfd;
