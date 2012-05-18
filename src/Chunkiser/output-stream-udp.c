@@ -93,7 +93,7 @@ static void packet_write(int fd, const char *ip, int port, uint8_t *data, int si
 {
   struct sockaddr_in si_other;
 
-  bzero(&si_other, sizeof(si_other));
+  memset(&si_other, 0, sizeof(si_other));
   si_other.sin_family = AF_INET;
   si_other.sin_port = htons(port);
   if (inet_aton(ip, &si_other.sin_addr) == 0) {

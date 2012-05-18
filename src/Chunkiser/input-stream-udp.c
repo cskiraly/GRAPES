@@ -55,7 +55,7 @@ static int listen_udp(int port)
     return -1;
   }
 
-  bzero(&servaddr, sizeof(servaddr));
+  memset(&servaddr, 0, sizeof(servaddr));
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
   servaddr.sin_port = htons(port);
