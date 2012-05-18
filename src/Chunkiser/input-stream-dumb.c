@@ -12,9 +12,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef _WIN32
-#include <winsock2.h>
-#endif
 
 #include "chunkiser_iface.h"
 #include "config.h"
@@ -58,8 +55,7 @@ static struct chunkiser_ctx *dumb_open(const char *fname, int *period, const cha
 #ifndef _WIN32
       fcntl(res->fds[0], F_SETFL, O_NONBLOCK);
 #else
-      unsigned long nonblocking = 1;
-      ioctlsocket(res->fds[0], FIONBIO, (unsigned long*) &nonblocking);
+      fprintf(stderr, "nonblock is not implemented yet\n");
 #endif
     }
   }
