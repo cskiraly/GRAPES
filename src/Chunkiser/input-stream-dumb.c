@@ -12,6 +12,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
 
 #include "chunkiser_iface.h"
 #include "config.h"
@@ -52,7 +55,12 @@ static struct chunkiser_ctx *dumb_open(const char *fname, int *period, const cha
     config_value_int(cfg_tags, "chunk_size", &res->chunk_size);
     access_mode = config_value_str(cfg_tags, "mode");
     if (access_mode && !strcmp(access_mode, "nonblock")) {
+#ifndef _WIN32
       fcntl(res->fds[0], F_SETFL, O_NONBLOCK);
+#else
+      unsigned long nonblocking = 1;
+      ioctlsocket(res->fds[0], FIONBIO, (unsigned long*) &nonblocking);
+#endif
     }
   }
   free(cfg_tags);

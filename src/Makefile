@@ -3,9 +3,9 @@ BASE = ..
 endif
 CFGDIR ?= .
 
-SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler Cache PeerSampler CloudSupport Utils
+SUBDIRS = ChunkIDSet ChunkTrading TopologyManager ChunkBuffer PeerSet Scheduler Cache PeerSampler Utils Chunkiser
 ifneq ($(ARCH),win32)
-  SUBDIRS += Chunkiser
+  SUBDIRS += CloudSupport
 endif
 COMMON_OBJS = config.o
 

@@ -42,7 +42,12 @@ static struct dechunkiser_ctx *raw_open(const char *fname, const char *config)
   res->fd = 1;
   res->payload_type = raw;
   if (fname) {
+#ifndef _WIN32
     res->fd = open(fname, O_WRONLY | O_CREAT, S_IROTH | S_IWUSR | S_IRUSR);
+#else
+    res->fd = open(fname, O_WRONLY | O_CREAT);
+#endif
+
     if (res->fd < 0) {
       res->fd = 1;
     }
