@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <string.h>
 #include <sys/time.h>
 
