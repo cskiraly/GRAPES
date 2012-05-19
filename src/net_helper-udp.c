@@ -339,10 +339,10 @@ int node_addr(const struct nodeID *s, char *addr, int len)
 {
   int n;
 
-  if (!inet_ntop(AF_INET, &(s->addr.sin_addr), addr, len)) {
+  if (node_ip(s, addr, len) < 0) {
     return -1;
   }
-  n = snprintf(addr + strlen(addr), len - strlen(addr) - 1, ":%d", ntohs(s->addr.sin_port));
+  n = snprintf(addr + strlen(addr), len - strlen(addr) - 1, ":%d", node_port(s));
 
   return n;
 }
