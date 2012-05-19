@@ -398,9 +398,17 @@ void nodeid_free(struct nodeID *s)
 
 int node_ip(const struct nodeID *s, char *ip, int len)
 {
+#ifndef _WIN32
   if (inet_ntop(AF_INET, &(s->addr.sin_addr), ip, len) == 0) {
     return -1;
   }
+#else
+  char *str = inet_ntoa(s->addr.sin_addr);	//TODO: find a better (reentrant) way. No inet_atop in Win before Vista
+  if (strlen(str) >= len) {
+    return -1;
+  }
+  strcpy(ip, str);
+#endif
 
   return 1;
 }
