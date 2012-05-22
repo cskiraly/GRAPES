@@ -18,15 +18,15 @@ TESTS = topology_test \
         cb_test \
         config_test \
         tman_test \
-        topo_msg_size_test \
-	cloud_test \
-	cloudcast_topology_test \
-	cloud_topology_monitor \
-	test_queue
+        topo_msg_size_test
 
 ifneq ($(ARCH),win32)
   TESTS += topology_test_th \
            chunkiser_test
+	   cloud_test \
+           cloudcast_topology_test \
+           cloud_topology_monitor \
+           test_queue
 endif
 
 CPPFLAGS = -I$(BASE)/include
@@ -94,16 +94,14 @@ endif
 
 cloud_test: cloud_test.o net_helpers.o
 cloud_test: $(NET_HELPER).o
-cloud_test: LDFLAGS += -ldl
 
 cloudcast_topology_test: cloudcast_topology_test.o net_helpers.o
 cloudcast_topology_test: $(NET_HELPER).o
 cloudcast_topology_test: CFLAGS += -pthread
-cloudcast_topology_test: LDFLAGS += -ldl -pthread
+cloudcast_topology_test: LDFLAGS += -pthread
 
 cloud_topology_monitor: cloud_topology_monitor.o net_helpers.o
 cloud_topology_monitor: $(NET_HELPER).o
-cloud_topology_monitor: LDFLAGS += -ldl
 
 test_queue: test_queue.o
 test_queue: CFLAGS += -I$(BASE)/src/Utils

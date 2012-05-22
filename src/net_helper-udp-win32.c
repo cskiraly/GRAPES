@@ -174,13 +174,9 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
 
 int node_addr(const struct nodeID *s, char *addr, int len)
 {
-  char buff[96];
   int n;
 
-  if (!inet_ntop(AF_INET, &(s->addr.sin_addr), addr, len)) {
-    return -1;
-  }
-  n = snprintf(addr + strlen(addr), len - strlen(addr) - 1, ":%d", ntohs(s->addr.sin_port));
+  n = snprintf(addr, len, "%s:%d", !inet_ntoa(s->addr.sin_addr), ntohs(s->addr.sin_port));
 
   return n;
 }
@@ -236,9 +232,7 @@ void nodeid_free(struct nodeID *s)
 
 int node_ip(const struct nodeID *s, char *ip, int len)
 {
-  if (inet_ntop(AF_INET, &(s->addr.sin_addr), ip, len) == 0) {
-    return -1;
-  }
+  sprintf(ip, "%s", inet_ntoa(s->addr.sin_addr));
 
   return 1;
 }
