@@ -22,7 +22,7 @@ TESTS = topology_test \
 
 ifneq ($(ARCH),win32)
   TESTS += topology_test_th \
-           chunkiser_test
+           chunkiser_test   \
 	   cloud_test \
            cloudcast_topology_test \
            cloud_topology_monitor \
