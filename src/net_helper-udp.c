@@ -285,7 +285,7 @@ void nodeid_free(struct nodeID *s)
 
 int node_ip(const struct nodeID *s, char *ip, int len)
 {
-  if (inet_ntop(AF_INET, &(s->addr.sin_addr), ip, len) == 0) {
+  if (inet_ntop(AF_INET, &(s->addr.sin_addr), ip, len) == NULL) {
     return -1;
   }
 
