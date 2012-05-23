@@ -6,21 +6,20 @@
  */
 
 #include <sys/types.h>
-#ifndef _WIN32
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#else
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <assert.h>
-#endif
 #include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifndef _WIN32
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#else
+#include "win32-net.h"
+#endif
 
 #include "net_helper.h"
 
@@ -30,119 +29,6 @@ struct nodeID {
   struct sockaddr_in addr;
   int fd;
 };
-
-#ifdef _WIN32
-static int inet_aton(const char *cp, struct in_addr *addr)
-{
-    if( cp==NULL || addr==NULL )
-    {
-        return(0);
-    }
-
-    addr->s_addr = inet_addr(cp);
-    return (addr->s_addr == INADDR_NONE) ? 0 : 1;
-}
-
-struct iovec {                    /* Scatter/gather array items */
-  void  *iov_base;              /* Starting address */
-  size_t iov_len;               /* Number of bytes to transfer */
-};
-
-struct msghdr {
-  void         *msg_name;       /* optional address */
-  socklen_t     msg_namelen;    /* size of address */
-  struct iovec *msg_iov;        /* scatter/gather array */
-  size_t        msg_iovlen;     /* # elements in msg_iov */
-  void         *msg_control;    /* ancillary data, see below */
-  socklen_t     msg_controllen; /* ancillary data buffer len */
-  int           msg_flags;      /* flags on received message */
-};
-
-#define MIN(A,B)    ((A)<(B) ? (A) : (B))
-ssize_t recvmsg (int sd, struct msghdr *msg, int flags)
-{
-  ssize_t bytes_read;
-  size_t expected_recv_size;
-  ssize_t left2move;
-  char *tmp_buf;
-  char *tmp;
-  int i;
-
-  assert (msg->msg_iov);
-
-  expected_recv_size = 0;
-  for (i = 0; i < msg->msg_iovlen; i++)
-    expected_recv_size += msg->msg_iov[i].iov_len;
-  tmp_buf = malloc (expected_recv_size);
-  if (!tmp_buf)
-    return -1;
-
-  left2move = bytes_read = recvfrom (sd,
-                                     tmp_buf,
-                                     expected_recv_size,
-                                     flags,
-                                     (struct sockaddr *) msg->msg_name,
-                                     &msg->msg_namelen);
-
-  for (tmp = tmp_buf, i = 0; i < msg->msg_iovlen; i++)
-    {
-      if (left2move <= 0)
-        break;
-      assert (msg->msg_iov[i].iov_base);
-      memcpy (msg->msg_iov[i].iov_base,
-              tmp, MIN (msg->msg_iov[i].iov_len, left2move));
-      left2move -= msg->msg_iov[i].iov_len;
-      tmp += msg->msg_iov[i].iov_len;
-    }
-
-  free (tmp_buf);
-
-  return bytes_read;
-}
-
-ssize_t sendmsg (int sd, struct msghdr * msg, int flags)
-{
-  ssize_t bytes_send;
-  size_t expected_send_size;
-  size_t left2move;
-  char *tmp_buf;
-  char *tmp;
-  int i;
-
-  assert (msg->msg_iov);
-
-  expected_send_size = 0;
-  for (i = 0; i < msg->msg_iovlen; i++)
-    expected_send_size += msg->msg_iov[i].iov_len;
-  tmp_buf = malloc (expected_send_size);
-  if (!tmp_buf)
-    return -1;
-
-  for (tmp = tmp_buf, left2move = expected_send_size, i = 0; i <
-       msg->msg_iovlen; i++)
-    {
-      if (left2move <= 0)
-        break;
-      assert (msg->msg_iov[i].iov_base);
-      memcpy (tmp,
-              msg->msg_iov[i].iov_base,
-              MIN (msg->msg_iov[i].iov_len, left2move));
-      left2move -= msg->msg_iov[i].iov_len;
-      tmp += msg->msg_iov[i].iov_len;
-    }
-
-  bytes_send = sendto (sd,
-                       tmp_buf,
-                       expected_send_size,
-                       flags,
-                       (struct sockaddr *) msg->msg_name, msg->msg_namelen);
-
-  free (tmp_buf);
-
-  return bytes_send;
-}
-
-#endif
 
 int wait4data(const struct nodeID *s, struct timeval *tout, int *user_fds)
 {
@@ -399,17 +285,9 @@ void nodeid_free(struct nodeID *s)
 
 int node_ip(const struct nodeID *s, char *ip, int len)
 {
-#ifndef _WIN32
   if (inet_ntop(AF_INET, &(s->addr.sin_addr), ip, len) == 0) {
     return -1;
   }
-#else
-  char *str = inet_ntoa(s->addr.sin_addr);	//TODO: find a better (reentrant) way. No inet_atop in Win before Vista
-  if (strlen(str) >= len) {
-    return -1;
-  }
-  strcpy(ip, str);
-#endif
 
   return 1;
 }
