@@ -359,10 +359,10 @@ static uint8_t *avf_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
       av_free_packet(&pkt);
       new_pkt.destruct= av_destruct_packet;
     } else if(res < 0){
-      fprintf(stderr, "%s failed for stream %d, codec %s: ",
+      fprintf(stderr, "%s failed for stream %d, codec %d: ",
                       s->bsf[pkt.stream_index]->filter->name,
                       pkt.stream_index,
-                      s->s->streams[pkt.stream_index]->codec->codec->name);
+                      s->s->streams[pkt.stream_index]->codec->codec_id);
       fprintf(stderr, "%d\n", res);
       *size = 0;
 
