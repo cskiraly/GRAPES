@@ -327,8 +327,8 @@ static void recv_data_cb(char *buffer, int buflen, unsigned char msgtype, recv_p
 		sprintf(str,"!Unknown!");
 	if (arg->nrMissingBytes || !arg->firstPacketArrived) {
 	    fprintf(stderr, "Net-helper : corrupted message arrived from %s\n",str);
-/**/    fprintf(stderr, "\tMessage # %d -- Message type: %hhd -- Missing # %d bytes%s\n",
-			recv_counter, buffer[0],arg->nrMissingBytes, arg->firstPacketArrived?"":", Missing first!");
+	    fprintf(stderr, "\tMessage # %d -- Missing # %d bytes%s\n",
+			recv_counter, arg->nrMissingBytes, arg->firstPacketArrived?"":", Missing first!");
 	}
 	else {
 	//	fprintf(stderr, "Net-helper : message arrived from %s\n",str);
@@ -359,7 +359,7 @@ struct nodeID *net_helper_init(const char *IPaddr, int port, const char *config)
 	int s, i;
 	struct tag *cfg_tags;
 	const char *res;
-	const char *stun_server = "stun.ekiga.net";
+	const char *stun_server = "130.192.9.140";	//rucola.polito.it
 	int stun_port = 3478;
 	const char *repo_address = NULL;
 	int publish_interval = 60;
