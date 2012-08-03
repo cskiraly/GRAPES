@@ -146,7 +146,7 @@ static struct chunkiser_ctx *avf_open(const char *fname, int *period, const char
   struct chunkiser_ctx *desc;
   int i, res;
   struct tag *cfg_tags;
-  int video_streams = 0, audio_streams = 1;
+  int video_streams = 0, audio_streams = 0;
 
   avcodec_register_all();
   av_register_all();
