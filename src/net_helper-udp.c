@@ -134,7 +134,7 @@ struct my_hdr_t {
 int send_to_peer(const struct nodeID *from, struct nodeID *to, const uint8_t *buffer_ptr, int buffer_size)
 {
   struct msghdr msg = {0};
-  struct my_hdr_t my_hdr  = {0};
+  static struct my_hdr_t my_hdr;
   struct iovec iov[2];
   int res;
 
@@ -176,7 +176,7 @@ int recv_from_peer(const struct nodeID *local, struct nodeID **remote, uint8_t *
   int res, recv, m_seq, frag_seq;
   struct sockaddr_in raddr;
   struct msghdr msg = {0};
-  struct my_hdr_t my_hdr = {0};
+  static struct my_hdr_t my_hdr;
   struct iovec iov[2];
 
   iov[0].iov_base = &my_hdr;
