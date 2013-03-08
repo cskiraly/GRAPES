@@ -129,15 +129,15 @@ static void udp_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
   while (i < size) {
     int stream, psize;
 
-    udp_chunk_header_parse(data + i, &psize, &stream);
+    udp_payload_header_parse(data + i, &psize, &stream);
     if (stream > o->ports) {
       fprintf(stderr, "Bad stream %d > %d\n", stream, o->ports);
 
       return;
     }
 
-    packet_write(o->outfd, o->ip, o->port[stream], data + i + UDP_CHUNK_HEADER_SIZE, psize);
-    i += UDP_CHUNK_HEADER_SIZE + psize;
+    packet_write(o->outfd, o->ip, o->port[stream], data + i + UDP_PAYLOAD_HEADER_SIZE, psize);
+    i += UDP_PAYLOAD_HEADER_SIZE + psize;
   }
 }
 
