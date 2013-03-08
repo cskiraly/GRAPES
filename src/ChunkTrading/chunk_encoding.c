@@ -14,6 +14,7 @@
 #include "trade_msg_la.h"
 #include "int_coding.h"
 
+#define CHUNK_VERSION 0
 
 int encodeChunk(const struct chunk *c, uint8_t *buff, int buff_len)
 {
@@ -24,13 +25,15 @@ int encodeChunk(const struct chunk *c, uint8_t *buff, int buff_len)
     return -1;
   }
 
-  int_cpy(buff, c->id);
+  buff[0] = CHUNK_VERSION;
+  buff[1] = c->payload_type;
+  int_cpy(buff + 2, c->id);
   half_ts = c->timestamp >> 32;
-  int_cpy(buff + 4, half_ts);
+  int_cpy(buff + 6, half_ts);
   half_ts = c->timestamp;
-  int_cpy(buff + 8, half_ts);
-  int_cpy(buff + 12, c->size);
-  int_cpy(buff + 16, c->attributes_size);
+  int_cpy(buff + 10, half_ts);
+  int_cpy(buff + 14, c->size);
+  int_cpy(buff + 18, c->attributes_size);
   memcpy(buff + CHUNK_HEADER_SIZE, c->data, c->size);
   if (c->attributes_size) {
     memcpy(buff + CHUNK_HEADER_SIZE + c->size, c->attributes, c->attributes_size);
@@ -44,12 +47,16 @@ int decodeChunk(struct chunk *c, const uint8_t *buff, int buff_len)
   if (buff_len < CHUNK_HEADER_SIZE) {
     return -1;
   }
-  c->id = int_rcpy(buff);
-  c->timestamp = int_rcpy(buff + 4);
+  if (buff[0] != CHUNK_VERSION) {
+    return -6;
+  }
+  c->payload_type = buff[1];
+  c->id = int_rcpy(buff + 2);
+  c->timestamp = int_rcpy(buff + 6);
   c->timestamp = c->timestamp << 32;
-  c->timestamp |= int_rcpy(buff + 8); 
-  c->size = int_rcpy(buff + 12);
-  c->attributes_size = int_rcpy(buff + 16);
+  c->timestamp |= int_rcpy(buff + 10);
+  c->size = int_rcpy(buff + 14);
+  c->attributes_size = int_rcpy(buff + 18);
 
   if (buff_len < c->size + CHUNK_HEADER_SIZE) {
     return -2;

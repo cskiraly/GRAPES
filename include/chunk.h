@@ -21,6 +21,10 @@ typedef struct chunk {
     */
    int id;
    /**
+    * Type of the data payload.
+    */
+   uint8_t payload_type;
+   /**
     * Size of the data, in byte.
     */
    int size;
