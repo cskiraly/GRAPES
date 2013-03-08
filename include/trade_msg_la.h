@@ -13,6 +13,11 @@
  *
  */
 
+/**
+ * @brief Size of the chunk header in bytes.
+ */
+#define CHUNK_HEADER_SIZE 20
+
  /**
   * @brief Encode a sequence of information, filling the buffer with the corresponding bit stream.
   * 

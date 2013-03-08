@@ -51,7 +51,7 @@ int sendChunk(struct nodeID *to, const struct chunk *c, uint16_t transid)
   uint8_t *buff;
   int res;
 
-  buff_len  = 20 + sizeof(transid) + c->size + c->attributes_size;
+  buff_len  = CHUNK_HEADER_SIZE + sizeof(transid) + c->size + c->attributes_size;
   buff = malloc(buff_len + 1);
   if (buff == NULL) {
       return -1;

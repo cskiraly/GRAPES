@@ -14,7 +14,6 @@
 #include "trade_msg_la.h"
 #include "int_coding.h"
 
-#define CHUNK_HEADER_SIZE 20
 
 int encodeChunk(const struct chunk *c, uint8_t *buff, int buff_len)
 {
