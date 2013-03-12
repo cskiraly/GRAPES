@@ -24,7 +24,6 @@ static int udp_port;
 static int out_udp_port;
 static int timed;
 
-static int cycle;
 static struct timeval tnext;
 
 static int verbose;
@@ -177,9 +176,9 @@ static void in_wait(const int *fd, uint64_t ts)
       gettimeofday(&tfirst, NULL);
       tsfirst = ts;
     }
-    if (verbose) printf("Sleep %llu\n", ts - tsfirst + cycle);
-    tadd.tv_sec = (ts - tsfirst + cycle) / 1000000;
-    tadd.tv_usec = (ts - tsfirst + cycle) % 1000000;
+    if (verbose) printf("Sleep %llu\n", ts - tsfirst);
+    tadd.tv_sec = (ts - tsfirst) / 1000000;
+    tadd.tv_usec = (ts - tsfirst) % 1000000;
     timeradd(&tfirst, &tadd, &tnext);
     tout_init(&tv);
     ptv = &tv;
@@ -225,7 +224,6 @@ int main(int argc, char *argv[])
     in_fds = input_get_fds(input);
   } else {
     in_fds = NULL;
-    cycle = period;
   }
   output = out_stream_init(argv[2], out_opts);
   if (output == NULL) {
@@ -234,22 +232,21 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  ts = timed ? 1: (uint64_t)-1;
   done = 0; id = 0;
   while(!done) {
     int res;
     struct chunk c;
 
-    in_wait(in_fds, ts);
     c.id = id;
     res = chunkise(input, &c);
     if (res > 0) {
       if (verbose) fprintf(stderr,"chunk %d: %d %llu\n", id++, c.size, c.timestamp);
+      ts = timed ? c.timestamp : (uint64_t)-1;
+      in_wait(in_fds, ts);
       chunk_write(output, &c);
     } else if (res < 0) {
       done = 1;
     }
-    ts = timed ? c.timestamp : (uint64_t)-1;
     free(c.data);
   }
   input_stream_close(input);
