@@ -7,7 +7,7 @@
 #define AUDIO_PAYLOAD_HEADER_SIZE 1 + 1 + 2 + 2 + 1 // 1 Frame type + 1 channels 2 sample rate + 2 frame size + 1 number of frames
 #define VIDEO_PAYLOAD_HEADER_SIZE 1 + 2 + 2 + 2 + 2 + 1 // 1 Frame type + 2 width + 2 height + 2 frame rate num + 2 frame rate den + 1 number of frames
 #define FRAME_HEADER_SIZE (3 + 4 + 1)	// 3 Frame size + 4 PTS + 1 DeltaTS
-#define UDP_CHUNK_HEADER_SIZE (2 + 1)   // 2 size + 1 stream
+#define UDP_PAYLOAD_HEADER_SIZE (2 + 1)   // 2 size + 1 stream
 
 static inline void frame_header_parse(const uint8_t *data, int *size, int64_t *pts, int64_t *dts)
 {
@@ -75,13 +75,13 @@ static inline void frame_header_write(uint8_t *data, int size, int32_t pts, int3
   }
 }
 
-static inline void udp_chunk_header_parse(uint8_t *data, int *size, int *stream)
+static inline void udp_payload_header_parse(uint8_t *data, int *size, int *stream)
 {
   *size = int16_rcpy(data);
   *stream = data[2]; 
 }
 
-static inline void udp_chunk_header_write(uint8_t *data, int size, uint8_t stream)
+static inline void udp_payload_header_write(uint8_t *data, int size, uint8_t stream)
 {
   int16_cpy(data, size);
   data[2] = stream;

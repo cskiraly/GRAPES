@@ -110,9 +110,9 @@ static void raw_write(struct dechunkiser_ctx *o, int id, uint8_t *data, int size
     }
     offset = header_size + frames * FRAME_HEADER_SIZE;
   } else if (o->payload_type == udp) {
-    offset = UDP_CHUNK_HEADER_SIZE; 
+    offset = UDP_PAYLOAD_HEADER_SIZE;
   } else if (o->payload_type == rtp) {
-    offset = UDP_CHUNK_HEADER_SIZE + 12; 
+    offset = UDP_PAYLOAD_HEADER_SIZE + 12;
   } else {
     offset = 0;
   }

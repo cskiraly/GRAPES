@@ -170,7 +170,7 @@ static uint8_t *udp_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
   int i;
 
   if (s->buff == NULL) {
-    s->buff = malloc(UDP_BUF_SIZE + UDP_CHUNK_HEADER_SIZE);
+    s->buff = malloc(UDP_BUF_SIZE + UDP_PAYLOAD_HEADER_SIZE);
     if (s->buff == NULL) {
       *size = -1;
 
@@ -178,12 +178,12 @@ static uint8_t *udp_chunkise(struct chunkiser_ctx *s, int id, int *size, uint64_
     }
   }
   for (i = 0; s->fds[i] >= 0; i++) {
-    if ((*size = input_get_udp(s->buff + s->size + UDP_CHUNK_HEADER_SIZE, s->fds[i]))) {
+    if ((*size = input_get_udp(s->buff + s->size + UDP_PAYLOAD_HEADER_SIZE, s->fds[i]))) {
       uint8_t *res = s->buff;
       struct timeval now;
 
-      udp_chunk_header_write(s->buff + s->size, *size, i);
-      *size += UDP_CHUNK_HEADER_SIZE;
+      udp_payload_header_write(s->buff + s->size, *size, i);
+      *size += UDP_PAYLOAD_HEADER_SIZE;
       s->size += *size;
 
       if (++s->counter % s->every) {
