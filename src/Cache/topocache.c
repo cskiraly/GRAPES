@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <stdio.h>
@@ -688,6 +689,7 @@ struct peer_cache *merge_caches(const struct peer_cache *c1, const struct peer_c
   int n1, n2;
   struct peer_cache *new_cache;
   uint8_t *meta;
+  static int tiewinner1 = false;
 
   new_cache = cache_init(newsize, c1->metadata_size, c1->max_timestamp);
   if (new_cache == NULL) {
@@ -723,7 +725,12 @@ struct peer_cache *merge_caches(const struct peer_cache *c1, const struct peer_c
       }
       n1++;
     } else {
-      if (c2->entries[n2].timestamp > c1->entries[n1].timestamp) {
+      int tie = false;
+      if (c2->entries[n2].timestamp == c1->entries[n1].timestamp) {
+        tie = true;
+        tiewinner1 = !tiewinner1;
+      }
+      if ((tie && tiewinner1) || (c2->entries[n2].timestamp > c1->entries[n1].timestamp)) {
         if (in_cache(new_cache, &c1->entries[n1]) < 0) {
           if (new_cache->metadata_size) {
             memcpy(meta, c1->metadata + n1 * c1->metadata_size, c1->metadata_size);
